@@ -5,6 +5,10 @@
         <visible>true</visible>
     </applicationVisibilities>
     <description>Full admin access to all ApexAgent objects, fields, tabs, and the ApexAgent Setup Portal app.</description>
+    <externalCredentialPrincipalAccesses>
+        <enabled>true</enabled>
+        <externalCredentialPrincipal>OpenRouter_Credential-Authorization</externalCredentialPrincipal>
+    </externalCredentialPrincipalAccesses>
     <fieldPermissions>
         <editable>true</editable>
         <field>ApexAgent_Agent__c.Active__c</field>
@@ -460,10 +464,10 @@
     </tabSettings>
     <userPermissions>
         <enabled>true</enabled>
-        <name>ApiEnabled</name>
+        <name>ApexRestServices</name>
     </userPermissions>
     <userPermissions>
         <enabled>true</enabled>
-        <name>ApexRestServices</name>
+        <name>ApiEnabled</name>
     </userPermissions>
 </PermissionSet>
