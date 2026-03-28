@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Output_Token_Cost_M__c</fullName>
+    <description>Cost per million output tokens billed by the provider.</description>
+    <inlineHelpText>Enter the cost in USD per 1,000,000 output tokens as listed by your LLM provider.</inlineHelpText>
+    <label>Output Token Cost / M</label>
+    <precision>16</precision>
+    <scale>6</scale>
+    <trackHistory>true</trackHistory>
+    <type>Currency</type>
+</CustomField>

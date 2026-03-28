@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Active__c</fullName>
+    <defaultValue>true</defaultValue>
+    <description>When unchecked, the agent cannot be invoked.</description>
+    <inlineHelpText>Use this to enable or disable an agent without deleting its configuration. Default to checked.</inlineHelpText>
+    <label>Active</label>
+    <trackHistory>true</trackHistory>
+    <type>Checkbox</type>
+</CustomField>

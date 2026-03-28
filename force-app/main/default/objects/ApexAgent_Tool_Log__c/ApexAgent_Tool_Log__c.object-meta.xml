@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Records a single tool execution triggered by the LLM during a message. Captures input, output, timing, status, and any errors for debugging and auditing.</description>
+    <label>Agent Tool Log</label>
+    <pluralLabel>Agent Tool Logs</pluralLabel>
+    <nameField>
+        <label>Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>TOOL-{000000}</displayFormat>
+        <startingNumber>1</startingNumber>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>ControlledByParent</sharingModel>
+    <compactLayoutAssignment>Tool_Log_Compact</compactLayoutAssignment>
+    <actionOverrides>
+        <actionName>View</actionName>
+        <content>ApexAgent_Tool_Log_Record_Page</content>
+        <formFactor>Large</formFactor>
+        <skipRecordTypeSelect>false</skipRecordTypeSelect>
+        <type>Flexipage</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>View</actionName>
+        <content>ApexAgent_Tool_Log_Record_Page</content>
+        <formFactor>Small</formFactor>
+        <skipRecordTypeSelect>false</skipRecordTypeSelect>
+        <type>Flexipage</type>
+    </actionOverrides>
+</CustomObject>

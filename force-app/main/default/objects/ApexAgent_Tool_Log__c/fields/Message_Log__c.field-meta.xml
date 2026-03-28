@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Message_Log__c</fullName>
+    <description>The message log record that triggered this tool execution.</description>
+    <inlineHelpText>Links this tool call to its parent message.</inlineHelpText>
+    <label>Message Log</label>
+    <referenceTo>ApexAgent_Message_Log__c</referenceTo>
+    <relationshipLabel>Tool Logs</relationshipLabel>
+    <relationshipName>Tool_Logs</relationshipName>
+    <relationshipOrder>0</relationshipOrder>
+    <reparentableMasterDetail>false</reparentableMasterDetail>
+    <type>MasterDetail</type>
+    <writeRequiresMasterRead>false</writeRequiresMasterRead>
+</CustomField>

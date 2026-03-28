@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Required__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Indicates whether the LLM must provide this parameter when calling the tool.</description>
+    <inlineHelpText>Check this if the tool cannot function without this parameter.</inlineHelpText>
+    <label>Required</label>
+    <trackHistory>true</trackHistory>
+    <type>Checkbox</type>
+</CustomField>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Type__c</fullName>
+    <description>The data type of this parameter, used to generate the JSON schema sent to the LLM.</description>
+    <inlineHelpText>Select the appropriate type. For complex nested objects, select object and specify a Definition Class.</inlineHelpText>
+    <label>Type</label>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>string</fullName>
+                <default>false</default>
+                <label>String</label>
+            </value>
+            <value>
+                <fullName>boolean</fullName>
+                <default>false</default>
+                <label>Boolean</label>
+            </value>
+            <value>
+                <fullName>number</fullName>
+                <default>false</default>
+                <label>Number</label>
+            </value>
+            <value>
+                <fullName>object</fullName>
+                <default>false</default>
+                <label>Object</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+    <trackHistory>true</trackHistory>
+</CustomField>

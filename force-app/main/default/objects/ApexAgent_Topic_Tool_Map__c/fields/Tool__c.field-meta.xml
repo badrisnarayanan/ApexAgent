@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Tool__c</fullName>
+    <description>The tool being assigned to the topic.</description>
+    <inlineHelpText>Select the tool to make available within this topic.</inlineHelpText>
+    <label>Tool</label>
+    <referenceTo>ApexAgent_Tool__c</referenceTo>
+    <relationshipLabel>Topic Tool Maps</relationshipLabel>
+    <relationshipName>Topic_Tool_Maps</relationshipName>
+    <relationshipOrder>1</relationshipOrder>
+    <reparentableMasterDetail>false</reparentableMasterDetail>
+    <type>MasterDetail</type>
+    <trackHistory>true</trackHistory>
+    <writeRequiresMasterRead>false</writeRequiresMasterRead>
+</CustomField>

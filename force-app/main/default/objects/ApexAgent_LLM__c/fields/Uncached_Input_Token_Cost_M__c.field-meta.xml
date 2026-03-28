@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Uncached_Input_Token_Cost_M__c</fullName>
+    <description>Cost per million uncached input tokens (standard prompt tokens).</description>
+    <inlineHelpText>Enter the standard input token cost per 1,000,000 tokens as listed by your LLM provider.</inlineHelpText>
+    <label>Uncached Input Token Cost / M</label>
+    <precision>16</precision>
+    <scale>6</scale>
+    <trackHistory>true</trackHistory>
+    <type>Currency</type>
+</CustomField>

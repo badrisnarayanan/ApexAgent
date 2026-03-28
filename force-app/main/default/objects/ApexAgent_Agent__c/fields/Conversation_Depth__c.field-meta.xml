@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Conversation_Depth__c</fullName>
+    <description>Number of previous message pairs (user+assistant) to include as context in each API call.</description>
+    <inlineHelpText>Higher values give the agent more memory but increase token usage. Set to 0 for stateless conversations.</inlineHelpText>
+    <label>Conversation Depth</label>
+    <precision>18</precision>
+    <required>false</required>
+    <scale>0</scale>
+    <type>Number</type>
+    <unique>false</unique>
+    <trackHistory>true</trackHistory>
+</CustomField>

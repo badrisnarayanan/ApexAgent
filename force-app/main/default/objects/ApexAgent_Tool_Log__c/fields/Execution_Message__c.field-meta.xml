@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Execution_Message__c</fullName>
+    <description>A human-readable status message about the tool execution shown to the user.</description>
+    <inlineHelpText>Shown in the UI when Show Execution Message is enabled on the agent.</inlineHelpText>
+    <label>Execution Message</label>
+    <length>255</length>
+    <required>false</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

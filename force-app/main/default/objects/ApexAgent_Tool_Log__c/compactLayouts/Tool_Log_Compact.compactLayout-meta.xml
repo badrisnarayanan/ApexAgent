@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CompactLayout xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Tool_Log_Compact</fullName>
+    <fields>Name</fields>
+    <fields>Tool_Name__c</fields>
+    <fields>Status__c</fields>
+    <fields>Duration_ms__c</fields>
+    <fields>Message_Log__c</fields>
+    <label>Tool Log Compact Layout</label>
+</CompactLayout>

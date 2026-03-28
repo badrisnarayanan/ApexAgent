@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CompactLayout xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Thread_Log_Compact</fullName>
+    <fields>Name</fields>
+    <fields>OwnerId</fields>
+    <fields>Started_At__c</fields>
+    <fields>Last_Activity_At__c</fields>
+    <label>Thread Log Compact Layout</label>
+</CompactLayout>

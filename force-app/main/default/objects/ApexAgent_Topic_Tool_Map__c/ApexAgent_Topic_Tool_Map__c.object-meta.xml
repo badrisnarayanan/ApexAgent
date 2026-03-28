@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Junction object that assigns tools to topics. A tool assigned to a topic is made available to any agent that includes that topic.</description>
+    <label>Agent Topic Tool Map</label>
+    <pluralLabel>Agent Topic Tool Maps</pluralLabel>
+    <nameField>
+        <label>Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>TPTL-{000000}</displayFormat>
+        <startingNumber>1</startingNumber>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <enableHistory>true</enableHistory>
+    <sharingModel>ControlledByParent</sharingModel>
+    <compactLayoutAssignment>Topic_Tool_Map_Compact</compactLayoutAssignment>
+    <actionOverrides>
+        <actionName>View</actionName>
+        <content>ApexAgent_Topic_Tool_Map_Record_Page</content>
+        <formFactor>Large</formFactor>
+        <skipRecordTypeSelect>false</skipRecordTypeSelect>
+        <type>Flexipage</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>View</actionName>
+        <content>ApexAgent_Topic_Tool_Map_Record_Page</content>
+        <formFactor>Small</formFactor>
+        <skipRecordTypeSelect>false</skipRecordTypeSelect>
+        <type>Flexipage</type>
+    </actionOverrides>
+</CustomObject>

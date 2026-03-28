@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Stack_Trace__c</fullName>
+    <description>The full exception stack trace captured during agent processing.</description>
+    <inlineHelpText>Use this to identify the exact code location where the error occurred.</inlineHelpText>
+    <label>Stack Trace</label>
+    <length>131072</length>
+    <type>LongTextArea</type>
+    <visibleLines>5</visibleLines>
+</CustomField>

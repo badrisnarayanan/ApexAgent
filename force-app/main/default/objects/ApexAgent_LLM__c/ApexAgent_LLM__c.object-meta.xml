@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Stores configuration for a Large Language Model (LLM) provider, including authentication, model identity, pricing, and capability flags used by agents at runtime.</description>
+    <label>LLM</label>
+    <pluralLabel>LLMs</pluralLabel>
+    <nameField>
+        <label>Name</label>
+        <type>Text</type>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <enableHistory>true</enableHistory>
+    <sharingModel>Private</sharingModel>
+    <compactLayoutAssignment>LLM_Compact</compactLayoutAssignment>
+    <actionOverrides>
+        <actionName>View</actionName>
+        <content>ApexAgent_LLM_Record_Page</content>
+        <formFactor>Large</formFactor>
+        <skipRecordTypeSelect>false</skipRecordTypeSelect>
+        <type>Flexipage</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>View</actionName>
+        <content>ApexAgent_LLM_Record_Page</content>
+        <formFactor>Small</formFactor>
+        <skipRecordTypeSelect>false</skipRecordTypeSelect>
+        <type>Flexipage</type>
+    </actionOverrides>
+</CustomObject>

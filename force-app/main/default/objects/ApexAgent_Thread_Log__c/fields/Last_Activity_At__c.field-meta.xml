@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Last_Activity_At__c</fullName>
+    <description>Timestamp of the last message or activity in this thread.</description>
+    <inlineHelpText>Automatically updated when new messages are logged to this thread.</inlineHelpText>
+    <label>Last Activity At</label>
+    <type>DateTime</type>
+</CustomField>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Tool_Log_Depth_Le_Conversation_Depth</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(
+    NOT(ISBLANK(Tool_Log_Depth__c)),
+    OR(
+        ISBLANK(Conversation_Depth__c),
+        Tool_Log_Depth__c &gt; Conversation_Depth__c,
+        Tool_Log_Depth__c &lt; 0,
+        Conversation_Depth__c &lt; 0
+    )
+)</errorConditionFormula>
+    <errorMessage>Tool Log Depth must be a non-negative value and cannot exceed Conversation Depth.</errorMessage>
+</ValidationRule>

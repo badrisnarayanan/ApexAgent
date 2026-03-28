@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Supports_Reasoning__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Indicates whether this LLM supports extended thinking/reasoning capabilities.</description>
+    <inlineHelpText>Check this if the model supports chain-of-thought or reasoning mode.</inlineHelpText>
+    <label>Supports Reasoning?</label>
+    <trackHistory>true</trackHistory>
+    <type>Checkbox</type>
+</CustomField>

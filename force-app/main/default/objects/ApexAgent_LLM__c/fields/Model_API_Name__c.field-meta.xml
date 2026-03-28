@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Model_API_Name__c</fullName>
+    <description>The API identifier used to invoke this model in API calls.</description>
+    <inlineHelpText>Enter the exact model ID as required by the provider, e.g. claude-sonnet-4-6.</inlineHelpText>
+    <label>Model API Name</label>
+    <length>100</length>
+    <required>true</required>
+    <type>Text</type>
+    <unique>false</unique>
+    <trackHistory>true</trackHistory>
+</CustomField>

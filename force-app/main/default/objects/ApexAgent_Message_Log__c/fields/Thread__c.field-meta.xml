@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Thread__c</fullName>
+    <description>The conversation thread this message belongs to.</description>
+    <inlineHelpText>Links this message to its parent thread.</inlineHelpText>
+    <label>Thread</label>
+    <referenceTo>ApexAgent_Thread_Log__c</referenceTo>
+    <relationshipLabel>Message Logs</relationshipLabel>
+    <relationshipName>Message_Logs</relationshipName>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <required>true</required>
+    <type>Lookup</type>
+</CustomField>

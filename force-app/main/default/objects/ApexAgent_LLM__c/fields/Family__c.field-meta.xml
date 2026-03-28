@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Family__c</fullName>
+    <description>The model family or provider group this LLM belongs to.</description>
+    <inlineHelpText>Enter the provider/family name, e.g. Anthropic, OpenAI, Google.</inlineHelpText>
+    <label>Family</label>
+    <length>50</length>
+    <required>true</required>
+    <type>Text</type>
+    <unique>false</unique>
+    <trackHistory>true</trackHistory>
+</CustomField>

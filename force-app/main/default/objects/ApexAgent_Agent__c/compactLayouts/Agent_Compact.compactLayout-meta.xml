@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CompactLayout xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Agent_Compact</fullName>
+    <fields>Name</fields>
+    <fields>LLM__c</fields>
+    <fields>Active__c</fields>
+    <fields>Max_Tokens__c</fields>
+    <fields>Reasoning_Effort__c</fields>
+    <label>Agent Compact Layout</label>
+</CompactLayout>

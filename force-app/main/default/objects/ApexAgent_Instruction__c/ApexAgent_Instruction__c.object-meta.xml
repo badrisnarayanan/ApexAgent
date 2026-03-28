@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>A single system prompt instruction belonging to a topic. Instructions are assembled in order to form the agent's system prompt sent to the LLM.</description>
+    <label>Agent Instruction</label>
+    <pluralLabel>Agent Instructions</pluralLabel>
+    <nameField>
+        <label>Name</label>
+        <type>Text</type>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <enableHistory>true</enableHistory>
+    <sharingModel>ControlledByParent</sharingModel>
+    <compactLayoutAssignment>Instruction_Compact</compactLayoutAssignment>
+    <actionOverrides>
+        <actionName>View</actionName>
+        <content>ApexAgent_Instruction_Record_Page</content>
+        <formFactor>Large</formFactor>
+        <skipRecordTypeSelect>false</skipRecordTypeSelect>
+        <type>Flexipage</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>View</actionName>
+        <content>ApexAgent_Instruction_Record_Page</content>
+        <formFactor>Small</formFactor>
+        <skipRecordTypeSelect>false</skipRecordTypeSelect>
+        <type>Flexipage</type>
+    </actionOverrides>
+</CustomObject>

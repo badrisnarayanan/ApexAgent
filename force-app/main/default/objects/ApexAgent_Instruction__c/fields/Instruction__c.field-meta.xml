@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Instruction__c</fullName>
+    <description>The system prompt instruction text sent to the LLM.</description>
+    <inlineHelpText>Write instructions in natural language. This text becomes part of the agent's system prompt sent to the LLM.</inlineHelpText>
+    <label>Instruction</label>
+    <length>131072</length>
+    <type>LongTextArea</type>
+    <visibleLines>10</visibleLines>
+</CustomField>

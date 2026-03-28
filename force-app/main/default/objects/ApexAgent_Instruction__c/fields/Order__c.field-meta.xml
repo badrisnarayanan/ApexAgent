@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Order__c</fullName>
+    <description>Determines the sequence in which instructions are assembled into the system prompt.</description>
+    <inlineHelpText>Controls the position of this instruction relative to others in the same topic. Use gaps (10, 20, 30) to allow easy insertions.</inlineHelpText>
+    <label>Order</label>
+    <precision>18</precision>
+    <required>false</required>
+    <scale>0</scale>
+    <type>Number</type>
+    <unique>false</unique>
+    <trackHistory>true</trackHistory>
+</CustomField>

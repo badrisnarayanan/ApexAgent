@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Agent__c</fullName>
+    <description>The agent that processed this message.</description>
+    <inlineHelpText>Identifies which agent configuration was used to generate the response.</inlineHelpText>
+    <label>Agent</label>
+    <referenceTo>ApexAgent_Agent__c</referenceTo>
+    <relationshipLabel>Message Logs</relationshipLabel>
+    <relationshipName>Message_Logs</relationshipName>
+    <required>false</required>
+    <type>Lookup</type>
+</CustomField>

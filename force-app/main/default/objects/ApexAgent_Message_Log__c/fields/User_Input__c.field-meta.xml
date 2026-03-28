@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>User_Input__c</fullName>
+    <description>The user's original message or query sent to the agent.</description>
+    <inlineHelpText>Stores the raw user input for auditing and debugging.</inlineHelpText>
+    <label>User Input</label>
+    <length>131072</length>
+    <type>LongTextArea</type>
+    <visibleLines>5</visibleLines>
+</CustomField>

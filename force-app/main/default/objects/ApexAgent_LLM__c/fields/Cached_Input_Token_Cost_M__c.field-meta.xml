@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Cached_Input_Token_Cost_M__c</fullName>
+    <description>Cost per million cached input tokens (prompt cache hits).</description>
+    <inlineHelpText>Enter the cached input token cost per 1,000,000 tokens. Usually lower than uncached input cost.</inlineHelpText>
+    <label>Cached Input Token Cost / M</label>
+    <precision>16</precision>
+    <scale>6</scale>
+    <trackHistory>true</trackHistory>
+    <type>Currency</type>
+</CustomField>

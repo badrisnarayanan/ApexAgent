@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Feedback__c</fullName>
+    <description>User-provided feedback on the quality of the agent's response.</description>
+    <inlineHelpText>Collect user ratings to identify poor responses and improve the agent over time.</inlineHelpText>
+    <label>Feedback</label>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Thumbs Up</fullName>
+                <default>false</default>
+                <label>Thumbs Up</label>
+            </value>
+            <value>
+                <fullName>Thumbs Down</fullName>
+                <default>false</default>
+                <label>Thumbs Down</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

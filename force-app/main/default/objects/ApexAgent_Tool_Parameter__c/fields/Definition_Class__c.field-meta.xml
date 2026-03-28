@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Definition_Class__c</fullName>
+    <description>For object-type parameters, the Apex class that defines the parameter's structure.</description>
+    <inlineHelpText>Required when Type is object. Enter the Apex class name which defines the parameter schema.</inlineHelpText>
+    <label>Definition Class</label>
+    <length>100</length>
+    <required>false</required>
+    <type>Text</type>
+    <unique>false</unique>
+    <trackHistory>true</trackHistory>
+</CustomField>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>LLM__c</fullName>
+    <description>The LLM configuration this agent uses to process requests.</description>
+    <inlineHelpText>Select the LLM model configuration that this agent will use.</inlineHelpText>
+    <label>LLM</label>
+    <referenceTo>ApexAgent_LLM__c</referenceTo>
+    <relationshipLabel>Agents</relationshipLabel>
+    <relationshipName>Agents</relationshipName>
+    <required>true</required>
+    <deleteConstraint>Restrict</deleteConstraint>
+    <trackHistory>true</trackHistory>
+    <type>Lookup</type>
+</CustomField>

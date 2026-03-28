@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Modifies_Salesforce_Data__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Indicates whether this tool creates, updates, or deletes Salesforce records.</description>
+    <inlineHelpText>Check this for tools that write to Salesforce.</inlineHelpText>
+    <label>Modifies Salesforce Data?</label>
+    <trackHistory>true</trackHistory>
+    <type>Checkbox</type>
+</CustomField>

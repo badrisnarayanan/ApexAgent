@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Active__c</fullName>
+    <defaultValue>true</defaultValue>
+    <description>When unchecked, this instruction is excluded from the agent's system prompt.</description>
+    <inlineHelpText>Disable to temporarily remove this instruction without deleting it.</inlineHelpText>
+    <label>Active</label>
+    <trackHistory>true</trackHistory>
+    <type>Checkbox</type>
+</CustomField>

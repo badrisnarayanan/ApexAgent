@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Reasoning_Effort__c</fullName>
+    <description>Controls the depth of reasoning/thinking the model performs before responding.</description>
+    <inlineHelpText>Higher reasoning effort improves accuracy but increases latency and cost. Set to Disabled for models that don't support reasoning.</inlineHelpText>
+    <label>Reasoning Effort</label>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>low</fullName>
+                <default>false</default>
+                <label>Low</label>
+            </value>
+            <value>
+                <fullName>medium</fullName>
+                <default>false</default>
+                <label>Medium</label>
+            </value>
+            <value>
+                <fullName>high</fullName>
+                <default>false</default>
+                <label>High</label>
+            </value>
+            <value>
+                <fullName>disabled</fullName>
+                <default>true</default>
+                <label>Disabled</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+    <trackHistory>true</trackHistory>
+</CustomField>

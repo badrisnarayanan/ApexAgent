@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Order__c</fullName>
+    <description>Controls the order in which this topic's instructions appear in the system prompt.</description>
+    <inlineHelpText>Controls the position of this topic's instructions relative to other topics in the assembled system prompt.</inlineHelpText>
+    <label>Order</label>
+    <precision>18</precision>
+    <required>false</required>
+    <scale>0</scale>
+    <type>Number</type>
+    <unique>false</unique>
+    <trackHistory>true</trackHistory>
+</CustomField>

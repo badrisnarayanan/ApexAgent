@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Input__c</fullName>
+    <description>The JSON-encoded input parameters passed to the tool by the LLM.</description>
+    <inlineHelpText>Records exactly what the LLM sent as tool arguments for auditing and debugging.</inlineHelpText>
+    <label>Input</label>
+    <length>131072</length>
+    <type>LongTextArea</type>
+    <visibleLines>5</visibleLines>
+</CustomField>

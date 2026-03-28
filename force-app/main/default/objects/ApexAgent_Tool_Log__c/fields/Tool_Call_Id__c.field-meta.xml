@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Tool_Call_Id__c</fullName>
+    <description>The identifier assigned by the LLM to correlate the tool call request with its result.</description>
+    <inlineHelpText>Set by the LLM API. Used to match tool results back to their invocation in multi-tool scenarios.</inlineHelpText>
+    <label>Tool Call Id</label>
+    <length>255</length>
+    <required>false</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

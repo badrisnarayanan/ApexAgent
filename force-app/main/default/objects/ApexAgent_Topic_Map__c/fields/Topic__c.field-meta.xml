@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Topic__c</fullName>
+    <description>The topic being assigned to the agent.</description>
+    <inlineHelpText>Select the topic to include in this agent.</inlineHelpText>
+    <label>Topic</label>
+    <referenceTo>ApexAgent_Topic__c</referenceTo>
+    <relationshipLabel>Agent Topic Maps</relationshipLabel>
+    <relationshipName>Agent_Topic_Maps</relationshipName>
+    <relationshipOrder>1</relationshipOrder>
+    <reparentableMasterDetail>false</reparentableMasterDetail>
+    <type>MasterDetail</type>
+    <trackHistory>true</trackHistory>
+    <writeRequiresMasterRead>false</writeRequiresMasterRead>
+</CustomField>

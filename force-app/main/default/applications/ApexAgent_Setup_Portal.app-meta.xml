@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <defaultLandingTab>ApexAgent_LLM__c</defaultLandingTab>
+    <description>ApexAgent Setup Portal — configure LLMs, agents, topics, instructions, and tools for the ApexAgent framework.</description>
+    <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
+    <isNavPersonalizationDisabled>false</isNavPersonalizationDisabled>
+    <label>ApexAgent Setup Portal</label>
+    <navType>Console</navType>
+    <tabs>ApexAgent_LLM__c</tabs>
+    <tabs>ApexAgent_Agent__c</tabs>
+    <tabs>ApexAgent_Topic__c</tabs>
+    <tabs>ApexAgent_Instruction__c</tabs>
+    <tabs>ApexAgent_Tool__c</tabs>
+    <tabs>ApexAgent_Thread_Log__c</tabs>
+    <tabs>ApexAgent_Message_Log__c</tabs>
+    <tabs>ApexAgent_Tool_Log__c</tabs>
+    <tabs>ApexAgent_Error_Log__c</tabs>
+    <uiType>Lightning</uiType>
+    <formFactors>Large</formFactors>
+    <formFactors>Small</formFactors>
+    <workspaceConfig>
+        <mappings>
+            <tab>ApexAgent_LLM__c</tab>
+        </mappings>
+        <mappings>
+            <tab>ApexAgent_Agent__c</tab>
+        </mappings>
+        <mappings>
+            <tab>ApexAgent_Topic__c</tab>
+        </mappings>
+        <mappings>
+            <tab>ApexAgent_Instruction__c</tab>
+        </mappings>
+        <mappings>
+            <tab>ApexAgent_Tool__c</tab>
+        </mappings>
+        <mappings>
+            <tab>ApexAgent_Thread_Log__c</tab>
+        </mappings>
+        <mappings>
+            <tab>ApexAgent_Message_Log__c</tab>
+        </mappings>
+        <mappings>
+            <tab>ApexAgent_Tool_Log__c</tab>
+        </mappings>
+        <mappings>
+            <tab>ApexAgent_Error_Log__c</tab>
+        </mappings>
+    </workspaceConfig>
+</CustomApplication>
