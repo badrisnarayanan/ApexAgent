@@ -9,6 +9,8 @@ ApexAgent is a Salesforce DX project that provides a metadata-driven framework f
 **Salesforce API version:** 66.0
 **Package directory:** `force-app/`
 
+If the request is strraightforwad - dont use explore agents without needing
+
 ## Data Model Architecture
 
 The core data model follows this hierarchy:
@@ -77,6 +79,10 @@ Always prefer the specialized sf-skill over generic approaches — they enforce 
 - Core agent framework classes (non-tool classes) must be prefixed with `ApexAgent` (e.g., `ApexAgentOrchestrator`, `ApexAgentMessageBuilder`)
 - Apex classes must be organized in subfolders under `force-app/main/default/classes/` (e.g., `classes/core/`, `classes/tools/`, `classes/services/`) — never dump classes flat into the `classes/` root
 - Apex code must be properly abstracted: use interfaces/abstract classes for extensibility, separate concerns (service layer, selector layer, domain layer), and avoid god classes
+- If you think there are repeated utility code-  create a utility function in a utility class 
+- For tools, ensure exceptions (missing input  variables, input variable no value, etc) are caught and thrown, remember that an LLM is going to call it
+- For tests, test comprehensively, but keep the number of methods limited, you can do multiple assertions in a single method, consolidate the test cases into fewer methods
+- When running tests, run synchronously, do not run async
 
 ## Static Analysis (mandatory after every Apex/LWC change)
 
