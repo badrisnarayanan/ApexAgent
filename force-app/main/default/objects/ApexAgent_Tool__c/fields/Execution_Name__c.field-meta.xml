@@ -2,11 +2,13 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Execution_Name__c</fullName>
     <description>The API name of the Apex class or Flow to execute when this tool is called.</description>
+    <externalId>false</externalId>
     <inlineHelpText>For Apex, enter the class name implementing the tool interface. For Flow, enter the Flow API name.</inlineHelpText>
     <label>Execution Name</label>
     <length>100</length>
     <required>true</required>
+    <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
     <type>Text</type>
     <unique>false</unique>
-    <trackHistory>true</trackHistory>
 </CustomField>

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
-    <!-- Highlights: Primary field (Name) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -11,7 +10,6 @@
         <name>Facet-m1000001-b2c3-4d5e-a6f7-890123456001</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Highlights: Secondary fields (Agent__c, Topic__c, Active__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -34,16 +32,21 @@
         <name>Facet-m1000002-b2c3-4d5e-a6f7-890123456002</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Header region -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
                 <componentInstanceProperties>
                     <name>actionNames</name>
                     <valueList>
-                        <valueListItems><value>Edit</value></valueListItems>
-                        <valueListItems><value>Clone</value></valueListItems>
-                        <valueListItems><value>Delete</value></valueListItems>
+                        <valueListItems>
+                            <value>Edit</value>
+                        </valueListItems>
+                        <valueListItems>
+                            <value>Clone</value>
+                        </valueListItems>
+                        <valueListItems>
+                            <value>Delete</value>
+                        </valueListItems>
                     </valueList>
                 </componentInstanceProperties>
                 <componentInstanceProperties>
@@ -66,7 +69,6 @@
         <name>header</name>
         <type>Region</type>
     </flexiPageRegions>
-    <!-- Mapping: Left (Agent__c, Order__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -83,7 +85,6 @@
         <name>Facet-m1000003-b2c3-4d5e-a6f7-890123456003</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Mapping: Right (Topic__c, Active__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -124,7 +125,6 @@
         <name>Facet-m1000005-b2c3-4d5e-a6f7-890123456005</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Quick Access: Left (Quick_Access__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -135,7 +135,6 @@
         <name>Facet-m1000006-b2c3-4d5e-a6f7-890123456006</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Quick Access: Right (Quick_Access_Icon__c - visible+required when Quick_Access=true) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -181,7 +180,6 @@
         <name>Facet-m1000008-b2c3-4d5e-a6f7-890123456008</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- System Info -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -234,7 +232,6 @@
         <name>Facet-m1000011-b2c3-4d5e-a6f7-890123456011</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- detailTabContent -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -294,7 +291,6 @@
         <name>detailTabContent</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- History facet -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -325,7 +321,6 @@
         <name>Facet-m1000012-b2c3-4d5e-a6f7-890123456012</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- maintabs -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -363,7 +358,6 @@
         <name>maintabs</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Main region -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>

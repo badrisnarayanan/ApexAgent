@@ -5,6 +5,7 @@
     <inlineHelpText>Populated only when Status is Error. Used for debugging Apex or Flow failures.</inlineHelpText>
     <label>Stack Trace</label>
     <length>131072</length>
+    <trackTrending>false</trackTrending>
     <type>LongTextArea</type>
     <visibleLines>5</visibleLines>
 </CustomField>

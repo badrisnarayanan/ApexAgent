@@ -2,9 +2,10 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Agent_Thought_Signature__c</fullName>
     <description>Encrypted reasoning trace associated with the decision to call this tool.</description>
-    <inlineHelpText>Stores the model's reasoning signature at the point of tool invocation. Only populated when reasoning is enabled.</inlineHelpText>
+    <inlineHelpText>Stores the model&apos;s reasoning signature at the point of tool invocation. Only populated when reasoning is enabled.</inlineHelpText>
     <label>Agent Thought Signature</label>
     <length>131072</length>
+    <trackTrending>false</trackTrending>
     <type>LongTextArea</type>
     <visibleLines>5</visibleLines>
 </CustomField>

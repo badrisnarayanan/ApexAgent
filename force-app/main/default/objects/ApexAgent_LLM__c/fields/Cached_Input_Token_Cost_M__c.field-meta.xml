@@ -5,7 +5,9 @@
     <inlineHelpText>Enter the cached input token cost per 1,000,000 tokens. Usually lower than uncached input cost.</inlineHelpText>
     <label>Cached Input Token Cost / M</label>
     <precision>16</precision>
+    <required>false</required>
     <scale>6</scale>
     <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
     <type>Currency</type>
 </CustomField>

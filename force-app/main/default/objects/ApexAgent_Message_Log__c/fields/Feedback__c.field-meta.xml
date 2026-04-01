@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Feedback__c</fullName>
-    <description>User-provided feedback on the quality of the agent's response.</description>
+    <description>User-provided feedback on the quality of the agent&apos;s response.</description>
     <inlineHelpText>Collect user ratings to identify poor responses and improve the agent over time.</inlineHelpText>
     <label>Feedback</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
     <type>Picklist</type>
     <valueSet>
         <restricted>true</restricted>

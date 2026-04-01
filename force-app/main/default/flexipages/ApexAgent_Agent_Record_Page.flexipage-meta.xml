@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
-    <!-- Highlights: Primary field (Name) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Name</fieldItem>
                 <identifier>RecordNameField</identifier>
             </fieldInstance>
@@ -11,28 +14,43 @@
         <name>Facet-a1000001-b2c3-4d5e-a6f7-890123456001</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Highlights: Secondary fields (LLM__c, Active__c, Max_Tokens__c, Reasoning_Effort__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.LLM__c</fieldItem>
                 <identifier>RecordLLM_cField</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Active__c</fieldItem>
                 <identifier>RecordActive_cField</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Max_Tokens__c</fieldItem>
                 <identifier>RecordMax_Tokens_cField</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Reasoning_Effort__c</fieldItem>
                 <identifier>RecordReasoning_Effort_cField</identifier>
             </fieldInstance>
@@ -40,16 +58,21 @@
         <name>Facet-a1000002-b2c3-4d5e-a6f7-890123456002</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Header region -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
                 <componentInstanceProperties>
                     <name>actionNames</name>
                     <valueList>
-                        <valueListItems><value>Edit</value></valueListItems>
-                        <valueListItems><value>Clone</value></valueListItems>
-                        <valueListItems><value>Delete</value></valueListItems>
+                        <valueListItems>
+                            <value>Edit</value>
+                        </valueListItems>
+                        <valueListItems>
+                            <value>Clone</value>
+                        </valueListItems>
+                        <valueListItems>
+                            <value>Delete</value>
+                        </valueListItems>
                     </valueList>
                 </componentInstanceProperties>
                 <componentInstanceProperties>
@@ -72,35 +95,59 @@
         <name>header</name>
         <type>Region</type>
     </flexiPageRegions>
-    <!-- Configuration: Left (LLM__c, Active__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
+                <fieldItem>Record.Name</fieldItem>
+                <identifier>RecordNameField2</identifier>
+            </fieldInstance>
+        </itemInstances>
+        <itemInstances>
+            <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
+                <fieldItem>Record.Active__c</fieldItem>
+                <identifier>RecordActive_cField2</identifier>
+            </fieldInstance>
+        </itemInstances>
+        <itemInstances>
+            <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
+                <fieldItem>Record.Reasoning_Effort__c</fieldItem>
+                <identifier>RecordReasoning_Effort_cField2</identifier>
+            </fieldInstance>
+        </itemInstances>
+        <name>Facet-a1000003-b2c3-4d5e-a6f7-890123456003</name>
+        <type>Facet</type>
+    </flexiPageRegions>
+    <flexiPageRegions>
+        <itemInstances>
+            <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.LLM__c</fieldItem>
                 <identifier>RecordLLM_cField2</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
             <fieldInstance>
-                <fieldItem>Record.Active__c</fieldItem>
-                <identifier>RecordActive_cField2</identifier>
-            </fieldInstance>
-        </itemInstances>
-        <name>Facet-a1000003-b2c3-4d5e-a6f7-890123456003</name>
-        <type>Facet</type>
-    </flexiPageRegions>
-    <!-- Configuration: Right (Max_Tokens__c, Reasoning_Effort__c) -->
-    <flexiPageRegions>
-        <itemInstances>
-            <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Max_Tokens__c</fieldItem>
                 <identifier>RecordMax_Tokens_cField2</identifier>
-            </fieldInstance>
-        </itemInstances>
-        <itemInstances>
-            <fieldInstance>
-                <fieldItem>Record.Reasoning_Effort__c</fieldItem>
-                <identifier>RecordReasoning_Effort_cField2</identifier>
             </fieldInstance>
         </itemInstances>
         <name>Facet-a1000004-b2c3-4d5e-a6f7-890123456004</name>
@@ -130,16 +177,23 @@
         <name>Facet-a1000005-b2c3-4d5e-a6f7-890123456005</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Behavior: Left (Conversation_Depth__c, Show_Execution_Message__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Conversation_Depth__c</fieldItem>
                 <identifier>RecordConversation_Depth_cField</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Show_Execution_Message__c</fieldItem>
                 <identifier>RecordShow_Execution_Message_cField</identifier>
             </fieldInstance>
@@ -147,10 +201,13 @@
         <name>Facet-a1000006-b2c3-4d5e-a6f7-890123456006</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Behavior: Right (Tool_Log_Depth__c — visible when Conversation_Depth__c WasSet) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Tool_Log_Depth__c</fieldItem>
                 <identifier>RecordTool_Log_Depth_cField</identifier>
                 <visibilityRule>
@@ -189,10 +246,13 @@
         <name>Facet-a1000008-b2c3-4d5e-a6f7-890123456008</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Description: Fields -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>required</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Description__c</fieldItem>
                 <identifier>RecordDescription_cField</identifier>
             </fieldInstance>
@@ -214,7 +274,6 @@
         <name>Facet-a1000010-b2c3-4d5e-a6f7-890123456010</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- System Info -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -267,7 +326,6 @@
         <name>Facet-a1000013-b2c3-4d5e-a6f7-890123456013</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- detailTabContent -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -345,7 +403,6 @@
         <name>detailTabContent</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Related tab: Topic_Maps -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -383,6 +440,9 @@
                             <value>NAME</value>
                         </valueListItems>
                         <valueListItems>
+                            <value>ApexAgent_Topic__c.NAME</value>
+                        </valueListItems>
+                        <valueListItems>
                             <value>Order__c</value>
                         </valueListItems>
                         <valueListItems>
@@ -416,7 +476,6 @@
         <name>Facet-a1000014-b2c3-4d5e-a6f7-890123456014</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- History facet -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -447,7 +506,6 @@
         <name>Facet-a1000015-b2c3-4d5e-a6f7-890123456015</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- maintabs -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -499,7 +557,6 @@
         <name>maintabs</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Main region -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>

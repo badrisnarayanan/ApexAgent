@@ -4,5 +4,7 @@
     <description>Timestamp of the last message or activity in this thread.</description>
     <inlineHelpText>Automatically updated when new messages are logged to this thread.</inlineHelpText>
     <label>Last Activity At</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
     <type>DateTime</type>
 </CustomField>

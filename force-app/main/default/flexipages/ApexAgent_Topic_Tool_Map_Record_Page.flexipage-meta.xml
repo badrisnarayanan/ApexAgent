@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
-    <!-- Highlights: Primary field (Name) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -11,7 +10,6 @@
         <name>Facet-a8000001-b2c3-4d5e-a6f7-890123456001</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Highlights: Secondary fields (Topic__c, Tool__c, Active__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -34,7 +32,6 @@
         <name>Facet-a8000002-b2c3-4d5e-a6f7-890123456002</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Header region with highlights panel -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -72,7 +69,6 @@
         <name>header</name>
         <type>Region</type>
     </flexiPageRegions>
-    <!-- Mapping section: Left column fields (Topic__c, Active__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -89,7 +85,6 @@
         <name>Facet-a8000005-b2c3-4d5e-a6f7-890123456005</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Mapping section: Right column fields (Tool__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -100,7 +95,6 @@
         <name>Facet-a8000006-b2c3-4d5e-a6f7-890123456006</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Mapping section: Columns -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -125,7 +119,6 @@
         <name>Facet-a8000007-b2c3-4d5e-a6f7-890123456007</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- System Info: Left column fields -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -140,7 +133,6 @@
         <name>Facet-a8000008-b2c3-4d5e-a6f7-890123456008</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- System Info: Right column fields -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -155,7 +147,6 @@
         <name>Facet-a8000009-b2c3-4d5e-a6f7-890123456009</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- System Info: Columns -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -180,7 +171,6 @@
         <name>Facet-a8000010-b2c3-4d5e-a6f7-890123456010</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- detailTabContent: Field sections -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -222,7 +212,6 @@
         <name>detailTabContent</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- History facet -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -253,7 +242,6 @@
         <name>Facet-a8000011-b2c3-4d5e-a6f7-890123456011</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- maintabs -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -291,7 +279,6 @@
         <name>maintabs</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Main region -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>

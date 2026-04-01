@@ -4,5 +4,7 @@
     <description>Timestamp when the LLM API call began.</description>
     <inlineHelpText>Used with Ended At to calculate processing duration.</inlineHelpText>
     <label>Started At</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
     <type>DateTime</type>
 </CustomField>

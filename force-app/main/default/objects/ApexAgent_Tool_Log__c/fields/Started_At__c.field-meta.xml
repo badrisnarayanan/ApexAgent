@@ -4,5 +4,7 @@
     <description>Timestamp when tool execution began.</description>
     <inlineHelpText>Used with Ended At to measure tool execution duration.</inlineHelpText>
     <label>Started At</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
     <type>DateTime</type>
 </CustomField>

@@ -4,6 +4,9 @@
     <description>The data type of this parameter, used to generate the JSON schema sent to the LLM.</description>
     <inlineHelpText>Select the appropriate type. For complex nested objects, select object and specify a Definition Class.</inlineHelpText>
     <label>Type</label>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
     <type>Picklist</type>
     <valueSet>
         <restricted>true</restricted>
@@ -31,5 +34,4 @@
             </value>
         </valueSetDefinition>
     </valueSet>
-    <trackHistory>true</trackHistory>
 </CustomField>

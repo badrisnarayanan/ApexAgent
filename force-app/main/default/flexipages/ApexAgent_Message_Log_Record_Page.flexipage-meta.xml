@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
-    <!-- Highlights: Primary field (Name) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -11,7 +10,6 @@
         <name>Facet-g1000001-b2c3-4d5e-a6f7-890123456001</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Highlights: Secondary fields (Agent__c, Thread__c, Feedback__c, Cost__c, Duration_ms__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -46,16 +44,21 @@
         <name>Facet-g1000002-b2c3-4d5e-a6f7-890123456002</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Header region -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
                 <componentInstanceProperties>
                     <name>actionNames</name>
                     <valueList>
-                        <valueListItems><value>Edit</value></valueListItems>
-                        <valueListItems><value>Clone</value></valueListItems>
-                        <valueListItems><value>Delete</value></valueListItems>
+                        <valueListItems>
+                            <value>Edit</value>
+                        </valueListItems>
+                        <valueListItems>
+                            <value>Clone</value>
+                        </valueListItems>
+                        <valueListItems>
+                            <value>Delete</value>
+                        </valueListItems>
                     </valueList>
                 </componentInstanceProperties>
                 <componentInstanceProperties>
@@ -78,7 +81,6 @@
         <name>header</name>
         <type>Region</type>
     </flexiPageRegions>
-    <!-- User Input: Fields -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -103,7 +105,6 @@
         <name>Facet-g1000004-b2c3-4d5e-a6f7-890123456004</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Agent Response: Fields -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -128,7 +129,6 @@
         <name>Facet-g1000006-b2c3-4d5e-a6f7-890123456006</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Execution Details: Left (Agent__c, Model_Name__c, Started_At__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -151,7 +151,6 @@
         <name>Facet-g1000007-b2c3-4d5e-a6f7-890123456007</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Execution Details: Right (Thread__c, Duration_ms__c, Ended_At__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -198,7 +197,6 @@
         <name>Facet-g1000009-b2c3-4d5e-a6f7-890123456009</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Token Usage: Left (Input_Tokens__c, Output_Tokens__c, Cost__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -221,7 +219,6 @@
         <name>Facet-g1000010-b2c3-4d5e-a6f7-890123456010</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Token Usage: Right (Cached_Input_Tokens__c, Reasoning_Tokens__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -262,7 +259,6 @@
         <name>Facet-g1000012-b2c3-4d5e-a6f7-890123456012</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Feedback: Left (Feedback__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -273,7 +269,6 @@
         <name>Facet-g1000013-b2c3-4d5e-a6f7-890123456013</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Feedback: Right (Feedback_Notes__c — visible when Feedback__c = Thumbs Down) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -315,7 +310,6 @@
         <name>Facet-g1000015-b2c3-4d5e-a6f7-890123456015</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Technical: Fields -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -340,7 +334,6 @@
         <name>Facet-g1000017-b2c3-4d5e-a6f7-890123456017</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Reasoning Trace: Fields (visible when Agent_Thought_Signature__c WasSet) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -365,7 +358,6 @@
         <name>Facet-g1000019-b2c3-4d5e-a6f7-890123456019</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- System Info -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -418,7 +410,6 @@
         <name>Facet-g1000022-b2c3-4d5e-a6f7-890123456022</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- detailTabContent -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -568,7 +559,6 @@
         <name>detailTabContent</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Related tab: Tool_Logs + Error_Logs -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -705,7 +695,6 @@
         <name>Facet-g1000023-b2c3-4d5e-a6f7-890123456023</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- maintabs -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -743,7 +732,6 @@
         <name>maintabs</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Main region -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>

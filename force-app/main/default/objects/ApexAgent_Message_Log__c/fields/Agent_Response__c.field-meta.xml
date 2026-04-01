@@ -2,9 +2,10 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Agent_Response__c</fullName>
     <description>The final text response returned by the agent to the user.</description>
-    <inlineHelpText>Stores the agent's complete response text.</inlineHelpText>
+    <inlineHelpText>Stores the agent&apos;s complete response text.</inlineHelpText>
     <label>Agent Response</label>
     <length>131072</length>
+    <trackTrending>false</trackTrending>
     <type>LongTextArea</type>
     <visibleLines>5</visibleLines>
 </CustomField>

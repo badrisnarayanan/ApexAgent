@@ -2,11 +2,13 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Quick_Access_Icon__c</fullName>
     <description>The icon name displayed on the quick-access button for this topic.</description>
+    <externalId>false</externalId>
     <inlineHelpText>Enter a Salesforce SLDS icon name, e.g. utility:chat. Required when Quick Access is enabled.</inlineHelpText>
     <label>Quick Access Icon</label>
     <length>100</length>
     <required>false</required>
+    <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
     <type>Text</type>
     <unique>false</unique>
-    <trackHistory>true</trackHistory>
 </CustomField>

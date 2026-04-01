@@ -2,14 +2,15 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Topic__c</fullName>
     <description>The topic this instruction belongs to.</description>
-    <inlineHelpText>Instructions are grouped by topic and assembled into the agent's system prompt.</inlineHelpText>
+    <inlineHelpText>Instructions are grouped by topic and assembled into the agent&apos;s system prompt.</inlineHelpText>
     <label>Topic</label>
     <referenceTo>ApexAgent_Topic__c</referenceTo>
     <relationshipLabel>Instructions</relationshipLabel>
     <relationshipName>Instructions</relationshipName>
     <relationshipOrder>0</relationshipOrder>
     <reparentableMasterDetail>false</reparentableMasterDetail>
-    <type>MasterDetail</type>
     <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>MasterDetail</type>
     <writeRequiresMasterRead>false</writeRequiresMasterRead>
 </CustomField>

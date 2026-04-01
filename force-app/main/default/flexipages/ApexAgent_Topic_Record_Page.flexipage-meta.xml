@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
-    <!-- Highlights: Primary field (Name) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Name</fieldItem>
                 <identifier>RecordNameField</identifier>
             </fieldInstance>
@@ -11,10 +14,13 @@
         <name>Facet-p1000001-b2c3-4d5e-a6f7-890123456001</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Highlights: Secondary fields (Topic_API_Name__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Topic_API_Name__c</fieldItem>
                 <identifier>RecordTopic_API_Name_cField</identifier>
             </fieldInstance>
@@ -22,16 +28,21 @@
         <name>Facet-p1000002-b2c3-4d5e-a6f7-890123456002</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Header region -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
                 <componentInstanceProperties>
                     <name>actionNames</name>
                     <valueList>
-                        <valueListItems><value>Edit</value></valueListItems>
-                        <valueListItems><value>Clone</value></valueListItems>
-                        <valueListItems><value>Delete</value></valueListItems>
+                        <valueListItems>
+                            <value>Edit</value>
+                        </valueListItems>
+                        <valueListItems>
+                            <value>Clone</value>
+                        </valueListItems>
+                        <valueListItems>
+                            <value>Delete</value>
+                        </valueListItems>
                     </valueList>
                 </componentInstanceProperties>
                 <componentInstanceProperties>
@@ -54,10 +65,23 @@
         <name>header</name>
         <type>Region</type>
     </flexiPageRegions>
-    <!-- Identification: Fields (Topic_API_Name__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>required</value>
+                </fieldInstanceProperties>
+                <fieldItem>Record.Name</fieldItem>
+                <identifier>RecordNameField2</identifier>
+            </fieldInstance>
+        </itemInstances>
+        <itemInstances>
+            <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Topic_API_Name__c</fieldItem>
                 <identifier>RecordTopic_API_Name_cField2</identifier>
             </fieldInstance>
@@ -79,10 +103,13 @@
         <name>Facet-p1000004-b2c3-4d5e-a6f7-890123456004</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Description: Fields -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>required</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Description__c</fieldItem>
                 <identifier>RecordDescription_cField</identifier>
             </fieldInstance>
@@ -104,7 +131,6 @@
         <name>Facet-p1000006-b2c3-4d5e-a6f7-890123456006</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- System Info -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -157,7 +183,6 @@
         <name>Facet-p1000009-b2c3-4d5e-a6f7-890123456009</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- detailTabContent -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -217,7 +242,6 @@
         <name>detailTabContent</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Related tab: Instructions, Topic_Tool_Maps, Agent_Topic_Maps -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -318,6 +342,12 @@
                             <value>NAME</value>
                         </valueListItems>
                         <valueListItems>
+                            <value>ApexAgent_Tool__c.NAME</value>
+                        </valueListItems>
+                        <valueListItems>
+                            <value>ApexAgent_Tool__c.Execution_Type__c</value>
+                        </valueListItems>
+                        <valueListItems>
                             <value>Active__c</value>
                         </valueListItems>
                     </valueList>
@@ -378,7 +408,7 @@
                             <value>NAME</value>
                         </valueListItems>
                         <valueListItems>
-                            <value>Order__c</value>
+                            <value>ApexAgent_Agent__c.NAME</value>
                         </valueListItems>
                         <valueListItems>
                             <value>Active__c</value>
@@ -395,11 +425,11 @@
                 </componentInstanceProperties>
                 <componentInstanceProperties>
                     <name>sortFieldAlias</name>
-                    <value>Order__c</value>
+                    <value>__DEFAULT__</value>
                 </componentInstanceProperties>
                 <componentInstanceProperties>
                     <name>sortFieldOrder</name>
-                    <value>Ascending</value>
+                    <value>Default</value>
                 </componentInstanceProperties>
                 <componentName>lst:dynamicRelatedList</componentName>
                 <identifier>lst_dynamicRelatedList_AgentTopicMaps</identifier>
@@ -408,7 +438,6 @@
         <name>Facet-p1000010-b2c3-4d5e-a6f7-890123456010</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- History facet -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -439,7 +468,6 @@
         <name>Facet-p1000011-b2c3-4d5e-a6f7-890123456011</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- maintabs -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -491,7 +519,6 @@
         <name>maintabs</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Main region -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>

@@ -6,5 +6,6 @@
     <inlineHelpText>Use this to enable or disable an agent without deleting its configuration. Default to checked.</inlineHelpText>
     <label>Active</label>
     <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
     <type>Checkbox</type>
 </CustomField>

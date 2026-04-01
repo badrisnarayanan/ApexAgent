@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Agent__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
     <description>The agent that processed this message.</description>
     <inlineHelpText>Identifies which agent configuration was used to generate the response.</inlineHelpText>
     <label>Agent</label>
@@ -8,5 +9,6 @@
     <relationshipLabel>Message Logs</relationshipLabel>
     <relationshipName>Message_Logs</relationshipName>
     <required>false</required>
+    <trackTrending>false</trackTrending>
     <type>Lookup</type>
 </CustomField>

@@ -4,6 +4,9 @@
     <description>Defines whether this tool is executed via an Apex class or a Salesforce Flow.</description>
     <inlineHelpText>Select Apex if the tool runs an Apex invocable method. Select Flow if it runs an autolaunched Flow.</inlineHelpText>
     <label>Execution Type</label>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
     <type>Picklist</type>
     <valueSet>
         <restricted>true</restricted>
@@ -21,5 +24,4 @@
             </value>
         </valueSetDefinition>
     </valueSet>
-    <trackHistory>true</trackHistory>
 </CustomField>

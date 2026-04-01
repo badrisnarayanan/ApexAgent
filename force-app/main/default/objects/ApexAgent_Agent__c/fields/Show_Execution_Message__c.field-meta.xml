@@ -2,9 +2,10 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Show_Execution_Message__c</fullName>
     <defaultValue>false</defaultValue>
-    <description>When enabled, tool execution status messages are included in the agent's response.</description>
+    <description>When enabled, tool execution status messages are included in the agent&apos;s response.</description>
     <inlineHelpText>Enable to show users real-time progress messages while the agent executes tools.</inlineHelpText>
     <label>Show Execution Message</label>
     <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
     <type>Checkbox</type>
 </CustomField>

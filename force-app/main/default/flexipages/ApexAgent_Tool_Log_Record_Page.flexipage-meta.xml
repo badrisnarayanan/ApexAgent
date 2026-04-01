@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
-    <!-- Highlights: Primary field (Name) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -11,7 +10,6 @@
         <name>Facet-j1000001-b2c3-4d5e-a6f7-890123456001</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Highlights: Secondary fields (Tool_Name__c, Status__c, Duration_ms__c, Message_Log__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -40,16 +38,21 @@
         <name>Facet-j1000002-b2c3-4d5e-a6f7-890123456002</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Header region -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
                 <componentInstanceProperties>
                     <name>actionNames</name>
                     <valueList>
-                        <valueListItems><value>Edit</value></valueListItems>
-                        <valueListItems><value>Clone</value></valueListItems>
-                        <valueListItems><value>Delete</value></valueListItems>
+                        <valueListItems>
+                            <value>Edit</value>
+                        </valueListItems>
+                        <valueListItems>
+                            <value>Clone</value>
+                        </valueListItems>
+                        <valueListItems>
+                            <value>Delete</value>
+                        </valueListItems>
                     </valueList>
                 </componentInstanceProperties>
                 <componentInstanceProperties>
@@ -72,7 +75,6 @@
         <name>header</name>
         <type>Region</type>
     </flexiPageRegions>
-    <!-- Execution: Left (Tool_Name__c, Status__c, Started_At__c, Duration_ms__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -101,7 +103,6 @@
         <name>Facet-j1000003-b2c3-4d5e-a6f7-890123456003</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Execution: Right (Message_Log__c, Tool_Call_Id__c, Ended_At__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -148,7 +149,6 @@
         <name>Facet-j1000005-b2c3-4d5e-a6f7-890123456005</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Execution Message: Fields (visible when Execution_Message__c WasSet) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -179,7 +179,6 @@
         <name>Facet-j1000007-b2c3-4d5e-a6f7-890123456007</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Input: Fields -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -204,7 +203,6 @@
         <name>Facet-j1000009-b2c3-4d5e-a6f7-890123456009</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Output: Fields -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -229,7 +227,6 @@
         <name>Facet-j1000011-b2c3-4d5e-a6f7-890123456011</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Error Details: Fields (visible when Status__c = Error) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -274,7 +271,6 @@
         <name>Facet-j1000013-b2c3-4d5e-a6f7-890123456013</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Reasoning Trace: Fields (visible when Agent_Thought_Signature__c WasSet) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -299,7 +295,6 @@
         <name>Facet-j1000015-b2c3-4d5e-a6f7-890123456015</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- System Info -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -352,7 +347,6 @@
         <name>Facet-j1000018-b2c3-4d5e-a6f7-890123456018</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- detailTabContent -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -497,7 +491,6 @@
         <name>detailTabContent</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- maintabs -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -521,7 +514,6 @@
         <name>maintabs</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Main region -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>

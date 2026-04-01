@@ -69,7 +69,4 @@
     <showInteractionLogPanel>false</showInteractionLogPanel>
     <showRunAssignmentRulesCheckbox>false</showRunAssignmentRulesCheckbox>
     <showSubmitAndAttachButton>false</showSubmitAndAttachButton>
-    <relatedLists>
-        <relatedList>RelatedHistoryList</relatedList>
-    </relatedLists>
 </Layout>

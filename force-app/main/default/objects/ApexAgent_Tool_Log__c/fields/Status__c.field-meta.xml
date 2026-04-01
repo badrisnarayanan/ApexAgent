@@ -4,6 +4,8 @@
     <description>The outcome of the tool execution.</description>
     <inlineHelpText>Success indicates the tool ran and returned output. Error indicates an exception occurred.</inlineHelpText>
     <label>Status</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
     <type>Picklist</type>
     <valueSet>
         <restricted>true</restricted>

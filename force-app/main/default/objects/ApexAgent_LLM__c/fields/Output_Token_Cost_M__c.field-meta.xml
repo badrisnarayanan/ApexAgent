@@ -5,7 +5,9 @@
     <inlineHelpText>Enter the cost in USD per 1,000,000 output tokens as listed by your LLM provider.</inlineHelpText>
     <label>Output Token Cost / M</label>
     <precision>16</precision>
+    <required>false</required>
     <scale>6</scale>
     <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
     <type>Currency</type>
 </CustomField>

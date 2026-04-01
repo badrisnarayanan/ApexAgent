@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
-    <!-- Highlights: Primary field (Name) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Name</fieldItem>
                 <identifier>RecordNameField</identifier>
             </fieldInstance>
@@ -11,28 +14,43 @@
         <name>Facet-l1000001-b2c3-4d5e-a6f7-890123456001</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Highlights: Secondary fields -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Family__c</fieldItem>
                 <identifier>RecordFamily_cField</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Model_API_Name__c</fieldItem>
                 <identifier>RecordModel_API_Name_cField</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Named_Credential__c</fieldItem>
                 <identifier>RecordNamed_Credential_cField</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Supports_Reasoning__c</fieldItem>
                 <identifier>RecordSupports_Reasoning_cField</identifier>
             </fieldInstance>
@@ -40,16 +58,21 @@
         <name>Facet-l1000002-b2c3-4d5e-a6f7-890123456002</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Header region -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
                 <componentInstanceProperties>
                     <name>actionNames</name>
                     <valueList>
-                        <valueListItems><value>Edit</value></valueListItems>
-                        <valueListItems><value>Clone</value></valueListItems>
-                        <valueListItems><value>Delete</value></valueListItems>
+                        <valueListItems>
+                            <value>Edit</value>
+                        </valueListItems>
+                        <valueListItems>
+                            <value>Clone</value>
+                        </valueListItems>
+                        <valueListItems>
+                            <value>Delete</value>
+                        </valueListItems>
                     </valueList>
                 </componentInstanceProperties>
                 <componentInstanceProperties>
@@ -72,41 +95,69 @@
         <name>header</name>
         <type>Region</type>
     </flexiPageRegions>
-    <!-- Identification: Left (Family__c, Model_API_Name__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Family__c</fieldItem>
                 <identifier>RecordFamily_cField2</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Model_API_Name__c</fieldItem>
                 <identifier>RecordModel_API_Name_cField2</identifier>
+            </fieldInstance>
+        </itemInstances>
+        <itemInstances>
+            <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
+                <fieldItem>Record.Named_Credential__c</fieldItem>
+                <identifier>RecordNamed_Credential_cField2</identifier>
             </fieldInstance>
         </itemInstances>
         <name>Facet-l1000003-b2c3-4d5e-a6f7-890123456003</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Identification: Right (Named_Credential__c, Supports_Reasoning__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
-                <fieldItem>Record.Named_Credential__c</fieldItem>
-                <identifier>RecordNamed_Credential_cField2</identifier>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
+                <fieldItem>Record.Name</fieldItem>
+                <identifier>RecordNameField2</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
             <fieldInstance>
-                <fieldItem>Record.Chat_Completions_Path__c</fieldItem>
-                <identifier>RecordChat_Completions_Path_cField</identifier>
-            </fieldInstance>
-        </itemInstances>
-        <itemInstances>
-            <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Supports_Reasoning__c</fieldItem>
                 <identifier>RecordSupports_Reasoning_cField2</identifier>
+            </fieldInstance>
+        </itemInstances>
+        <itemInstances>
+            <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
+                <fieldItem>Record.Chat_Completions_Path__c</fieldItem>
+                <identifier>RecordChat_Completions_Path_cField</identifier>
             </fieldInstance>
         </itemInstances>
         <name>Facet-l1000004-b2c3-4d5e-a6f7-890123456004</name>
@@ -136,16 +187,23 @@
         <name>Facet-l1000005-b2c3-4d5e-a6f7-890123456005</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Pricing: Left (Uncached_Input_Token_Cost_M__c, Output_Token_Cost_M__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Uncached_Input_Token_Cost_M__c</fieldItem>
                 <identifier>RecordUncached_Input_Token_Cost_M_cField</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Output_Token_Cost_M__c</fieldItem>
                 <identifier>RecordOutput_Token_Cost_M_cField</identifier>
             </fieldInstance>
@@ -153,10 +211,13 @@
         <name>Facet-l1000006-b2c3-4d5e-a6f7-890123456006</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Pricing: Right (Cached_Input_Token_Cost_M__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Cached_Input_Token_Cost_M__c</fieldItem>
                 <identifier>RecordCached_Input_Token_Cost_M_cField</identifier>
             </fieldInstance>
@@ -188,7 +249,6 @@
         <name>Facet-l1000008-b2c3-4d5e-a6f7-890123456008</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- System Info: Left (CreatedById) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -241,7 +301,6 @@
         <name>Facet-l1000011-b2c3-4d5e-a6f7-890123456011</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- detailTabContent -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -301,7 +360,6 @@
         <name>detailTabContent</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Related tab: Agents -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -372,7 +430,6 @@
         <name>Facet-l1000012-b2c3-4d5e-a6f7-890123456012</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- History facet -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -403,7 +460,6 @@
         <name>Facet-l1000013-b2c3-4d5e-a6f7-890123456013</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- maintabs -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -455,7 +511,6 @@
         <name>maintabs</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Main region -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>

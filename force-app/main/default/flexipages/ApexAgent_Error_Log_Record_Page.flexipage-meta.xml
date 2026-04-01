@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
-    <!-- Highlights: Primary field (Name) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -11,7 +10,6 @@
         <name>Facet-e1000001-b2c3-4d5e-a6f7-890123456001</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Highlights: Secondary fields (Message_Log__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -22,16 +20,21 @@
         <name>Facet-e1000002-b2c3-4d5e-a6f7-890123456002</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Header region -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
                 <componentInstanceProperties>
                     <name>actionNames</name>
                     <valueList>
-                        <valueListItems><value>Edit</value></valueListItems>
-                        <valueListItems><value>Clone</value></valueListItems>
-                        <valueListItems><value>Delete</value></valueListItems>
+                        <valueListItems>
+                            <value>Edit</value>
+                        </valueListItems>
+                        <valueListItems>
+                            <value>Clone</value>
+                        </valueListItems>
+                        <valueListItems>
+                            <value>Delete</value>
+                        </valueListItems>
                     </valueList>
                 </componentInstanceProperties>
                 <componentInstanceProperties>
@@ -54,7 +57,6 @@
         <name>header</name>
         <type>Region</type>
     </flexiPageRegions>
-    <!-- Reference section fields (Message_Log__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -79,7 +81,6 @@
         <name>Facet-e1000004-b2c3-4d5e-a6f7-890123456004</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Error section fields (Error__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -104,7 +105,6 @@
         <name>Facet-e1000006-b2c3-4d5e-a6f7-890123456006</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Stack Trace section fields (Stack_Trace__c) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -129,7 +129,6 @@
         <name>Facet-e1000008-b2c3-4d5e-a6f7-890123456008</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- System Info: Left (CreatedById) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -144,7 +143,6 @@
         <name>Facet-e1000009-b2c3-4d5e-a6f7-890123456009</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- System Info: Right (LastModifiedById) -->
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
@@ -183,7 +181,6 @@
         <name>Facet-e1000011-b2c3-4d5e-a6f7-890123456011</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- detailTabContent -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -261,7 +258,6 @@
         <name>detailTabContent</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- maintabs -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
@@ -285,7 +281,6 @@
         <name>maintabs</name>
         <type>Facet</type>
     </flexiPageRegions>
-    <!-- Main region -->
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
