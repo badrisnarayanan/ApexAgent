@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Chat_Completions_Path__c</fullName>
+    <description>The API path for the chat completions endpoint appended to the Named Credential base URL. Leave blank if the Named Credential already includes the full URL (e.g. /api/v1/chat/completions).</description>
+    <inlineHelpText>Optional path appended to the Named Credential base URL (e.g. /api/v1/chat/completions). Leave blank if the Named Credential already includes the full endpoint URL.</inlineHelpText>
+    <label>Chat Completions Path</label>
+    <length>255</length>
+    <required>false</required>
+    <type>Text</type>
+    <unique>false</unique>
+    <trackHistory>true</trackHistory>
+</CustomField>

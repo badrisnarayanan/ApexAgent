@@ -99,6 +99,12 @@
         </itemInstances>
         <itemInstances>
             <fieldInstance>
+                <fieldItem>Record.Chat_Completions_Path__c</fieldItem>
+                <identifier>RecordChat_Completions_Path_cField</identifier>
+            </fieldInstance>
+        </itemInstances>
+        <itemInstances>
+            <fieldInstance>
                 <fieldItem>Record.Supports_Reasoning__c</fieldItem>
                 <identifier>RecordSupports_Reasoning_cField2</identifier>
             </fieldInstance>
