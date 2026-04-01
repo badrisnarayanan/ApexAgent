@@ -69,6 +69,11 @@
         <field>ApexAgent_LLM__c.Cached_Input_Token_Cost_M__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>ApexAgent_LLM__c.Chat_Completions_Path__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
 
     <fieldPermissions>
         <editable>true</editable>
