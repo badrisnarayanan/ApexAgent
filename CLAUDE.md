@@ -77,7 +77,7 @@ Always prefer the specialized sf-skill over generic approaches — they enforce 
 - Compact layouts are defined for every object — update them when adding important fields
 - FlexiPages override the default View action on both Large and Small form factors
 - Core agent framework classes (non-tool classes) must be prefixed with `ApexAgent` (e.g., `ApexAgentOrchestrator`, `ApexAgentMessageBuilder`)
-- Apex classes must be organized in subfolders under `force-app/main/default/classes/` (e.g., `classes/core/`, `classes/tools/`, `classes/services/`) — never dump classes flat into the `classes/` root
+- Apex classes must be organized in subfolders under `force-app/main/default/classes/` (e.g., `classes/core/`, `classes/tools/`, `classes/services/`) — never dump classes flat into the `classes/` root; within `core/` use `interfaces/`, `execution/`, `types/`, `utils/`; in `types/`, `ApexAgentApiTypes` holds OpenAI API request/response wrappers (ToolCall etc.), `ApexAgentExecTypes` holds internal framework execution types (ToolResult etc.); create new subfolders freely if existing ones don't fit
 - Apex code must be properly abstracted: use interfaces/abstract classes for extensibility, separate concerns (service layer, selector layer, domain layer), and avoid god classes
 - If you think there are repeated utility code-  create a utility function in a utility class 
 - For tools, ensure exceptions (missing input  variables, input variable no value, etc) are caught and thrown, remember that an LLM is going to call it
