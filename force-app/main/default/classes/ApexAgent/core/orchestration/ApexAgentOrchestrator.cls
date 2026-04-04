@@ -68,7 +68,7 @@ public with sharing class ApexAgentOrchestrator {
             ApexAgentConfigTypes.LoadResult loaded = ApexAgentTopicLoader.load(agentName);
             config = loaded.config;
             List<Map<String, Object>> toolDefs =
-                ApexAgentTopicLoader.buildToolDefinitions(loaded.toolsByName);
+                ApexAgentTopicLoader.buildToolDefinitions(loaded.toolsByName, config.showExecutionMessage);
 
             // ── 2. Build messages array ───────────────────────────────
             List<Object> messages = new List<Object>();
@@ -133,11 +133,30 @@ public with sharing class ApexAgentOrchestrator {
 
                     messages.add(ApexAgentOrchestratorUtils.buildAssistantTurn(assistantMsg, lastSignature));
 
+                    // Extract execution_message from each tool call's arguments (strips param
+                    // before the tool executor sees the inputs) and publish in-progress PEs in bulk.
+                    Map<String, String> execMsgByToolCallId = new Map<String, String>();
+                    for (ApexAgentApiTypes.ToolCall tc : assistantMsg.tool_calls) {
+                        execMsgByToolCallId.put(
+                            tc.id,
+                            ApexAgentOrchestratorUtils.extractAndStripExecutionMessage(tc)
+                        );
+                    }
+                    if (config.showExecutionMessage == true) {
+                        ApexAgentExecutionMessageHandler.publishInProgress(
+                            resolvedUUID, assistantMsg.tool_calls, execMsgByToolCallId
+                        );
+                    }
+
                     for (ApexAgentApiTypes.ToolCall tc : assistantMsg.tool_calls) {
                         Datetime toolStart = Datetime.now();
                         ApexAgentExecTypes.ToolResult result =
                             ApexAgentToolExecutor.execute(loaded.toolsByName, tc);
                         Datetime toolEnd = Datetime.now();
+
+                        if (config.showExecutionMessage == true) {
+                            ApexAgentExecutionMessageHandler.publishCompleted(resolvedUUID, tc);
+                        }
 
                         ApexAgentApiTypes.ChatMessage toolMsg = new ApexAgentApiTypes.ChatMessage();
                         toolMsg.role         = 'tool';
@@ -148,7 +167,10 @@ public with sharing class ApexAgentOrchestrator {
                         messages.add(toolMsg);
 
                         toolEntries.add(
-                            ApexAgentOrchestratorUtils.buildToolLogEntry(tc, result, toolStart, toolEnd, lastSignature)
+                            ApexAgentOrchestratorUtils.buildToolLogEntry(
+                                tc, result, toolStart, toolEnd, lastSignature,
+                                execMsgByToolCallId.get(tc.id)
+                            )
                         );
                     }
 

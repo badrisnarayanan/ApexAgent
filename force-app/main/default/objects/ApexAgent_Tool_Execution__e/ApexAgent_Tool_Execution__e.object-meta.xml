@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Published before and after each tool execution when Show Execution Message is enabled on the agent. Powers real-time status updates via Platform Cache.</description>
+    <eventType>HighVolume</eventType>
+    <label>Agent Tool Execution</label>
+    <pluralLabel>Agent Tool Executions</pluralLabel>
+    <publishBehavior>PublishImmediately</publishBehavior>
+</CustomObject>

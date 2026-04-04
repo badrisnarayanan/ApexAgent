@@ -19,6 +19,7 @@ public with sharing class ApexAgentConfigTypes {
         public String modelApiName;
         public String chatCompletionsPath;
         public Boolean supportsReasoning;
+        public Boolean showExecutionMessage;
         // Cost per million tokens
         public Decimal uncachedInputCostPerM;
         public Decimal cachedInputCostPerM;

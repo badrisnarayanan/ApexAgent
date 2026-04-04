@@ -42,6 +42,7 @@ public with sharing class ApexAgentLogger {
         public String errorMessage;
         public String stackTrace;
         public String thoughtSignature;
+        public String executionMessage;
         public Datetime startedAt;
         public Datetime endedAt;
     }
@@ -150,7 +151,8 @@ public with sharing class ApexAgentLogger {
                 Output__c                  = truncate(entry.outputJson),
                 Status__c                  = entry.status,
                 Error_Message__c           = truncate(entry.errorMessage),
-                Stack_Trace__c             = truncate(entry.stackTrace)
+                Stack_Trace__c             = truncate(entry.stackTrace),
+                Execution_Message__c       = entry.executionMessage
             ));
         }
         insert records; // NOPMD

@@ -45,13 +45,16 @@ public with sharing class ApexAgentTopicLoader {
     /**
      * Builds the OpenRouter function-calling tool definitions array
      * from the tool map populated by load().
+     * When showExecutionMessage is true, an execution_message parameter is injected
+     * into every tool's schema so the LLM can provide a user-friendly status description.
      */
     public static List<Map<String, Object>> buildToolDefinitions(
-        Map<String, ApexAgent_Tool__c> toolsByName
+        Map<String, ApexAgent_Tool__c> toolsByName,
+        Boolean showExecutionMessage
     ) {
         List<Map<String, Object>> defs = new List<Map<String, Object>>();
         for (ApexAgent_Tool__c tool : toolsByName.values()) {
-            defs.add(buildSingleToolDef(tool));
+            defs.add(buildSingleToolDef(tool, showExecutionMessage == true));
         }
         return defs;
     }
@@ -64,6 +67,7 @@ public with sharing class ApexAgentTopicLoader {
         List<ApexAgent_Agent__c> agents = [
             SELECT Id, Name, Description__c, Max_Tokens__c,
                    Conversation_Depth__c, Reasoning_Effort__c, Tool_Log_Depth__c,
+                   Show_Execution_Message__c,
                    LLM__r.Named_Credential__c, LLM__r.Model_API_Name__c,
                    LLM__r.Family__c, LLM__r.Chat_Completions_Path__c,
                    LLM__r.Supports_Reasoning__c,
@@ -95,6 +99,7 @@ public with sharing class ApexAgentTopicLoader {
         cfg.modelApiName          = rec.LLM__r.Model_API_Name__c;
         cfg.chatCompletionsPath   = rec.LLM__r.Chat_Completions_Path__c;
         cfg.supportsReasoning     = rec.LLM__r.Supports_Reasoning__c;
+        cfg.showExecutionMessage  = rec.Show_Execution_Message__c == true;
         cfg.modelFamily           = rec.LLM__r.Family__c;
         cfg.uncachedInputCostPerM = rec.LLM__r.Uncached_Input_Token_Cost_M__c;
         cfg.cachedInputCostPerM   = rec.LLM__r.Cached_Input_Token_Cost_M__c;
@@ -211,7 +216,7 @@ public with sharing class ApexAgentTopicLoader {
     // Private: tool definition builder
     // ─────────────────────────────────────────────────────────────────
 
-    private static Map<String, Object> buildSingleToolDef(ApexAgent_Tool__c tool) {
+    private static Map<String, Object> buildSingleToolDef(ApexAgent_Tool__c tool, Boolean showExecutionMessage) {
         Map<String, Object> properties = new Map<String, Object>();
         List<String> required = new List<String>();
 
@@ -241,6 +246,17 @@ public with sharing class ApexAgentTopicLoader {
             if (param.Required__c) {
                 required.add(param.Name);
             }
+        }
+
+        if (showExecutionMessage) {
+            properties.put('execution_message', new Map<String, Object>{
+                'type'        => 'string',
+                'description' => 'Brief, user-friendly description of what you are doing '
+                    + 'with this specific tool call, in present continuous tense '
+                    + '(e.g. \'Searching for account records\'). '
+                    + 'Under 60 characters. Do not end with ellipsis.'
+            });
+            required.add('execution_message');
         }
 
         Map<String, Object> parameters = new Map<String, Object>{

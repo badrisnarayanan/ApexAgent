@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PlatformCachePartition xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Stores real-time tool execution status for in-flight agent messages. Keyed by message UUID. TTL is 300 seconds.</description>
+    <isDefaultPartition>false</isDefaultPartition>
+    <masterLabel>ApexAgentExecution</masterLabel>
+    <platformCachePartitionTypes>
+        <allocatedCapacity>1</allocatedCapacity>
+        <allocatedPurchasedCapacity>0</allocatedPurchasedCapacity>
+        <cacheType>Organization</cacheType>
+    </platformCachePartitionTypes>
+    <platformCachePartitionTypes>
+        <allocatedCapacity>0</allocatedCapacity>
+        <allocatedPurchasedCapacity>0</allocatedPurchasedCapacity>
+        <cacheType>Session</cacheType>
+    </platformCachePartitionTypes>
+</PlatformCachePartition>

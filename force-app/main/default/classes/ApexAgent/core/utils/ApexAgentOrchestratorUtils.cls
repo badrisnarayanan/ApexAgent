@@ -58,25 +58,42 @@ public with sharing class ApexAgentOrchestratorUtils {
         return turn;
     }
 
+    /**
+     * Extracts and strips the execution_message key from the tool call's JSON arguments.
+     * Modifies tc.function.arguments in place (removes the key so the tool never sees it).
+     * Returns the extracted message, or an empty string if absent.
+     */
+    public static String extractAndStripExecutionMessage(ApexAgentApiTypes.ToolCall tc) {
+        if (tc.function == null || String.isBlank(tc.function.arguments)) {
+            return '';
+        }
+        Map<String, Object> args = (Map<String, Object>) JSON.deserializeUntyped(tc.function.arguments);
+        Object msg = args.remove('execution_message');
+        tc.function.arguments = JSON.serialize(args);
+        return msg != null ? String.valueOf(msg) : '';
+    }
+
     /** Builds a ToolLogEntry from a completed tool call and its result. */
     public static ApexAgentLogger.ToolLogEntry buildToolLogEntry(
         ApexAgentApiTypes.ToolCall tc,
         ApexAgentExecTypes.ToolResult result,
         Datetime toolStart,
         Datetime toolEnd,
-        String signature
+        String signature,
+        String executionMessage
     ) {
         ApexAgentLogger.ToolLogEntry entry = new ApexAgentLogger.ToolLogEntry();
-        entry.toolCallId       = tc.id;
-        entry.toolName         = tc.function != null ? tc.function.name      : null;
-        entry.inputJson        = tc.function != null ? tc.function.arguments : null;
-        entry.outputJson       = result.output;
-        entry.status           = STATUS_ERROR.equals(result.status) ? STATUS_ERROR : STATUS_SUCCESS;
-        entry.errorMessage     = result.errorMessage;
-        entry.stackTrace       = result.errorStackTrace;
-        entry.thoughtSignature = signature;
-        entry.startedAt        = toolStart;
-        entry.endedAt          = toolEnd;
+        entry.toolCallId        = tc.id;
+        entry.toolName          = tc.function != null ? tc.function.name      : null;
+        entry.inputJson         = tc.function != null ? tc.function.arguments : null;
+        entry.outputJson        = result.output;
+        entry.status            = STATUS_ERROR.equals(result.status) ? STATUS_ERROR : STATUS_SUCCESS;
+        entry.errorMessage      = result.errorMessage;
+        entry.stackTrace        = result.errorStackTrace;
+        entry.thoughtSignature  = signature;
+        entry.executionMessage  = executionMessage;
+        entry.startedAt         = toolStart;
+        entry.endedAt           = toolEnd;
         return entry;
     }
 
