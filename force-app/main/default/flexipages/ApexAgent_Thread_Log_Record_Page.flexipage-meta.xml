@@ -3,6 +3,10 @@
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Name</fieldItem>
                 <identifier>RecordNameField</identifier>
             </fieldInstance>
@@ -13,12 +17,20 @@
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Started_At__c</fieldItem>
                 <identifier>RecordStarted_At_cField</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Last_Activity_At__c</fieldItem>
                 <identifier>RecordLast_Activity_At_cField</identifier>
             </fieldInstance>
@@ -66,12 +78,20 @@
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Agent_Thread_UUID__c</fieldItem>
                 <identifier>RecordAgent_Thread_UUID_cField</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Started_At__c</fieldItem>
                 <identifier>RecordStarted_At_cField2</identifier>
             </fieldInstance>
@@ -82,6 +102,10 @@
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>none</value>
+                </fieldInstanceProperties>
                 <fieldItem>Record.Last_Activity_At__c</fieldItem>
                 <identifier>RecordLast_Activity_At_cField2</identifier>
             </fieldInstance>
@@ -243,7 +267,10 @@
                             <value>NAME</value>
                         </valueListItems>
                         <valueListItems>
-                            <value>Agent__c</value>
+                            <value>User_Input__c</value>
+                        </valueListItems>
+                        <valueListItems>
+                            <value>Agent_Response__c</value>
                         </valueListItems>
                         <valueListItems>
                             <value>Started_At__c</value>
@@ -253,15 +280,6 @@
                         </valueListItems>
                         <valueListItems>
                             <value>Cost__c</value>
-                        </valueListItems>
-                        <valueListItems>
-                            <value>Feedback__c</value>
-                        </valueListItems>
-                        <valueListItems>
-                            <value>Input_Tokens__c</value>
-                        </valueListItems>
-                        <valueListItems>
-                            <value>Output_Tokens__c</value>
                         </valueListItems>
                     </valueList>
                 </componentInstanceProperties>
