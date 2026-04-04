@@ -105,3 +105,6 @@ Scope both tools to only the files you changed — avoid running against the ful
 Review output for Critical/High severity violations and fix them. Ignore:
 - SLDS-related suggestions
 - Complexity warnings (CyclomaticComplexity, CognitiveComplexity, NcssMethodCount, etc.)
+
+
+VSCode may throw problems/errors for Sobject / describe objects / variables - you can ignore them
