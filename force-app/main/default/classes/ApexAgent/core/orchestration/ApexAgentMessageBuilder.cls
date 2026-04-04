@@ -206,7 +206,7 @@ public with sharing class ApexAgentMessageBuilder {
     // User context + additional context message
     // ─────────────────────────────────────────────────────────────────
 
-    public static ApexAgentApiTypes.ChatMessage buildContextMessage(String systemContext) {
+    public static ApexAgentApiTypes.ChatMessage buildContextMessage(String additionalContext) {
         String profileName = '';
         String roleName    = '';
 
@@ -249,10 +249,10 @@ public with sharing class ApexAgentMessageBuilder {
         parts.add('Current Datetime (Org TZ):  ' + nowOrg);
         parts.add('Current Datetime (User TZ): ' + nowUser);
 
-        if (String.isNotBlank(systemContext)) {
+        if (String.isNotBlank(additionalContext)) {
             parts.add('');
             parts.add('=== ADDITIONAL CONTEXT ===');
-            parts.add(systemContext);
+            parts.add(additionalContext);
         }
 
         return makeMessage('system', String.join(parts, '\n'));

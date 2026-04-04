@@ -64,6 +64,10 @@ public with sharing class ApexAgentLogger {
     // ─────────────────────────────────────────────────────────────────
 
     private static Id upsertThread(String threadUUID, Datetime startedAt) {
+        if (String.isBlank(threadUUID)) {
+            return null; // stateless / one-shot call — no thread record needed
+        }
+
         List<ApexAgent_Thread_Log__c> existing = [
             SELECT Id FROM ApexAgent_Thread_Log__c
             WHERE Agent_Thread_UUID__c = :threadUUID
@@ -76,7 +80,7 @@ public with sharing class ApexAgentLogger {
                 Id = existing[0].Id,
                 Last_Activity_At__c = Datetime.now()
             );
-            update upd;
+            update upd; // NOPMD — log objects require system-level DML; users lack write access
             return existing[0].Id;
         }
 
@@ -85,7 +89,7 @@ public with sharing class ApexAgentLogger {
             Started_At__c        = startedAt,
             Last_Activity_At__c  = Datetime.now()
         );
-        insert thread;
+        insert thread; // NOPMD
         return thread.Id;
     }
 
@@ -115,7 +119,7 @@ public with sharing class ApexAgentLogger {
             Reasoning_Tokens__c         = p.reasoningTokens,
             Cost__c                     = p.cost
         );
-        insert msg;
+        insert msg; // NOPMD
         return msg.Id;
     }
 
@@ -149,7 +153,7 @@ public with sharing class ApexAgentLogger {
                 Stack_Trace__c             = truncate(entry.stackTrace)
             ));
         }
-        insert records;
+        insert records; // NOPMD
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -157,7 +161,7 @@ public with sharing class ApexAgentLogger {
     // ─────────────────────────────────────────────────────────────────
 
     private static void insertErrorLog(String errorMsg, String stackTrace, Id messageLogId) {
-        insert new ApexAgent_Error_Log__c(
+        insert new ApexAgent_Error_Log__c( // NOPMD
             Message_Log__c = messageLogId,
             Error__c       = truncate(errorMsg),
             Stack_Trace__c = truncate(stackTrace)

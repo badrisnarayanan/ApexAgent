@@ -19,13 +19,22 @@ public with sharing class ApexAgentOrchestrator {
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // Public API
+    // Public API — convenience overloads for Apex / Flow callers
     // ─────────────────────────────────────────────────────────────────
 
+    public static AgentResponse run(String agentName, String userMessage) {
+        return run(null, userMessage, null, agentName, null);
+    }
+
+    public static AgentResponse run(String agentName, String userMessage, String additionalContext) {
+        return run(null, userMessage, additionalContext, agentName, null);
+    }
+
+    // Full signature — used by LWC chat app (threadUUID / messageUUID managed by caller)
     public static AgentResponse run(
         String threadUUID,
         String userMessage,
-        String systemContext,
+        String additionalContext,
         String agentName,
         String messageUUID
     ) {
@@ -75,7 +84,7 @@ public with sharing class ApexAgentOrchestrator {
             }
 
             messages.add(ApexAgentMessageBuilder.buildUserMessage(userMessage));
-            messages.add(ApexAgentMessageBuilder.buildContextMessage(systemContext));
+            messages.add(ApexAgentMessageBuilder.buildContextMessage(additionalContext));
 
             // ── 3. Agentic loop ───────────────────────────────────────
             Integer iteration = 0;
@@ -163,10 +172,8 @@ public with sharing class ApexAgentOrchestrator {
         // ── 4. Log everything ─────────────────────────────────────
         Datetime endedAt = Datetime.now();
         try {
-            String logThreadUUID = String.isNotBlank(threadUUID) ? threadUUID : resolvedUUID;
-
             ApexAgentLogger.LogPayload payload = new ApexAgentLogger.LogPayload();
-            payload.threadUUID       = logThreadUUID;
+            payload.threadUUID       = threadUUID; // null/blank = no thread record created
             payload.messageUUID      = resolvedUUID;
             payload.agentId          = config != null ? config.agentId       : null;
             payload.agentName        = agentName;
