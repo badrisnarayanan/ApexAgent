@@ -57,7 +57,7 @@ When working on Salesforce-specific tasks in this repo, use the appropriate `sf-
 | Apex classes, triggers, test classes | `sf-apex` |
 | Custom objects, fields, validation rules, metadata XML | `sf-metadata` |
 | Flows (.flow-meta.xml) | `sf-flow` |
-| LWC components | `sf-lwc` |
+| LWC components | `sf-lwc` + `frontend-design:frontend-design` |
 | SOQL queries | `sf-soql` |
 | Deploying metadata, scratch orgs, CI/CD | `sf-deploy` |
 | Running Apex tests, coverage | `sf-testing` |
@@ -83,6 +83,11 @@ Always prefer the specialized sf-skill over generic approaches — they enforce 
 - For tools, ensure exceptions (missing input  variables, input variable no value, etc) are caught and thrown, remember that an LLM is going to call it
 - For tests, test comprehensively, but keep the number of methods limited, you can do multiple assertions in a single method, consolidate the test cases into fewer methods
 - When running tests, run synchronously, do not run async
+
+## LWC Development
+
+- Always invoke both `sf-lwc` and `frontend-design:frontend-design` skills when creating or editing LWC components — `sf-lwc` enforces Salesforce/PICKLES conventions, `frontend-design` ensures design quality.
+- Before using any SLDS class or token, use WebFetch or WebSearch to look up the exact name from the [SLDS documentation](https://www.lightningdesignsystem.com/) — do not guess SLDS class names from memory as they change across versions.
 
 ## Static Analysis (mandatory after every Apex/LWC change)
 
