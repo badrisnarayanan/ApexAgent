@@ -48,6 +48,7 @@ public with sharing class ApexAgentOrchestrator {
         Datetime startedAt = Datetime.now();
         String   lastContent = null;
         String   errorMsg    = null;
+        String   errorStack  = null;
 
         // Token accumulators across all loop iterations
         Integer accumPrompt     = 0;
@@ -188,7 +189,8 @@ public with sharing class ApexAgentOrchestrator {
             }
 
         } catch (Exception e) {
-            errorMsg = e.getMessage() + '\n' + e.getStackTraceString();
+            errorMsg      = e.getMessage();
+            errorStack    = e.getStackTraceString();
         }
 
         // ── 4. Log everything ─────────────────────────────────────
@@ -216,7 +218,7 @@ public with sharing class ApexAgentOrchestrator {
                 : null;
             payload.toolLogs         = toolEntries;
             payload.errorMessage     = errorMsg;
-            payload.errorStackTrace  = null; // already embedded in errorMsg above
+            payload.errorStackTrace  = errorStack;
 
             ApexAgentLogger.insertLogs(payload);
         } catch (Exception logEx) {
