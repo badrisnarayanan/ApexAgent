@@ -1,0 +1,132 @@
+<template>
+    <div class="chat-root" style={themeStyle}>
+
+        <!-- Sidebar overlay backdrop (closes sidebar on click outside) -->
+        <template if:true={isSidebarOpen}>
+            <div class="sidebar-backdrop" onclick={handleSidebarClose} aria-hidden="true"></div>
+        </template>
+
+        <!-- Sidebar -->
+        <c-apex-agent-chat-sidebar
+            threads={threads}
+            active-thread-u-u-i-d={currentThreadUUID}
+            is-processing={isProcessing}
+            is-open={isSidebarOpen}
+            onnewchat={handleNewChat}
+            onthreadselect={handleThreadSelect}
+            onclose={handleSidebarClose}>
+        </c-apex-agent-chat-sidebar>
+
+        <!-- Main chat panel -->
+        <div class="chat-panel">
+
+            <!-- Header: sidebar toggle only -->
+            <header class="chat-header">
+                <button
+                    class="sidebar-toggle"
+                    type="button"
+                    aria-label="Open conversation history"
+                    title="Conversations"
+                    onclick={handleSidebarOpen}>
+                    <lightning-icon icon-name="utility:justify_text" size="small"></lightning-icon>
+                </button>
+            </header>
+
+            <!-- Loading state -->
+            <template if:true={isConfigLoading}>
+                <div class="config-loading">
+                    <lightning-spinner alternative-text="Loading agent..." size="medium"></lightning-spinner>
+                </div>
+            </template>
+
+            <!-- Error state: no agent configured -->
+            <template if:true={hasConfigError}>
+                <div class="config-error">
+                    <lightning-icon icon-name="utility:error" size="medium" variant="error"></lightning-icon>
+                    <p>{configErrorMessage}</p>
+                </div>
+            </template>
+
+            <!-- Normal chat area -->
+            <template if:false={hasConfigError}>
+                <template if:false={isConfigLoading}>
+                <!-- Messages area -->
+                <div class="messages-container" role="log" aria-live="polite" aria-label="Chat messages">
+
+                    <!-- Thread loading state -->
+                    <template if:true={isThreadLoading}>
+                        <div class="thread-loading">
+                            <lightning-spinner alternative-text="Loading messages..." size="medium"></lightning-spinner>
+                        </div>
+                    </template>
+
+                    <!-- Empty state (hidden while thread loading) -->
+                    <template if:false={isThreadLoading}>
+                    <template if:true={showEmptyState}>
+                        <div class="empty-state">
+                            <div class="empty-avatar-wrap">
+                                <template if:true={hasAvatarUrl}>
+                                    <img class="empty-avatar empty-avatar--img" src={agentConfig.avatarUrl} alt={agentConfig.name} />
+                                </template>
+                                <template if:false={hasAvatarUrl}>
+                                    <div class="empty-avatar empty-avatar--letter" aria-hidden="true">{avatarLetter}</div>
+                                </template>
+                            </div>
+                            <p class="empty-agent-name">{agentConfig.name}</p>
+                            <p class="empty-tagline">{agentConfig.tagline}</p>
+                            <p class="empty-greeting">Hi, {userFirstName}!</p>
+                        </div>
+                    </template>
+
+                    <!-- Message list -->
+                    <template for:each={messages} for:item="msg">
+                        <c-apex-agent-chat-message
+                            key={msg.key}
+                            message={msg}
+                            agent-avatar-url={agentConfig.avatarUrl}
+                            agent-name={agentConfig.name}
+                            onfeedbackclick={handleFeedbackClick}
+                            ontoolstoggle={handleToolsToggle}>
+                        </c-apex-agent-chat-message>
+                    </template>
+                    </template><!-- end if:false={isThreadLoading} -->
+                </div>
+
+                <!-- Input area -->
+                <div class="input-wrapper">
+                        <textarea
+                            class="message-input"
+                            placeholder={inputPlaceholder}
+                            rows="1"
+                            maxlength="32000"
+                            disabled={isProcessing}
+                            aria-label="Message input"
+                            value={inputText}
+                            oninput={handleInput}
+                            onkeydown={handleKeyDown}>
+                        </textarea>
+                        <button
+                            class="send-btn"
+                            type="button"
+                            disabled={isSendDisabled}
+                            aria-label="Send message"
+                            onclick={handleSend}>
+                            <lightning-icon icon-name="utility:send" size="x-small" variant="inverse"></lightning-icon>
+                        </button>
+                </div>
+                </template><!-- end if:false={isConfigLoading} -->
+            </template>
+        </div>
+
+        <!-- Feedback dialog -->
+        <c-apex-agent-chat-feedback-dialog
+            is-open={isFeedbackOpen}
+            message-u-u-i-d={feedbackTarget.agentMessageUUID}
+            existing-feedback={feedbackTarget.feedback}
+            existing-notes={feedbackTarget.feedbackNotes}
+            onclose={handleFeedbackClose}
+            onsubmit={handleFeedbackSubmit}>
+        </c-apex-agent-chat-feedback-dialog>
+
+    </div>
+</template>

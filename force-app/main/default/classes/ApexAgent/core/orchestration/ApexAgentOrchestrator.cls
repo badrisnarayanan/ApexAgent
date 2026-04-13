@@ -13,9 +13,9 @@ public with sharing class ApexAgentOrchestrator {
     // ─────────────────────────────────────────────────────────────────
 
     public class AgentResponse {
-        public String llmResponse;
-        public String errorMessage;
-        public String messageUUID;
+        @AuraEnabled public String llmResponse;
+        @AuraEnabled public String errorMessage;
+        @AuraEnabled public String messageUUID;
     }
 
     // ─────────────────────────────────────────────────────────────────

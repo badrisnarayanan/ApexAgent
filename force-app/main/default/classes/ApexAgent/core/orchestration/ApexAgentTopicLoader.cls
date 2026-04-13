@@ -267,12 +267,14 @@ public with sharing class ApexAgentTopicLoader {
             parameters.put('required', required);
         }
 
+        parameters.put('additionalProperties', false);
         return new Map<String, Object>{
             'type' => 'function',
             'function' => new Map<String, Object>{
-                'name' => tool.Tool_API_Name__c,
+                'name'        => tool.Tool_API_Name__c,
                 'description' => tool.Description__c,
-                'parameters' => parameters
+                'strict'      => true,
+                'parameters'  => parameters
             }
         };
     }

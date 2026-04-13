@@ -106,7 +106,13 @@ public with sharing class ApexAgentExecutionMessageHandler {
         for (ApexAgent_Tool_Execution__e evt : events) {
             String tcId = evt.Tool_Call_Id__c;
             if (byToolCallId.containsKey(tcId)) {
-                byToolCallId.get(tcId).status = evt.Status__c;
+                ToolActionEntry existing = byToolCallId.get(tcId);
+                // Preserve execution message if the incoming event has one (In Progress carries it,
+                // Completed does not — events may arrive out of order so we never overwrite with blank)
+                if (String.isNotBlank(evt.Execution_Message__c)) {
+                    existing.executionMessage = evt.Execution_Message__c;
+                }
+                existing.status = evt.Status__c;
             } else {
                 ToolActionEntry fresh = new ToolActionEntry();
                 fresh.toolCallId       = tcId;

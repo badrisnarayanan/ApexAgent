@@ -4,6 +4,10 @@
         <application>ApexAgent_Setup_Portal</application>
         <visible>true</visible>
     </applicationVisibilities>
+    <classAccesses>
+        <apexClass>ApexAgentChatController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <description>Full admin access to all ApexAgent objects, fields, tabs, and the ApexAgent Setup Portal app.</description>
     <externalCredentialPrincipalAccesses>
         <enabled>true</enabled>
@@ -12,6 +16,11 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>ApexAgent_Agent__c.Active__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>ApexAgent_Agent__c.Avatar_Static_Resource__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -26,12 +35,27 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>ApexAgent_Agent__c.Has_LWC__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>ApexAgent_Agent__c.Primary_Color__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>ApexAgent_Agent__c.Reasoning_Effort__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
         <field>ApexAgent_Agent__c.Show_Execution_Message__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>ApexAgent_Agent__c.Tagline__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -74,7 +98,6 @@
         <field>ApexAgent_LLM__c.Chat_Completions_Path__c</field>
         <readable>true</readable>
     </fieldPermissions>
-
     <fieldPermissions>
         <editable>true</editable>
         <field>ApexAgent_LLM__c.Output_Token_Cost_M__c</field>
@@ -466,6 +489,10 @@
     </tabSettings>
     <tabSettings>
         <tab>ApexAgent_Topic__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>Lumen_Agent</tab>
         <visibility>Visible</visibility>
     </tabSettings>
     <userPermissions>

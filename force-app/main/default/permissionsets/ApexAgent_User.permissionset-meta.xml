@@ -4,11 +4,35 @@
         <application>ApexAgent_Setup_Portal</application>
         <visible>true</visible>
     </applicationVisibilities>
+    <classAccesses>
+        <apexClass>ApexAgentChatController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <description>Read-only access to ApexAgent config objects and log objects for agent users.</description>
     <externalCredentialPrincipalAccesses>
         <enabled>true</enabled>
         <externalCredentialPrincipal>OpenRouter_Credential-Authorization</externalCredentialPrincipal>
     </externalCredentialPrincipalAccesses>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>ApexAgent_Agent__c.Avatar_Static_Resource__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>ApexAgent_Agent__c.Has_LWC__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>ApexAgent_Agent__c.Primary_Color__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>ApexAgent_Agent__c.Tagline__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <hasActivationRequired>false</hasActivationRequired>
     <label>ApexAgent User</label>
     <objectPermissions>
@@ -131,6 +155,10 @@
         <viewAllFields>true</viewAllFields>
         <viewAllRecords>true</viewAllRecords>
     </objectPermissions>
+    <tabSettings>
+        <tab>Lumen_Agent</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
     <userPermissions>
         <enabled>true</enabled>
         <name>ApexRestServices</name>

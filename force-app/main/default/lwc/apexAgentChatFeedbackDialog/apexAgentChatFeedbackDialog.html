@@ -1,0 +1,51 @@
+<template>
+    <template if:true={isOpen}>
+        <div class="overlay" role="dialog" aria-modal="true" aria-labelledby="feedback-title" onclick={handleOverlayClick}>
+            <div class="dialog" onclick={stopPropagation}>
+                <h2 class="dialog-title" id="feedback-title">Rate this response</h2>
+
+                <div class="thumb-group" role="group" aria-label="Feedback options">
+                    <button
+                        class={thumbUpClass}
+                        type="button"
+                        aria-pressed={isThumbsUp}
+                        title="Helpful"
+                        onclick={handleThumbsUp}>
+                        <lightning-icon icon-name="utility:like" size="small"></lightning-icon>
+                        <span>Helpful</span>
+                    </button>
+                    <button
+                        class={thumbDownClass}
+                        type="button"
+                        aria-pressed={isThumbsDown}
+                        title="Not helpful"
+                        onclick={handleThumbsDown}>
+                        <lightning-icon icon-name="utility:dislike" size="small"></lightning-icon>
+                        <span>Not helpful</span>
+                    </button>
+                </div>
+
+                <div class="notes-section">
+                    <lightning-textarea
+                        label="Notes (optional)"
+                        placeholder="What was helpful or unhelpful?"
+                        value={notes}
+                        max-length="1000"
+                        onchange={handleNotesChange}>
+                    </lightning-textarea>
+                </div>
+
+                <div class="dialog-footer">
+                    <button class="btn btn-cancel" type="button" onclick={handleCancel}>Cancel</button>
+                    <button
+                        class="btn btn-submit"
+                        type="button"
+                        disabled={isSubmitDisabled}
+                        onclick={handleSubmit}>
+                        Submit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+</template>

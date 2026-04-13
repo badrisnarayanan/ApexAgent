@@ -1,0 +1,24 @@
+<template>
+    <div class="tool-section">
+        <button
+            class="accordion-btn"
+            type="button"
+            onclick={handleToggle}
+            aria-expanded={ariaExpanded}>
+            <lightning-icon icon-name={chevronIcon} size="x-small" class="chevron-icon"></lightning-icon>
+            <span class="accordion-label">Tool Executions ({toolCount})</span>
+        </button>
+        <template if:true={isExpanded}>
+            <ul class="tool-list" role="list">
+                <template for:each={processedLogs} for:item="log">
+                    <li key={log.key} class={log.rowClass}>
+                        <template if:true={log.isInProgress}>
+                            <span class="spinner-ring" role="status" aria-label="In progress"></span>
+                        </template>
+                        <span class="tool-display-text">{log.displayText}</span>
+                    </li>
+                </template>
+            </ul>
+        </template>
+    </div>
+</template>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Avatar_Static_Resource__c</fullName>
+    <description>API name of the Static Resource used as the agent avatar image in the chat interface.</description>
+    <externalId>false</externalId>
+    <inlineHelpText>Upload an image (PNG/SVG) as a Static Resource in Setup → Static Resources, then enter its exact API name here (e.g. LumenAvatar). Leave blank to use an auto-generated letter avatar.</inlineHelpText>
+    <label>Avatar Static Resource</label>
+    <length>80</length>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

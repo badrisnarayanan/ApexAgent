@@ -100,10 +100,10 @@
             <fieldInstance>
                 <fieldInstanceProperties>
                     <name>uiBehavior</name>
-                    <value>none</value>
+                    <value>required</value>
                 </fieldInstanceProperties>
-                <fieldItem>Record.Family__c</fieldItem>
-                <identifier>RecordFamily_cField2</identifier>
+                <fieldItem>Record.Name</fieldItem>
+                <identifier>RecordNameField2</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
@@ -112,8 +112,8 @@
                     <name>uiBehavior</name>
                     <value>none</value>
                 </fieldInstanceProperties>
-                <fieldItem>Record.Model_API_Name__c</fieldItem>
-                <identifier>RecordModel_API_Name_cField2</identifier>
+                <fieldItem>Record.Family__c</fieldItem>
+                <identifier>RecordFamily_cField2</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
@@ -136,8 +136,8 @@
                     <name>uiBehavior</name>
                     <value>none</value>
                 </fieldInstanceProperties>
-                <fieldItem>Record.Name</fieldItem>
-                <identifier>RecordNameField2</identifier>
+                <fieldItem>Record.Model_API_Name__c</fieldItem>
+                <identifier>RecordModel_API_Name_cField2</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>

@@ -1,0 +1,51 @@
+<template>
+    <div class={sidebarClass} role="complementary" aria-label="Conversation history">
+        <div class="sidebar-header">
+            <button
+                class="new-chat-btn"
+                type="button"
+                disabled={isProcessing}
+                onclick={handleNewChat}
+                title="Start a new conversation">
+                <lightning-icon icon-name="utility:add" size="x-small"></lightning-icon>
+                <span>New Chat</span>
+            </button>
+            <button
+                class="close-btn"
+                type="button"
+                onclick={handleClose}
+                aria-label="Close sidebar"
+                title="Close">
+                <lightning-icon icon-name="utility:close" size="x-small"></lightning-icon>
+            </button>
+        </div>
+
+        <div class="thread-list" role="list">
+            <template if:true={hasThreads}>
+                <template for:each={groupedThreads} for:item="group">
+                    <div key={group.label} class="thread-group">
+                        <p class="group-label">{group.label}</p>
+                        <template for:each={group.threads} for:item="thread">
+                            <button
+                                key={thread.threadUUID}
+                                class={thread.itemClass}
+                                type="button"
+                                disabled={isProcessing}
+                                data-uuid={thread.threadUUID}
+                                onclick={handleThreadClick}
+                                title={thread.firstMessage}>
+                                <span class="thread-title">{thread.firstMessage}</span>
+                                <span class="thread-time">{thread.relativeTime}</span>
+                            </button>
+                        </template>
+                    </div>
+                </template>
+            </template>
+            <template if:false={hasThreads}>
+                <div class="empty-threads">
+                    <p>No previous conversations</p>
+                </div>
+            </template>
+        </div>
+    </div>
+</template>

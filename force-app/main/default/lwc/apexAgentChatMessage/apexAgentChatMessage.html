@@ -1,0 +1,84 @@
+<template>
+    <!-- User bubble -->
+    <template if:true={isUser}>
+        <div class="msg-row msg-row--user">
+            <div class="bubble bubble--user">
+                <p class="bubble-text">{message.text}</p>
+                <span class="bubble-time">{formattedTime}</span>
+            </div>
+        </div>
+    </template>
+
+    <!-- Agent bubble (response or in-flight loading) -->
+    <template if:true={isAgent}>
+        <div class="msg-row msg-row--agent">
+            <div class="avatar-wrap">
+                <template if:true={hasAvatarUrl}>
+                    <img class="avatar avatar--img" src={agentAvatarUrl} alt="Agent avatar" />
+                </template>
+                <template if:false={hasAvatarUrl}>
+                    <div class="avatar avatar--letter" aria-hidden="true">{avatarLetter}</div>
+                </template>
+            </div>
+            <div class="agent-content">
+                <!-- Tool execution accordion (only when tool logs exist) -->
+                <template if:true={hasToolLogs}>
+                    <c-apex-agent-chat-tool-execution
+                        tool-logs={message.toolLogs}
+                        is-expanded={message.isToolsExpanded}
+                        ontoggle={handleToolsToggle}>
+                    </c-apex-agent-chat-tool-execution>
+                </template>
+
+                <!-- Response text or loading dots -->
+                <div class={agentBubbleClass}>
+                    <template if:true={isLoading}>
+                        <div class="loading-dots" role="status" aria-label="Agent is responding">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                        </div>
+                    </template>
+                    <template if:false={isLoading}>
+                        <div class="bubble-text"><lightning-formatted-rich-text value={message.text}></lightning-formatted-rich-text></div>
+                        <span class="bubble-time">{formattedTime}</span>
+                    </template>
+                </div>
+
+                <!-- Feedback icons (only after response, when messageLogId exists) -->
+                <template if:true={showFeedback}>
+                    <div class="feedback-row" role="group" aria-label="Rate this response">
+                        <button
+                            class={thumbUpClass}
+                            type="button"
+                            title="Helpful"
+                            aria-pressed={isThumbsUp}
+                            onclick={handleThumbsUp}>
+                            <lightning-icon icon-name="utility:like" size="x-small" variant={thumbUpIconVariant}></lightning-icon>
+                        </button>
+                        <button
+                            class={thumbDownClass}
+                            type="button"
+                            title="Not helpful"
+                            aria-pressed={isThumbsDown}
+                            onclick={handleThumbsDown}>
+                            <lightning-icon icon-name="utility:dislike" size="x-small" variant={thumbDownIconVariant}></lightning-icon>
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </template>
+
+    <!-- Error bubble -->
+    <template if:true={isError}>
+        <div class="msg-row msg-row--agent">
+            <div class="avatar-wrap">
+                <div class="avatar avatar--error" aria-hidden="true">!</div>
+            </div>
+            <div class="bubble bubble--error">
+                <p class="bubble-text">{message.text}</p>
+            </div>
+        </div>
+    </template>
+</template>
