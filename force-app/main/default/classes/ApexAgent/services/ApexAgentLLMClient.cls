@@ -1,14 +1,18 @@
 /**
  * Handles HTTP callouts to the OpenRouter chat completions endpoint.
  * Serializes the request, enforces timeout, and parses the response.
+ * Retries up to MAX_RETRIES times on transient errors (network failures, 429, 5xx).
  */
 public with sharing class ApexAgentLLMClient {
 
     private static final Integer TIMEOUT_MS = 120000;
+    private static final Integer MAX_RETRIES = 3;
+    private static final Set<Integer> RETRYABLE_STATUS_CODES = new Set<Integer>{ 429, 500, 502, 503, 504 };
 
     /**
      * Sends a chat completion request to the configured LLM endpoint.
-     * Throws a CalloutException if the response status is not 2xx.
+     * Retries on network errors and retryable HTTP status codes.
+     * Throws a CalloutException if all attempts fail or a non-retryable error occurs.
      */
     public static ApexAgentApiTypes.ChatCompletionResponse call(
         ApexAgentConfigTypes.AgentConfig config,
@@ -22,24 +26,49 @@ public with sharing class ApexAgentLLMClient {
         req.setMethod('POST');
         req.setHeader('Content-Type', 'application/json');
         String serializedBody = JSON.serialize(body, true);
-        System.debug(LoggingLevel.DEBUG,  'Request Body: ' +    serializedBody);
+        System.debug(LoggingLevel.DEBUG, 'Request Body: ' + serializedBody);
         req.setBody(serializedBody);
         req.setTimeout(TIMEOUT_MS);
 
         Http http = new Http();
-        HttpResponse resp = http.send(req);
+        Integer attempt = 0;
 
-        if (resp.getStatusCode() < 200 || resp.getStatusCode() >= 300) {
-            throw new CalloutException(
-                'LLM callout failed. Status: ' + resp.getStatusCode()
-                + ' Body: ' + resp.getBody()
-            );
+        while (true) {
+            attempt++;
+            try {
+                HttpResponse resp = http.send(req);
+                Integer statusCode = resp.getStatusCode();
+
+                if (statusCode >= 200 && statusCode < 300) {
+                    return (ApexAgentApiTypes.ChatCompletionResponse) JSON.deserialize(
+                        resp.getBody(),
+                        ApexAgentApiTypes.ChatCompletionResponse.class
+                    );
+                }
+
+                if (!RETRYABLE_STATUS_CODES.contains(statusCode) || attempt > MAX_RETRIES) {
+                    throw new CalloutException(
+                        'LLM callout failed after ' + attempt + ' attempt(s).'
+                        + ' Status: ' + statusCode
+                        + ' Body: ' + resp.getBody()
+                    );
+                }
+
+                System.debug(LoggingLevel.WARN,
+                    'LLM callout attempt ' + attempt + ' returned ' + statusCode + '. Retrying...'
+                );
+
+            } catch (CalloutException e) {
+                if (attempt > MAX_RETRIES) {
+                    throw new CalloutException(
+                        'LLM callout failed after ' + attempt + ' attempt(s): ' + e.getMessage()
+                    );
+                }
+                System.debug(LoggingLevel.WARN,
+                    'LLM callout attempt ' + attempt + ' threw exception: ' + e.getMessage() + '. Retrying...'
+                );
+            }
         }
-
-        return (ApexAgentApiTypes.ChatCompletionResponse) JSON.deserialize(
-            resp.getBody(),
-            ApexAgentApiTypes.ChatCompletionResponse.class
-        );
     }
 
     // ─────────────────────────────────────────────────────────────────
