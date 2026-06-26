@@ -104,6 +104,10 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
+.bubble--agent .bubble-text {
+    white-space: normal;
+}
+
 .bubble--agent-loading {
     width: fit-content;
 }

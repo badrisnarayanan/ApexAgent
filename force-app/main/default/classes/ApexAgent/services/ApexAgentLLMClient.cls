@@ -69,6 +69,7 @@ public with sharing class ApexAgentLLMClient {
                 );
             }
         }
+        return null; // unreachable — while(true) always returns or throws, but Apex compiler requires this
     }
 
     // ─────────────────────────────────────────────────────────────────

@@ -39,6 +39,9 @@ ehthumbs.db
 [Dd]esktop.ini
 $RECYCLE.BIN/
 
+# Agent instructions (not for source control)
+instructions/
+
 # Local environment variables
 .env
 
