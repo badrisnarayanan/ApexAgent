@@ -192,6 +192,12 @@
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
+                <componentName>apexAgentThreadViewer</componentName>
+                <identifier>c_apexAgentThreadViewer</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
                 <componentInstanceProperties>
                     <name>columns</name>
                     <value>Facet-t1000005-b2c3-4d5e-a6f7-890123456005</value>

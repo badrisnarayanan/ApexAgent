@@ -1,0 +1,183 @@
+<template>
+    <div class="viewer-container" style={themeStyle}>
+
+        <!-- Stats bar -->
+        <div class="stats-bar">
+            <div class="stats-left">
+                <span class="stats-item">
+                    <lightning-icon icon-name="utility:currency" size="xx-small" class="stats-icon"></lightning-icon>
+                    <span class="stats-value">{totalCostFormatted}</span>
+                </span>
+                <span class="stats-sep">·</span>
+                <span class="stats-item">
+                    <span class="stats-value">{messageCount}</span>
+                    <span class="stats-label">&nbsp;messages</span>
+                </span>
+                <span class="stats-sep">·</span>
+                <span class="stats-item">
+                    <lightning-icon icon-name="utility:custom_apps" size="xx-small" class="stats-icon"></lightning-icon>
+                    <span class="stats-value">{totalToolCalls}</span>
+                    <span class="stats-label">&nbsp;tool calls</span>
+                </span>
+            </div>
+            <lightning-button-icon
+                icon-name="utility:refresh"
+                variant="border-filled"
+                size="small"
+                title="Refresh conversation"
+                onclick={handleRefresh}>
+            </lightning-button-icon>
+        </div>
+
+        <!-- Message list -->
+        <div class="msg-list" onscroll={handleScroll}>
+            <template for:each={messageRows} for:item="row">
+                <div key={row.id} class="turn">
+
+                    <!-- User bubble (left-aligned) -->
+                    <div class="msg-row msg-row--user">
+                        <div class="bubble bubble--user">
+                            <p class="bubble-text">{row.userInput}</p>
+                        </div>
+                    </div>
+                    <div class="sender-line sender-line--user">
+                        <span>{row.userName}</span>
+                        <span class="sender-sep">·</span>
+                        <button class="timestamp-link" data-id={row.id} onclick={handleOpenRecord}>{row.formattedStartTime}</button>
+                    </div>
+
+                    <!-- Agent response (right-aligned) -->
+                    <template if:true={row.hasAgentResponse}>
+
+                        <!-- Tool execution accordion (above bubble) -->
+                        <template if:true={row.hasToolExecution}>
+                            <div class="tool-exec-wrap">
+                                <c-apex-agent-chat-tool-execution
+                                    tool-logs={row.toolLogs}>
+                                </c-apex-agent-chat-tool-execution>
+                            </div>
+                        </template>
+
+                        <!-- Bubble + avatar -->
+                        <div class="msg-row msg-row--agent">
+                            <div class="bubble bubble--agent">
+                                <lightning-formatted-rich-text value={row.agentResponse}></lightning-formatted-rich-text>
+                            </div>
+                            <template if:true={hasAvatarUrl}>
+                                <img class="avatar avatar--img" src={agentAvatarUrl} alt="Agent avatar" />
+                            </template>
+                            <template if:false={hasAvatarUrl}>
+                                <div class="avatar avatar--letter" aria-hidden="true">{row.agentLetter}</div>
+                            </template>
+                        </div>
+
+                        <!-- Sender line -->
+                        <div class="sender-line sender-line--agent">
+                            <span>{row.agentName}</span>
+                            <span class="sender-sep">·</span>
+                            <button class="timestamp-link" data-id={row.id} onclick={handleOpenRecord}>{row.formattedEndTime}</button>
+                        </div>
+
+                        <!-- Meta row: tool count · cost · duration -->
+                        <div class="meta-row">
+                            <template if:true={row.hasToolCalls}>
+                                <span class="meta-item">
+                                    <lightning-icon icon-name="utility:custom_apps" size="xx-small" class="meta-icon"></lightning-icon>
+                                    <span class="meta-value">{row.toolCallCount}</span>
+                                </span>
+                            </template>
+                            <template if:true={row.hasCost}>
+                                <span class="meta-item">
+                                    <lightning-icon icon-name="utility:currency" size="xx-small" class="meta-icon"></lightning-icon>
+                                    <span class="meta-value">{row.costFormatted}</span>
+                                </span>
+                            </template>
+                            <template if:true={row.hasDuration}>
+                                <span class="meta-item">
+                                    <lightning-icon icon-name="utility:clock" size="xx-small" class="meta-icon"></lightning-icon>
+                                    <span class="meta-value">{row.durationFormatted}</span>
+                                </span>
+                            </template>
+                        </div>
+
+                        <!-- Feedback badge (if feedback was given) -->
+                        <template if:true={row.hasFeedback}>
+                            <div class={row.feedbackClass}>
+                                <lightning-icon
+                                    icon-name={row.feedbackIcon}
+                                    size="xx-small"
+                                    class="feedback-icon">
+                                </lightning-icon>
+                                <template if:true={row.feedbackNotes}>
+                                    <span class="feedback-notes">{row.feedbackNotes}</span>
+                                </template>
+                            </div>
+                        </template>
+
+                        <!-- Error bubbles after agent response -->
+                        <template if:true={row.hasErrors}>
+                            <template for:each={row.errorLogs} for:item="errLog">
+                                <div key={errLog.key} class="msg-row msg-row--agent">
+                                    <div class="bubble bubble--error">
+                                        <p class="bubble-text bubble-text--error">{errLog.error}</p>
+                                    </div>
+                                    <div class="avatar avatar--error" aria-hidden="true">!</div>
+                                </div>
+                            </template>
+                        </template>
+
+                    </template>
+
+                    <!-- No agent response yet -->
+                    <template if:false={row.hasAgentResponse}>
+
+                        <!-- Error bubbles (failed with no response) -->
+                        <template if:true={row.hasErrors}>
+                            <template for:each={row.errorLogs} for:item="errLog">
+                                <div key={errLog.key} class="msg-row msg-row--agent">
+                                    <div class="bubble bubble--error">
+                                        <p class="bubble-text bubble-text--error">{errLog.error}</p>
+                                    </div>
+                                    <div class="avatar avatar--error" aria-hidden="true">!</div>
+                                </div>
+                            </template>
+                        </template>
+
+                        <!-- Loading dots (truly in-progress) -->
+                        <template if:false={row.hasErrors}>
+                            <div class="msg-row msg-row--agent">
+                                <div class="bubble bubble--agent bubble--loading">
+                                    <div class="loading-dots" role="status" aria-label="Agent is responding">
+                                        <span class="dot"></span>
+                                        <span class="dot"></span>
+                                        <span class="dot"></span>
+                                    </div>
+                                </div>
+                                <div class="avatar avatar--letter" aria-hidden="true">{row.agentLetter}</div>
+                            </div>
+                        </template>
+
+                    </template>
+
+                </div>
+            </template>
+
+            <!-- Empty state -->
+            <template if:true={isEmpty}>
+                <div class="empty-state">
+                    <lightning-icon icon-name="utility:chat" size="medium" class="empty-icon"></lightning-icon>
+                    <p class="empty-text">No messages in this thread yet.</p>
+                </div>
+            </template>
+        </div>
+
+        <!-- New message indicator pill -->
+        <template if:true={_hasNewMessages}>
+            <button class="new-msg-pill" type="button" onclick={handleScrollToBottom}>
+                <lightning-icon icon-name="utility:down" size="xx-small"></lightning-icon>
+                New message
+            </button>
+        </template>
+
+    </div>
+</template>

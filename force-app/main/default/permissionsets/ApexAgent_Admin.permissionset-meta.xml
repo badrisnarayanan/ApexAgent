@@ -8,6 +8,10 @@
         <apexClass>ApexAgentChatController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>ApexAgentThreadViewerController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <description>Full admin access to all ApexAgent objects, fields, tabs, and the ApexAgent Setup Portal app.</description>
     <externalCredentialPrincipalAccesses>
         <enabled>true</enabled>
