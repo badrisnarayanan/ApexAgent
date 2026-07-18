@@ -7,11 +7,6 @@ public with sharing class ApexAgentMessageBuilder {
     private static final String GEMINI_FAMILY               = 'Google';
     private static final String DUMMY_THOUGHT_SIGNATURE     = 'skip_thought_signature_validator';
     private static final String REASONING_ENCRYPTED_TYPE    = 'reasoning.encrypted';
-    // Caps replayed tool_call input/output per entry when rebuilding history — Tool_Log__c
-    // Input__c/Output__c can each be up to 131KB; replaying that raw across toolLogDepth
-    // messages risks the 6MB synchronous heap limit, especially for data-heavy tools.
-    private static final Integer MAX_HISTORY_FIELD_LENGTH = 4000;
-    private static final String  TRUNCATION_SUFFIX = '...[truncated]';
 
     // ─────────────────────────────────────────────────────────────────
     // System prompt
@@ -174,7 +169,7 @@ public with sharing class ApexAgentMessageBuilder {
                     tc.type = 'function';
                     ApexAgentApiTypes.ToolCallFunction fn = new ApexAgentApiTypes.ToolCallFunction();
                     fn.name      = tl.Tool_Name__c;
-                    fn.arguments = truncateArgumentsForHistory(tl.Input__c);
+                    fn.arguments = tl.Input__c;
                     tc.function  = fn;
                     assistantWithTools.tool_calls.add(tc);
                 }
@@ -185,7 +180,7 @@ public with sharing class ApexAgentMessageBuilder {
                     ApexAgentApiTypes.ChatMessage toolResult = new ApexAgentApiTypes.ChatMessage();
                     toolResult.role         = 'tool';
                     toolResult.tool_call_id = tl.Tool_Call_Id__c;
-                    toolResult.content      = truncateForHistory(tl.Output__c);
+                    toolResult.content      = String.isNotBlank(tl.Output__c) ? tl.Output__c : '';
                     messages.add(toolResult);
                 }
             }
@@ -272,35 +267,6 @@ public with sharing class ApexAgentMessageBuilder {
         msg.role    = role;
         msg.content = content;
         return msg;
-    }
-
-    /** Truncates free-text history content (tool result) to a safe replay size. */
-    private static String truncateForHistory(String value) {
-        if (String.isBlank(value)) {
-            return '';
-        }
-        return value.length() > MAX_HISTORY_FIELD_LENGTH
-            ? value.substring(0, MAX_HISTORY_FIELD_LENGTH) + TRUNCATION_SUFFIX
-            : value;
-    }
-
-    /**
-     * Truncates a replayed tool_call's arguments, keeping the result valid JSON —
-     * naive substring truncation on Input__c can break arguments mid-string, which
-     * some providers re-validate on replay. Oversized arguments are replaced with a
-     * placeholder object rather than a partial, invalid JSON fragment.
-     */
-    private static String truncateArgumentsForHistory(String value) {
-        if (String.isBlank(value)) {
-            return value;
-        }
-        if (value.length() <= MAX_HISTORY_FIELD_LENGTH) {
-            return value;
-        }
-        return JSON.serialize(new Map<String, Object>{
-            '_truncated'     => true,
-            'originalLength' => value.length()
-        });
     }
 
     private static List<ApexAgent_Message_Log__c> reverseList(

@@ -306,11 +306,16 @@ private class ApexAgentChatControllerTest {
             EmailEncodingKey = 'UTF-8',
             LanguageLocaleKey = 'en_US'
         );
-        insert nonAdminUser;
-        insert new PermissionSetAssignment(
-            AssigneeId = nonAdminUser.Id,
-            PermissionSetId = [SELECT Id FROM PermissionSet WHERE Name = 'ApexAgent_User' LIMIT 1].Id
-        );
+        // Setup-object DML (User, PermissionSetAssignment) can't share a transaction with the
+        // non-setup DML above (LLM/Agent/Thread/Message records) — MIXED_DML_OPERATION.
+        // System.runAs opens an isolated DML context for just this block.
+        System.runAs(new User(Id = UserInfo.getUserId())) {
+            insert nonAdminUser;
+            insert new PermissionSetAssignment(
+                AssigneeId = nonAdminUser.Id,
+                PermissionSetId = [SELECT Id FROM PermissionSet WHERE Name = 'ApexAgent_User' LIMIT 1].Id
+            );
+        }
         // Message_Log__c uses private (owner-based) sharing, so it must be owned by the
         // non-admin user for their own read to see it — matching what happens in real
         // usage, where the record is created inside that user's own request.
