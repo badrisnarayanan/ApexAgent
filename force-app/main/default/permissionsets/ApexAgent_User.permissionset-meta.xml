@@ -8,6 +8,10 @@
         <apexClass>ApexAgentChatController</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>ApexAgentDmlBridgeResource</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <description>Read-only access to ApexAgent config objects and log objects for agent users.</description>
     <externalCredentialPrincipalAccesses>
         <enabled>true</enabled>
@@ -31,6 +35,11 @@
     <fieldPermissions>
         <editable>false</editable>
         <field>ApexAgent_Agent__c.Tagline__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>ApexAgent_Message_Log__c.Agent_Message_UUID__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <hasActivationRequired>false</hasActivationRequired>

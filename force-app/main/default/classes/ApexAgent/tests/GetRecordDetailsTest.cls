@@ -25,7 +25,16 @@ private class GetRecordDetailsTest {
             tool.execute(new Map<String, Object>{ 'recordId' => null });
             Assert.fail('Expected exception for null recordId');
         } catch (IllegalArgumentException e) {
-            Assert.isTrue(e.getMessage().contains('null'), 'Message should mention null');
+            // Shared ApexAgentToolInput validation unifies missing-key and null-value
+            // wording into a single "Missing required input parameter" message.
+            Assert.isTrue(e.getMessage().contains('recordId'), 'Message should mention recordId');
+        }
+
+        try {
+            tool.execute(new Map<String, Object>{ 'recordId' => 42 });
+            Assert.fail('Expected exception for non-string recordId');
+        } catch (IllegalArgumentException e) {
+            Assert.isTrue(e.getMessage().contains('recordId'), 'Message should mention recordId');
         }
 
         try {

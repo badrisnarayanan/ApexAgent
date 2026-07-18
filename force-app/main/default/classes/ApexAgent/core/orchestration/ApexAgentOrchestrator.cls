@@ -49,6 +49,12 @@ public with sharing class ApexAgentOrchestrator {
         String   lastContent = null;
         String   errorMsg    = null;
         String   errorStack  = null;
+        // True only for errorMsg values this method authored itself (safe, actionable,
+        // no internal detail). Exception-derived messages (e.g. CalloutException text
+        // that embeds a provider's raw HTTP response body) stay false and get
+        // sanitized before reaching the client — the full detail is still written to
+        // Error_Log__c either way via the payload below.
+        Boolean  errorMsgIsSafeForClient = false;
 
         // Token accumulators across all loop iterations
         Integer accumPrompt     = 0;
@@ -107,6 +113,13 @@ public with sharing class ApexAgentOrchestrator {
                 ApexAgentApiTypes.ChatCompletionResponse resp =
                     ApexAgentLLMClient.call(config, messages, currentTools);
 
+                if (resp.choices == null || resp.choices.isEmpty()) {
+                    throw new IllegalArgumentException(
+                        'LLM response contained no choices.'
+                        + (resp.error != null ? ' Error: ' + JSON.serialize(resp.error) : '')
+                    );
+                }
+
                 if (resp.usage != null) {
                     accumPrompt     += resp.usage.prompt_tokens     != null ? resp.usage.prompt_tokens     : 0;
                     accumCompletion += resp.usage.completion_tokens  != null ? resp.usage.completion_tokens  : 0;
@@ -138,10 +151,17 @@ public with sharing class ApexAgentOrchestrator {
                     // before the tool executor sees the inputs) and publish in-progress PEs in bulk.
                     Map<String, String> execMsgByToolCallId = new Map<String, String>();
                     for (ApexAgentApiTypes.ToolCall tc : assistantMsg.tool_calls) {
-                        execMsgByToolCallId.put(
-                            tc.id,
-                            ApexAgentOrchestratorUtils.extractAndStripExecutionMessage(tc)
-                        );
+                        String execMsg;
+                        try {
+                            execMsg = ApexAgentOrchestratorUtils.extractAndStripExecutionMessage(tc);
+                        } catch (Exception e) {
+                            // Malformed arguments JSON on this one tool call — leave arguments
+                            // untouched and fall through with no execution message; the tool
+                            // executor below still reports a recoverable per-call error instead
+                            // of this failure killing the entire turn.
+                            execMsg = '';
+                        }
+                        execMsgByToolCallId.put(tc.id, execMsg);
                     }
                     if (config.showExecutionMessage == true) {
                         ApexAgentExecutionMessageHandler.publishInProgress(
@@ -184,6 +204,11 @@ public with sharing class ApexAgentOrchestrator {
 
                 } else {
                     lastContent = assistantMsg.content;
+                    if ('length'.equals(finishReason) && String.isBlank(lastContent)) {
+                        errorMsg = 'Response was cut off before any content was generated '
+                            + '(max tokens reached). Try increasing Max Tokens on the agent.';
+                        errorMsgIsSafeForClient = true;
+                    }
                     break;
                 }
             }
@@ -229,7 +254,16 @@ public with sharing class ApexAgentOrchestrator {
         }
 
         response.llmResponse  = lastContent;
-        response.errorMessage = errorMsg;
+        // Full detail (including any provider HTTP body embedded in an exception
+        // message by ApexAgentLLMClient) is already on the Error_Log__c write above —
+        // only a safe, pre-authored message is ever returned to the client.
+        if (String.isBlank(errorMsg)) {
+            response.errorMessage = null;
+        } else if (errorMsgIsSafeForClient) {
+            response.errorMessage = errorMsg;
+        } else {
+            response.errorMessage = 'Something went wrong processing your request. Please try again.';
+        }
         return response;
     }
 

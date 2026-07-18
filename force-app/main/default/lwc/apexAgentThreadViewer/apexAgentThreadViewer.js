@@ -19,7 +19,13 @@ export default class ApexAgentThreadViewer extends NavigationMixin(LightningElem
         this._isAtBottom     = true;
         this._hasNewMessages = false;
         this._load();
-        this._intervalId = setInterval(this._load.bind(this), REFRESH_INTERVAL_MS);
+        // Skip polling while the tab is hidden — each poll queries the full thread
+        // with subqueries, no point paying that cost when nobody can see the result.
+        this._intervalId = setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                this._load();
+            }
+        }, REFRESH_INTERVAL_MS);
     }
 
     disconnectedCallback() {

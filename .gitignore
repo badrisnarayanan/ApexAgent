@@ -42,6 +42,9 @@ $RECYCLE.BIN/
 # Agent instructions (not for source control)
 instructions/
 
+# Internal dev docs / audit notes (not for source control)
+dev_docs/
+
 # Local environment variables
 .env
 

@@ -91,7 +91,7 @@ public with sharing class ApexAgentTopicLoader {
         cfg.agentId               = rec.Id;
         cfg.agentName             = rec.Name;
         cfg.agentDescription      = rec.Description__c;
-        cfg.maxTokens             = rec.Max_Tokens__c != null ? Integer.valueOf(rec.Max_Tokens__c) : 1000; // default to 1000 if not set
+        cfg.maxTokens             = rec.Max_Tokens__c != null ? Integer.valueOf(rec.Max_Tokens__c) : 10000; // default to 10000 if not set
         cfg.conversationDepth     = rec.Conversation_Depth__c != null ? Integer.valueOf(rec.Conversation_Depth__c) : 15; // default to 15 if not set
         cfg.toolLogDepth          = rec.Tool_Log_Depth__c != null ? Integer.valueOf(rec.Tool_Log_Depth__c) : 5; // default to 5 if not set
         cfg.reasoningEffort       = rec.Reasoning_Effort__c;
@@ -273,7 +273,6 @@ public with sharing class ApexAgentTopicLoader {
             'function' => new Map<String, Object>{
                 'name'        => tool.Tool_API_Name__c,
                 'description' => tool.Description__c,
-                'strict'      => true,
                 'parameters'  => parameters
             }
         };

@@ -27,26 +27,12 @@ public with sharing class UpsertRecords implements ApexAgentTool {
     // ─── Input validation ────────────────────────────────────────────────────────
 
     private void validateInput(Map<String, Object> input) {
-        if (input == null) {
-            throw new IllegalArgumentException('Input map must not be null');
-        }
+        ApexAgentToolInput.requireMap(input);
+        ApexAgentToolInput.requireString(input, 'objectApiName');
+        ApexAgentToolInput.requireBoolean(input, 'allOrNone');
+        ApexAgentToolInput.optionalString(input, 'externalIdFieldName');
 
-        if (!input.containsKey('objectApiName') || input.get('objectApiName') == null) {
-            throw new IllegalArgumentException('Missing required input parameter: objectApiName');
-        }
-        if (String.isBlank(String.valueOf(input.get('objectApiName')))) {
-            throw new IllegalArgumentException('Input parameter objectApiName must not be blank');
-        }
-
-        if (!input.containsKey('allOrNone') || input.get('allOrNone') == null) {
-            throw new IllegalArgumentException('Missing required input parameter: allOrNone (expected true or false)');
-        }
-
-        if (!input.containsKey('records') || input.get('records') == null) {
-            throw new IllegalArgumentException('Missing required input parameter: records');
-        }
-
-        List<Object> rawRecords = (List<Object>) input.get('records');
+        List<Object> rawRecords = ApexAgentToolInput.requireList(input, 'records');
         if (rawRecords.isEmpty()) {
             throw new IllegalArgumentException('Input parameter records must not be empty');
         }
@@ -287,36 +273,93 @@ public with sharing class UpsertRecords implements ApexAgentTool {
     }
 
     private Datetime parseDatetime(String value, String fieldApiName, Integer recordIdx) {
-        // Normalize ISO 8601 → Salesforce format (YYYY-MM-DD HH:mm:ss)
-        String normalized = value.trim();
-        if (normalized.contains('T')) {
-            normalized = normalized.replace('T', ' ');
-            if (normalized.endsWith('Z')) {
-                normalized = normalized.removeEnd('Z');
-            } else if (normalized.contains('+')) {
-                normalized = normalized.substringBefore('+');
+        String trimmed = value.trim();
+        if (!trimmed.contains('T')) {
+            return parseNaiveDatetime(trimmed, value, fieldApiName, recordIdx);
+        }
+        return parseIso8601Datetime(trimmed, value, fieldApiName, recordIdx);
+    }
+
+    /**
+     * Parses a 'T'-delimited ISO 8601 datetime. A trailing 'Z' or an explicit +/-HH:MM
+     * offset marks the string as UTC/zoned — those are parsed with Datetime.valueOfGmt()
+     * (with offset arithmetic applied), never Datetime.valueOf(), since valueOf()
+     * interprets its input in the running user's local time zone and would silently
+     * shift a UTC timestamp by the org/user's offset. A string with no zone marker at
+     * all is genuinely naive and falls back to local-time parsing.
+     */
+    private Datetime parseIso8601Datetime(String trimmed, String original, String fieldApiName, Integer recordIdx) {
+        String body = trimmed.replace('T', ' ');
+        Integer offsetSeconds = 0;
+        Boolean hasZoneMarker = false;
+
+        if (body.endsWith('Z')) {
+            hasZoneMarker = true;
+            body = body.removeEnd('Z');
+        } else {
+            // Search only the time portion (index > 10 skips the date's own '-' separators,
+            // e.g. the dashes in "2024-06-15") for an explicit +HH:MM / -HH:MM offset.
+            Integer plusIdx = body.indexOf('+', 10);
+            if (plusIdx != -1) {
+                hasZoneMarker = true;
+                offsetSeconds = parseOffsetSeconds(body.substring(plusIdx), original, fieldApiName, recordIdx);
+                body = body.substring(0, plusIdx);
             } else {
-                // Handle negative UTC offset (-05:00) that appears after the time portion
-                Integer offsetIdx = normalized.lastIndexOf('-');
-                if (offsetIdx > 10) {
-                    normalized = normalized.substring(0, offsetIdx);
+                Integer minusIdx = body.lastIndexOf('-');
+                if (minusIdx > 10) {
+                    hasZoneMarker = true;
+                    offsetSeconds = parseOffsetSeconds(body.substring(minusIdx), original, fieldApiName, recordIdx);
+                    body = body.substring(0, minusIdx);
                 }
             }
-            if (normalized.contains('.')) {
-                normalized = normalized.substringBefore('.');
-            }
-            normalized = normalized.trim();
+        }
+
+        if (body.contains('.')) {
+            body = body.substringBefore('.');
+        }
+        body = body.trim();
+
+        if (!hasZoneMarker) {
+            return parseNaiveDatetime(body, original, fieldApiName, recordIdx);
         }
 
         try {
-            return Datetime.valueOf(normalized);
+            Datetime gmt = Datetime.valueOfGmt(body);
+            return offsetSeconds != 0 ? gmt.addSeconds(-offsetSeconds) : gmt;
+        } catch (Exception e) {
+            throw new IllegalArgumentException(
+                'Record ' + recordIdx + ', field "' + fieldApiName
+                + '": cannot parse "' + original
+                + '" as a Datetime. Use ISO 8601 format (e.g. 2024-06-15T13:30:45Z).'
+            );
+        }
+    }
+
+    private Integer parseOffsetSeconds(String offsetStr, String original, String fieldApiName, Integer recordIdx) {
+        try {
+            Integer sign = offsetStr.startsWith('-') ? -1 : 1;
+            List<String> parts = offsetStr.substring(1).split(':');
+            Integer hh = Integer.valueOf(parts[0]);
+            Integer mm = parts.size() > 1 ? Integer.valueOf(parts[1]) : 0;
+            return sign * (hh * 3600 + mm * 60);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(
+                'Record ' + recordIdx + ', field "' + fieldApiName
+                + '": cannot parse the UTC offset in "' + original + '".'
+            );
+        }
+    }
+
+    private Datetime parseNaiveDatetime(String body, String original, String fieldApiName, Integer recordIdx) {
+        try {
+            return Datetime.valueOf(body);
         } catch (Exception firstEx) {
             try {
-                return Datetime.parse(value);
+                return Datetime.parse(original);
             } catch (Exception secondEx) {
                 throw new IllegalArgumentException(
                     'Record ' + recordIdx + ', field "' + fieldApiName
-                    + '": cannot parse "' + value
+                    + '": cannot parse "' + original
                     + '" as a Datetime. Use ISO 8601 format (e.g. 2024-06-15T13:30:45Z).'
                 );
             }

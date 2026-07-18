@@ -1,5 +1,9 @@
 public with sharing class ApexAgentThreadViewerController {
 
+    // Most recent messages shown per thread — without this, a long-running thread
+    // re-queries and re-transmits its entire history every 5s poll indefinitely.
+    private static final Integer MAX_MESSAGES = 100;
+
     public class ToolLogWrapper {
         @AuraEnabled public String executionMessage;
         @AuraEnabled public String status;
@@ -15,8 +19,8 @@ public with sharing class ApexAgentThreadViewerController {
         @AuraEnabled public String             userInput;
         @AuraEnabled public String             agentResponse;
         @AuraEnabled public String             agentName;
-        @AuraEnabled public String             startedAt;
-        @AuraEnabled public String             endedAt;
+        @AuraEnabled public Datetime           startedAt;
+        @AuraEnabled public Datetime           endedAt;
         @AuraEnabled public Long               durationMs;
         @AuraEnabled public Decimal            cost;
         @AuraEnabled public Integer            toolCallCount;
@@ -57,12 +61,15 @@ public with sharing class ApexAgentThreadViewerController {
             FROM ApexAgent_Message_Log__c
             WHERE Thread__c = :threadId
             WITH USER_MODE
-            ORDER BY Started_At__c ASC NULLS LAST
+            ORDER BY Started_At__c DESC NULLS LAST
+            LIMIT :MAX_MESSAGES
         ];
 
+        // Query above orders DESC to pick the most recent MAX_MESSAGES rows; reverse
+        // here so the LWC still receives chronological (oldest-first) order.
         List<MessageWrapper> result = new List<MessageWrapper>();
-        for (ApexAgent_Message_Log__c msg : messages) {
-            result.add(toWrapper(msg));
+        for (Integer i = messages.size() - 1; i >= 0; i--) {
+            result.add(toWrapper(messages[i]));
         }
         return result;
     }
@@ -77,8 +84,12 @@ public with sharing class ApexAgentThreadViewerController {
         w.agentAvatarUrl      = (msg.Agent__r != null && String.isNotBlank(msg.Agent__r.Avatar_Static_Resource__c))
                                     ? '/resource/' + msg.Agent__r.Avatar_Static_Resource__c
                                     : null;
-        w.startedAt       = msg.Started_At__c  != null ? String.valueOf(msg.Started_At__c)  : null;
-        w.endedAt         = msg.Ended_At__c    != null ? String.valueOf(msg.Ended_At__c)    : null;
+        // Raw Datetime, not String.valueOf() — the Aura/LWC serializer emits proper
+        // ISO-8601 for @AuraEnabled Datetime fields. String.valueOf() previously
+        // produced "yyyy-MM-dd HH:mm:ss" (no T/zone), which `new Date(ts)` in the LWC
+        // parses as Invalid Date on Safari/iOS (non-ISO strings are implementation-defined).
+        w.startedAt       = msg.Started_At__c;
+        w.endedAt         = msg.Ended_At__c;
         w.durationMs      = msg.Duration_ms__c != null ? msg.Duration_ms__c.longValue()     : null;
         w.cost            = msg.Cost__c;
         w.userName        = msg.CreatedBy?.Name;

@@ -8,6 +8,8 @@
  */
 public with sharing class ApexAgentToolExecutor {
 
+    private static final Integer DML_BRIDGE_TIMEOUT_MS = 60000;
+
     /**
      * Executes the tool identified in the given tool call.
      *
@@ -99,13 +101,20 @@ public with sharing class ApexAgentToolExecutor {
         ApexAgent_Tool__c tool,
         Map<String, Object> inputs
     ) {
-        String sessionId = Page.ApexAgentSession.getContent().toString().trim();
+        // getContent() is unsupported inside test methods (a hard Apex platform
+        // restriction, not something a mock can work around), so tests substitute
+        // a dummy session id — the DML-bridge callout itself is still fully
+        // exercised and mockable via HttpCalloutMock.
+        String sessionId = Test.isRunningTest()
+            ? 'test-session-id'
+            : Page.ApexAgentSession.getContent().toString().trim();
 
         HttpRequest req = new HttpRequest();
         req.setEndpoint(URL.getOrgDomainUrl().toExternalForm() + '/services/apexrest/ApexAgent/dml-bridge');
         req.setMethod('POST');
         req.setHeader('Content-Type', 'application/json');
         req.setHeader('Authorization', 'Bearer ' + sessionId); //NOPMD - session ID from VF page required for same-org callout
+        req.setTimeout(DML_BRIDGE_TIMEOUT_MS);
         req.setBody(JSON.serialize(new Map<String, Object>{
             'executionType' => tool.Execution_Type__c,
             'executionName' => tool.Execution_Name__c,

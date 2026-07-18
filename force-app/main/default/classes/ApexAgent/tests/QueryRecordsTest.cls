@@ -72,20 +72,61 @@ private class QueryRecordsTest {
         Assert.isTrue(q5.containsIgnoreCase('LIMIT 10'),
             'LIMIT below 50 should be left as-is — got: ' + q5);
 
-        // Aggregate query with COUNT — no LIMIT injected
+        // Aggregate query with COUNT — LIMIT is now injected too (SOQL aggregates accept
+        // LIMIT; previously aggregate detection skipped limit enforcement entirely)
         String q6 = tool.sanitize('SELECT COUNT(Id) FROM Account');
-        Assert.isFalse(q6.containsIgnoreCase('LIMIT'),
-            'Aggregate query should not have LIMIT added — got: ' + q6);
+        Assert.isTrue(q6.containsIgnoreCase('LIMIT 50'),
+            'Aggregate query should now have the default LIMIT added — got: ' + q6);
 
-        // Aggregate query with GROUP BY — no LIMIT injected
+        // Aggregate query with GROUP BY — LIMIT is added
         String q7 = tool.sanitize('SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName');
-        Assert.isFalse(q7.containsIgnoreCase('LIMIT'),
-            'GROUP BY query should not have LIMIT added — got: ' + q7);
+        Assert.isTrue(q7.containsIgnoreCase('LIMIT 50'),
+            'GROUP BY query should now have the default LIMIT added — got: ' + q7);
 
-        // Aggregate query with GROUPING() — no LIMIT injected
-        String q8 = tool.sanitize('SELECT GROUPING(StageName) FROM Opportunity GROUP BY ROLLUP(StageName)');
-        Assert.isFalse(q8.containsIgnoreCase('LIMIT'),
-            'GROUPING() query should not have LIMIT added — got: ' + q8);
+        // Aggregate query that already has its own LIMIT above 50 — still capped
+        String q8 = tool.sanitize('SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName LIMIT 200');
+        Assert.isTrue(q8.containsIgnoreCase('LIMIT 50'), 'Aggregate LIMIT above 50 should be capped — got: ' + q8);
+        Assert.isFalse(q8.containsIgnoreCase('LIMIT 200'), 'Original high aggregate LIMIT should be gone');
+    }
+
+    // ─── Subquery LIMIT must never be mistaken for the outer query's LIMIT ────────
+
+    @IsTest
+    static void testSubqueryLimitIsNotConfusedWithOuterLimit() {
+        QueryRecords tool = new QueryRecords();
+
+        // Subquery has an oversized LIMIT (200) and the outer query has none — the
+        // outer query must get the default LIMIT appended, and the subquery's own
+        // LIMIT must be left completely untouched (200, not capped to 50) since it
+        // governs a child relationship, not top-level record count.
+        String q1 = tool.sanitize(
+            'SELECT Id, (SELECT Id FROM Contacts LIMIT 200) FROM Account'
+        );
+        Assert.isTrue(q1.containsIgnoreCase('LIMIT 200'),
+            'Subquery LIMIT 200 must be left untouched — got: ' + q1);
+        Integer outerLimitCount = countOccurrences(q1.toUpperCase(), 'LIMIT 50');
+        Assert.areEqual(1, outerLimitCount, 'Outer query must get exactly one default LIMIT 50 — got: ' + q1);
+
+        // Subquery has a small LIMIT, outer query has an oversized LIMIT that must be
+        // capped — the subquery's LIMIT must not be the one that gets rewritten.
+        String q2 = tool.sanitize(
+            'SELECT Id, (SELECT Id FROM Contacts LIMIT 5) FROM Account LIMIT 500'
+        );
+        Assert.isTrue(q2.containsIgnoreCase('LIMIT 5)'),
+            'Subquery LIMIT 5 must be left untouched — got: ' + q2);
+        Assert.isTrue(q2.toUpperCase().endsWith('LIMIT 50'),
+            'Outer LIMIT 500 must be capped to 50 at the end of the query — got: ' + q2);
+        Assert.isFalse(q2.containsIgnoreCase('LIMIT 500'), 'Original high outer LIMIT should be gone');
+    }
+
+    private static Integer countOccurrences(String haystack, String needle) {
+        Integer count = 0;
+        Integer idx = haystack.indexOf(needle);
+        while (idx != -1) {
+            count++;
+            idx = haystack.indexOf(needle, idx + needle.length());
+        }
+        return count;
     }
 
     // ─── Successful query ────────────────────────────────────────────────────────

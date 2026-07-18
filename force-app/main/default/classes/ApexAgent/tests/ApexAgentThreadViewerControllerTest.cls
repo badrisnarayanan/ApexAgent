@@ -48,13 +48,43 @@ private class ApexAgentThreadViewerControllerTest {
         Assert.areEqual(2, first.toolCallCount, 'First message should show 2 tool calls');
         Assert.isNotNull(first.cost, 'First message should have cost');
         Assert.isNotNull(first.durationMs, 'First message should have durationMs');
-        Assert.isNotNull(first.startedAt, 'startedAt should be serialised to a string');
-        Assert.isNotNull(first.endedAt, 'endedAt should be serialised to a string');
+        Assert.isNotNull(first.startedAt, 'startedAt should be populated');
+        Assert.isNotNull(first.endedAt, 'endedAt should be populated');
 
         ApexAgentThreadViewerController.MessageWrapper second = result[1];
         Assert.areEqual('Tell me more.', second.userInput, 'Second message userInput should match');
         Assert.isNull(second.agentResponse, 'Second message should have no response yet');
         Assert.areEqual(0, second.toolCallCount, 'Second message should have 0 tool calls');
+    }
+
+    @IsTest
+    static void testGetThreadMessages_capsAtMostRecentAndPreservesChronologicalOrder() {
+        ApexAgent_Thread_Log__c thread = new ApexAgent_Thread_Log__c(
+            Agent_Thread_UUID__c = 'test-thread-uuid-viewer-bulk',
+            Started_At__c        = Datetime.now().addHours(-2)
+        );
+        insert thread;
+
+        // 105 messages, oldest first — exceeds the 100-message cap, so the oldest 5
+        // must be dropped while the most recent 100 remain in chronological order.
+        List<ApexAgent_Message_Log__c> messages = new List<ApexAgent_Message_Log__c>();
+        for (Integer i = 0; i < 105; i++) {
+            messages.add(new ApexAgent_Message_Log__c(
+                Thread__c     = thread.Id,
+                User_Input__c = 'Message ' + i,
+                Started_At__c = Datetime.now().addHours(-2).addMinutes(i)
+            ));
+        }
+        insert messages;
+
+        Test.startTest();
+        List<ApexAgentThreadViewerController.MessageWrapper> result =
+            ApexAgentThreadViewerController.getThreadMessages(thread.Id);
+        Test.stopTest();
+
+        Assert.areEqual(100, result.size(), 'Should cap at the 100 most recent messages');
+        Assert.areEqual('Message 5',   result[0].userInput,  'Oldest 5 messages should be dropped');
+        Assert.areEqual('Message 104', result[99].userInput, 'Most recent message should be last (chronological order)');
     }
 
     @IsTest

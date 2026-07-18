@@ -279,6 +279,59 @@ private class ApexAgentChatControllerTest {
         Assert.areEqual('Great response!', updated.Feedback_Notes__c, 'Feedback notes mismatch');
     }
 
+    /**
+     * Every other test in this file runs as the admin deploying user, so a
+     * WITH USER_MODE query would pass here even if ApexAgent_User's grants were
+     * wrong. This one runs as a user with only ApexAgent_User assigned, to prove
+     * the permission set actually gives a non-admin enough access to read their
+     * own message and thread before the system-mode feedback write.
+     */
+    @IsTest
+    static void testSaveFeedbackAsNonAdminUserOnlyAssignment() {
+        ApexAgent_LLM__c llm     = buildLlm();
+        ApexAgent_Agent__c agent = buildAgent(llm.Id);
+        ApexAgent_Thread_Log__c thread = buildThread('thread-feedback-nonadmin');
+        ApexAgent_Message_Log__c msg = buildMessage(thread.Id, agent.Id, 'msg-fb-nonadmin');
+
+        Profile minAccess = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce' LIMIT 1];
+        User nonAdminUser = new User(
+            FirstName = 'NonAdmin',
+            LastName  = 'Tester',
+            Alias     = 'natest',
+            Email     = 'nonadmin.tester@example.com.invalid',
+            Username  = 'nonadmin.tester.' + UUID.randomUUID().toString().left(8) + '@example.com.invalid',
+            ProfileId = minAccess.Id,
+            TimeZoneSidKey = 'America/Los_Angeles',
+            LocaleSidKey   = 'en_US',
+            EmailEncodingKey = 'UTF-8',
+            LanguageLocaleKey = 'en_US'
+        );
+        insert nonAdminUser;
+        insert new PermissionSetAssignment(
+            AssigneeId = nonAdminUser.Id,
+            PermissionSetId = [SELECT Id FROM PermissionSet WHERE Name = 'ApexAgent_User' LIMIT 1].Id
+        );
+        // Message_Log__c uses private (owner-based) sharing, so it must be owned by the
+        // non-admin user for their own read to see it — matching what happens in real
+        // usage, where the record is created inside that user's own request.
+        update new ApexAgent_Thread_Log__c(Id = thread.Id, OwnerId = nonAdminUser.Id);
+        update new ApexAgent_Message_Log__c(Id = msg.Id, OwnerId = nonAdminUser.Id);
+
+        Test.startTest();
+        System.runAs(nonAdminUser) {
+            ApexAgentChatController.saveFeedback('msg-fb-nonadmin', 'Thumbs Up', 'Works for non-admins too');
+        }
+        Test.stopTest();
+
+        ApexAgent_Message_Log__c updated = [
+            SELECT Feedback__c, Feedback_Notes__c
+            FROM ApexAgent_Message_Log__c
+            WHERE Agent_Message_UUID__c = 'msg-fb-nonadmin'
+        ];
+        Assert.areEqual('Thumbs Up', updated.Feedback__c, 'Non-admin feedback write should succeed');
+        Assert.areEqual('Works for non-admins too', updated.Feedback_Notes__c, 'Non-admin feedback notes should persist');
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // getExecutionMessages
     // ─────────────────────────────────────────────────────────────────────────
@@ -335,5 +388,123 @@ private class ApexAgentChatControllerTest {
             );
         }
         Test.stopTest();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // sendMessage (LLM-mocked — exercises real orchestrator/LLMClient/logging paths)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private static ApexAgent_Error_Log__c getErrorLogFor(String messageUUID) {
+        ApexAgent_Message_Log__c ml = [
+            SELECT Id FROM ApexAgent_Message_Log__c
+            WHERE Agent_Message_UUID__c = :messageUUID
+            LIMIT 1
+        ];
+        List<ApexAgent_Error_Log__c> errs = [
+            SELECT Error__c, Stack_Trace__c FROM ApexAgent_Error_Log__c WHERE Message_Log__c = :ml.Id
+        ];
+        return errs.isEmpty() ? null : errs[0];
+    }
+
+    @IsTest
+    static void testSendMessageHappyPathStopResponse() {
+        ApexAgent_LLM__c llm = buildLlm();
+        buildAgent(llm.Id);
+        String messageUUID = 'msg-happy-' + UUID.randomUUID().toString();
+
+        Test.setMock(HttpCalloutMock.class,
+            new ApexAgentLLMCalloutMock(200, ApexAgentLLMCalloutMock.stopResponse('Here is your answer.')));
+
+        Test.startTest();
+        ApexAgentOrchestrator.AgentResponse response = ApexAgentChatController.sendMessage(
+            'TestAgent', 'What are my open cases?', null, messageUUID, null
+        );
+        Test.stopTest();
+
+        Assert.areEqual('Here is your answer.', response.llmResponse, 'Should surface the LLM content');
+        Assert.isNull(response.errorMessage, 'Successful turn should have no error message');
+    }
+
+    @IsTest
+    static void testSendMessageEmptyChoicesReturnsSanitizedError() {
+        ApexAgent_LLM__c llm = buildLlm();
+        buildAgent(llm.Id);
+        // Thread__c is a required lookup on Message_Log__c — a blank threadUUID means
+        // ApexAgentLogger silently drops the whole log write, so getErrorLogFor below
+        // would find nothing. A real thread is needed purely so logging succeeds.
+        ApexAgent_Thread_Log__c thread = buildThread('thread-empty-choices');
+        String messageUUID = 'msg-empty-choices-' + UUID.randomUUID().toString();
+
+        Test.setMock(HttpCalloutMock.class,
+            new ApexAgentLLMCalloutMock(200, ApexAgentLLMCalloutMock.emptyChoicesResponse()));
+
+        Test.startTest();
+        ApexAgentOrchestrator.AgentResponse response = ApexAgentChatController.sendMessage(
+            'TestAgent', 'What are my open cases?', thread.Agent_Thread_UUID__c, messageUUID, null
+        );
+        Test.stopTest();
+
+        Assert.areEqual(
+            'Something went wrong processing your request. Please try again.',
+            response.errorMessage,
+            'Client should only see the generic sanitized message'
+        );
+        ApexAgent_Error_Log__c errLog = getErrorLogFor(messageUUID);
+        Assert.isNotNull(errLog, 'Full detail should still be written to Error_Log__c');
+        Assert.isTrue(errLog.Error__c.contains('no choices'), 'Internal log should carry the real cause');
+    }
+
+    @IsTest
+    static void testSendMessageLengthFinishReasonReturnsSafeMessage() {
+        ApexAgent_LLM__c llm = buildLlm();
+        buildAgent(llm.Id);
+        String messageUUID = 'msg-length-' + UUID.randomUUID().toString();
+
+        Test.setMock(HttpCalloutMock.class,
+            new ApexAgentLLMCalloutMock(200, ApexAgentLLMCalloutMock.lengthResponseBlankContent()));
+
+        Test.startTest();
+        ApexAgentOrchestrator.AgentResponse response = ApexAgentChatController.sendMessage(
+            'TestAgent', 'What are my open cases?', null, messageUUID, null
+        );
+        Test.stopTest();
+
+        Assert.areEqual(
+            'Response was cut off before any content was generated '
+                + '(max tokens reached). Try increasing Max Tokens on the agent.',
+            response.errorMessage,
+            'finish_reason=length with blank content should surface this specific, safe message'
+        );
+    }
+
+    @IsTest
+    static void testSendMessageNonRetryableStatusFailsWithoutExhaustingRetries() {
+        ApexAgent_LLM__c llm = buildLlm();
+        buildAgent(llm.Id);
+        // Thread__c is a required lookup on Message_Log__c — see comment in
+        // testSendMessageEmptyChoicesReturnsSanitizedError above.
+        ApexAgent_Thread_Log__c thread = buildThread('thread-400');
+        String messageUUID = 'msg-400-' + UUID.randomUUID().toString();
+
+        Test.setMock(HttpCalloutMock.class,
+            new ApexAgentLLMCalloutMock(400, '{"error":"bad request"}'));
+
+        Test.startTest();
+        ApexAgentOrchestrator.AgentResponse response = ApexAgentChatController.sendMessage(
+            'TestAgent', 'What are my open cases?', thread.Agent_Thread_UUID__c, messageUUID, null
+        );
+        Test.stopTest();
+
+        Assert.areEqual(
+            'Something went wrong processing your request. Please try again.',
+            response.errorMessage,
+            'Client should only see the generic sanitized message'
+        );
+        ApexAgent_Error_Log__c errLog = getErrorLogFor(messageUUID);
+        Assert.isNotNull(errLog, 'Full detail should still be written to Error_Log__c');
+        Assert.isTrue(errLog.Error__c.contains('non-retryable status'),
+            'Should fail via the immediate non-retryable path, not the retry-exhaustion path');
+        Assert.isFalse(errLog.Error__c.contains('attempt(s)'),
+            'A 400 must not be retried — message should not mention retry attempts');
     }
 }

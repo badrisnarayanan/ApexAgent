@@ -8,7 +8,7 @@
     <referenceTo>ApexAgent_Thread_Log__c</referenceTo>
     <relationshipLabel>Message Logs</relationshipLabel>
     <relationshipName>Message_Logs</relationshipName>
-    <required>true</required>
+    <required>false</required>
     <trackTrending>false</trackTrending>
     <type>Lookup</type>
 </CustomField>

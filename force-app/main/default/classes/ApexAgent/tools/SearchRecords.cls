@@ -32,35 +32,9 @@ public with sharing class SearchRecords implements ApexAgentTool {
     // ─── Entry point ────────────────────────────────────────────────────────────
 
     public Object execute(Map<String, Object> input) {
-        if (input == null) {
-            throw new IllegalArgumentException('Input map must not be null');
-        }
-        if (!input.containsKey('searchTerm')) {
-            throw new IllegalArgumentException('Missing required input parameter: searchTerm');
-        }
-        if (!input.containsKey('objectApiName')) {
-            throw new IllegalArgumentException('Missing required input parameter: objectApiName');
-        }
-
-        Object rawTerm = input.get('searchTerm');
-        Object rawObject = input.get('objectApiName');
-
-        if (rawTerm == null) {
-            throw new IllegalArgumentException('Input parameter searchTerm must not be null');
-        }
-        if (rawObject == null) {
-            throw new IllegalArgumentException('Input parameter objectApiName must not be null');
-        }
-
-        String searchTerm = String.valueOf(rawTerm).trim();
-        String objectApiName = String.valueOf(rawObject).trim();
-
-        if (String.isBlank(searchTerm)) {
-            throw new IllegalArgumentException('Input parameter searchTerm must not be blank');
-        }
-        if (String.isBlank(objectApiName)) {
-            throw new IllegalArgumentException('Input parameter objectApiName must not be blank');
-        }
+        ApexAgentToolInput.requireMap(input);
+        String searchTerm    = ApexAgentToolInput.requireString(input, 'searchTerm');
+        String objectApiName = ApexAgentToolInput.requireString(input, 'objectApiName');
 
         Schema.DescribeSObjectResult describe = ApexAgentUtils.getDescribe(objectApiName);
         if (!describe.isSearchable() || !describe.isAccessible()) {
@@ -80,11 +54,10 @@ public with sharing class SearchRecords implements ApexAgentTool {
 
     // ─── SOSL execution ──────────────────────────────────────────────────────────
 
-    @SuppressWarnings('PMD.ApexCRUDViolation')
     private List<SObject> executeSosl(String soslClause, String objectApiName) {
         String query = 'FIND {' + soslClause + '} IN NAME FIELDS RETURNING '
             + objectApiName + '(Id, Name) LIMIT ' + SOSL_LIMIT;
-        List<List<SObject>> results = Search.query(query);
+        List<List<SObject>> results = Search.query(query, AccessLevel.USER_MODE);
         return results.isEmpty() ? new List<SObject>() : results[0];
     }
 
@@ -107,8 +80,14 @@ public with sharing class SearchRecords implements ApexAgentTool {
         return String.join(new List<String>(soslTerms), ' OR ');
     }
 
+    @TestVisible
     private String escapeSosl(String term) {
         // Escape SOSL reserved characters: ? & | ! { } [ ] ( ) ^ ~ * : \ " ' + -
+        // The term is interpolated into `FIND {...}` in executeSosl, and this method
+        // also wraps each variant in its own '*' wildcards (buildSoslClause) — so any
+        // literal '{', '}', '(', ')', '*', or '?' in the input must be escaped too,
+        // or it can break out of the FIND block or be misread as an unintended wildcard.
+        // Backslash must be escaped first so later replacements don't double-escape it.
         return term
             .replace('\\', '\\\\')
             .replace('"',  '\\"')
@@ -120,7 +99,15 @@ public with sharing class SearchRecords implements ApexAgentTool {
             .replace('~',  '\\~')
             .replace(':',  '\\:')
             .replace('+',  '\\+')
-            .replace('-',  '\\-');
+            .replace('-',  '\\-')
+            .replace('?',  '\\?')
+            .replace('{',  '\\{')
+            .replace('}',  '\\}')
+            .replace('[',  '\\[')
+            .replace(']',  '\\]')
+            .replace('(',  '\\(')
+            .replace(')',  '\\)')
+            .replace('*',  '\\*');
     }
 
     @SuppressWarnings('PMD.NcssMethodCount')

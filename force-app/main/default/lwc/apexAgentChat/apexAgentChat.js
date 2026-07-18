@@ -50,7 +50,12 @@ export default class ApexAgentChat extends LightningElement {
 
     _currentThreadUUID  = null;
     _pollingInterval    = null;
-    _pollingStartTime   = null;
+    _sendTimeoutId      = null;
+    // Identity token for the in-flight send — lets late callbacks (a timeout that
+    // fires after the request already resolved, or a resolution that arrives after
+    // a timeout already gave up) tell whether they still own the shared processing
+    // state before mutating it.
+    _activeRequestState = null;
     _inFlightLoadingKey = null;
     _shouldScrollToBottom = false;
     _recordContext      = null;
@@ -68,6 +73,10 @@ export default class ApexAgentChat extends LightningElement {
 
     disconnectedCallback() {
         this._clearPolling();
+        if (this._sendTimeoutId) {
+            clearTimeout(this._sendTimeoutId);
+            this._sendTimeoutId = null;
+        }
     }
 
     renderedCallback() {
@@ -215,10 +224,30 @@ export default class ApexAgentChat extends LightningElement {
         this.messages = [...this.messages, userMsg, loadingMsg];
         this._shouldScrollToBottom = true;
 
+        // Tracks whether THIS send has already been finalized (by timeout or by a
+        // real resolution), independent of execution-message polling being enabled.
+        const requestState = { settled: false };
+        this._activeRequestState = requestState;
+
         // Start polling if agent has execution messages enabled
         if (this.agentConfig && this.agentConfig.showExecutionMessage) {
-            this._startPolling(messageUUID, loadingKey);
+            this._startPolling(messageUUID, loadingKey, requestState);
         }
+
+        // Client-side timeout now applies to every send, not just when
+        // execution-message polling happens to be active.
+        this._sendTimeoutId = setTimeout(() => {
+            if (requestState.settled) {
+                return;
+            }
+            requestState.settled = true;
+            this._replaceLoadingWithError(loadingKey, 'Request timed out. Please try again.');
+            if (this._activeRequestState === requestState) {
+                this._clearPolling();
+                this.isProcessing = false;
+                this._inFlightLoadingKey = null;
+            }
+        }, MAX_POLL_MS);
 
         sendMessage({
             agentName:   this.agentName,
@@ -228,18 +257,34 @@ export default class ApexAgentChat extends LightningElement {
             context:     this._recordContext
         })
         .then(response => {
+            // Already timed out client-side — don't let a late success silently
+            // overwrite the error bubble the user already saw.
+            if (requestState.settled) {
+                return;
+            }
+            requestState.settled = true;
+            clearTimeout(this._sendTimeoutId);
             this._clearPolling();
             this._resolveLoadingBubble(loadingKey, response);
             this._loadThreads();
         })
         .catch(() => {
+            if (requestState.settled) {
+                return;
+            }
+            requestState.settled = true;
+            clearTimeout(this._sendTimeoutId);
             this._clearPolling();
             this._replaceLoadingWithError(loadingKey, 'Something went wrong. Please try again.');
             this._loadThreads();
         })
         .finally(() => {
-            this.isProcessing = false;
-            this._inFlightLoadingKey = null;
+            // Only clear the shared processing state if a newer send hasn't already
+            // taken over (e.g. the user sent a follow-up after this one timed out).
+            if (this._activeRequestState === requestState) {
+                this.isProcessing = false;
+                this._inFlightLoadingKey = null;
+            }
             this._shouldScrollToBottom = true;
         });
     }
@@ -391,22 +436,15 @@ export default class ApexAgentChat extends LightningElement {
 
     // ── Private: polling ──
 
-    _startPolling(messageUUID, loadingKey) {
-        this._pollingStartTime = Date.now();
-        this._pollingInterval  = setInterval(() => {
-            if (!this.isProcessing) {
+    _startPolling(messageUUID, loadingKey, requestState) {
+        this._pollingInterval = setInterval(() => {
+            if (requestState.settled) {
                 this._clearPolling();
-                return;
-            }
-            if (Date.now() - this._pollingStartTime > MAX_POLL_MS) {
-                this._clearPolling();
-                this._replaceLoadingWithError(loadingKey, 'Request timed out. Please try again.');
-                this.isProcessing = false;
                 return;
             }
             getExecutionMessages({ messageUUID })
             .then(actions => {
-                if (!this.isProcessing || this._inFlightLoadingKey !== loadingKey) {
+                if (requestState.settled || this._inFlightLoadingKey !== loadingKey) {
                     return;
                 }
                 if (actions && actions.length > 0) {
@@ -431,8 +469,7 @@ export default class ApexAgentChat extends LightningElement {
     _clearPolling() {
         if (this._pollingInterval) {
             clearInterval(this._pollingInterval);
-            this._pollingInterval   = null;
-            this._pollingStartTime  = null;
+            this._pollingInterval = null;
         }
     }
 
@@ -444,7 +481,7 @@ export default class ApexAgentChat extends LightningElement {
 
     _mapToolActions(actions) {
         return actions.map(a => ({
-            toolName:        a.toolCallId || '',
+            toolName:        a.toolName || a.toolCallId || '',
             executionMessage: a.executionMessage || '',
             status:          a.status || ''
         }));
@@ -557,9 +594,11 @@ export default class ApexAgentChat extends LightningElement {
     }
 
     _resetTextareaHeight() {
+        // Height reset only — clearing the value directly would fight the template's
+        // value={inputText} binding, which is the actual source of truth and is
+        // already reset to '' by the caller before this runs.
         const ta = this.template.querySelector('.message-input');
         if (ta) {
-            ta.value = '';
             ta.style.height = 'auto';
         }
     }

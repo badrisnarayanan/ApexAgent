@@ -422,7 +422,45 @@ private class SearchRecordsTest {
         Assert.areEqual(0, emptyResults.size(), 'Empty SOSL must produce empty list');
     }
 
-    // ─── 8. ApexAgentUtils ───────────────────────────────────────────────────────
+    // ─── 8. SOSL escaping ──────────────────────────────────────────────────────────
+    // escapeSosl must escape every reserved SOSL character it advertises escaping —
+    // previously { } ( ) * ? were silently left unescaped, which could break out of
+    // the surrounding FIND {...} block or be misread as unintended wildcards.
+
+    @isTest
+    static void testEscapeSoslEscapesAllReservedCharacters() {
+        SearchRecords tool = new SearchRecords();
+
+        Assert.areEqual('a\\{b\\}c',  tool.escapeSosl('a{b}c'),  'Curly braces must be escaped');
+        Assert.areEqual('a\\(b\\)c',  tool.escapeSosl('a(b)c'),  'Parentheses must be escaped');
+        Assert.areEqual('a\\*b',      tool.escapeSosl('a*b'),    'Asterisk must be escaped');
+        Assert.areEqual('a\\?b',      tool.escapeSosl('a?b'),    'Question mark must be escaped');
+        Assert.areEqual('a\\[b\\]c',  tool.escapeSosl('a[b]c'),  'Square brackets must be escaped');
+        Assert.areEqual('a\\\\b',     tool.escapeSosl('a\\b'),   'Backslash must be escaped');
+        Assert.areEqual('a\\"b',      tool.escapeSosl('a"b'),    'Double quote must be escaped');
+
+        // A term combining several reserved characters, including one that would
+        // otherwise close the FIND {...} block early
+        Assert.areEqual(
+            '\\{escape\\}\\*me\\?',
+            tool.escapeSosl('{escape}*me?'),
+            'Combined reserved characters must all be escaped'
+        );
+
+        // End-to-end: a search term full of reserved characters must not throw when
+        // building/executing the SOSL clause (Test.setFixedSearchResults bypasses the
+        // actual query engine, so this exercises clause construction, not the escaped
+        // query string itself)
+        Test.setFixedSearchResults(new List<Id>());
+        Test.startTest();
+        List<Map<String, Object>> results = (List<Map<String, Object>>) tool.execute(
+            new Map<String, Object>{ 'searchTerm' => '{Acme} (Inc)*?', 'objectApiName' => 'Account' }
+        );
+        Test.stopTest();
+        Assert.isNotNull(results, 'Search with reserved characters must not throw');
+    }
+
+    // ─── 9. ApexAgentUtils ───────────────────────────────────────────────────────
 
     @isTest
     static void testApexAgentUtils() {

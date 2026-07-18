@@ -168,15 +168,41 @@ public with sharing class ApexAgentChatController {
     /**
      * Persists thumbs-up / thumbs-down feedback on a message log record,
      * identified by its external ID (Agent_Message_UUID__c).
+     *
+     * ApexAgent_User has no create/edit access to Message_Log__c (users shouldn't freely
+     * write log records), so this can't be a plain user-mode upsert. Ownership is verified
+     * with a user-mode query first — the running user must own the thread the message
+     * belongs to — then the field update runs in system mode.
+     *
+     * `sf code-analyzer` (sfge) flags the update below as a missing FLS check. That's a
+     * known false positive: none of the sfge suppression directives (next-line, stack,
+     * class-level) actually suppress it in this tool version, so it's documented here
+     * instead. The write is safe because ownership was already confirmed above.
      */
     @AuraEnabled
+    @SuppressWarnings('PMD.ApexCRUDViolation')
     public static void saveFeedback(String messageUUID, String feedback, String feedbackNotes) {
-        ApexAgent_Message_Log__c log = new ApexAgent_Message_Log__c(
-            Agent_Message_UUID__c = messageUUID,
-            Feedback__c           = feedback,
-            Feedback_Notes__c     = feedbackNotes
-        );
-        upsert as user log ApexAgent_Message_Log__c.Agent_Message_UUID__c;
+        if (String.isBlank(messageUUID)) {
+            throw new AuraHandledException('Message UUID is required.');
+        }
+
+        List<ApexAgent_Message_Log__c> logs = [
+            SELECT Id
+            FROM ApexAgent_Message_Log__c
+            WHERE Agent_Message_UUID__c = :messageUUID
+              AND Thread__r.OwnerId = :UserInfo.getUserId()
+            WITH USER_MODE
+            LIMIT 1
+        ];
+        if (logs.isEmpty()) {
+            throw new AuraHandledException('Message not found or you do not have access to it.');
+        }
+
+        Database.update(new ApexAgent_Message_Log__c(
+            Id                = logs[0].Id,
+            Feedback__c       = feedback,
+            Feedback_Notes__c = feedbackNotes
+        ), AccessLevel.SYSTEM_MODE);
     }
 
     /**

@@ -22,6 +22,7 @@ public with sharing class ApexAgentExecutionMessageHandler {
 
     public class ToolActionEntry {
         public String toolCallId;
+        public String toolName;
         public String executionMessage;
         public String status;
     }
@@ -44,6 +45,7 @@ public with sharing class ApexAgentExecutionMessageHandler {
             events.add(new ApexAgent_Tool_Execution__e(
                 Message_UUID__c      = messageUUID,
                 Tool_Call_Id__c      = tc.id,
+                Tool_Name__c         = tc.function != null ? tc.function.name : null,
                 Execution_Message__c = truncateMessage(execMsgByToolCallId.get(tc.id)),
                 Status__c            = STATUS_IN_PROGRESS
             ));
@@ -59,6 +61,7 @@ public with sharing class ApexAgentExecutionMessageHandler {
         EventBus.publish(new ApexAgent_Tool_Execution__e(
             Message_UUID__c = messageUUID,
             Tool_Call_Id__c = tc.id,
+            Tool_Name__c    = tc.function != null ? tc.function.name : null,
             Status__c       = STATUS_COMPLETED
         ));
     }
@@ -112,10 +115,14 @@ public with sharing class ApexAgentExecutionMessageHandler {
                 if (String.isNotBlank(evt.Execution_Message__c)) {
                     existing.executionMessage = evt.Execution_Message__c;
                 }
+                if (String.isNotBlank(evt.Tool_Name__c)) {
+                    existing.toolName = evt.Tool_Name__c;
+                }
                 existing.status = evt.Status__c;
             } else {
                 ToolActionEntry fresh = new ToolActionEntry();
                 fresh.toolCallId       = tcId;
+                fresh.toolName         = evt.Tool_Name__c;
                 fresh.executionMessage = evt.Execution_Message__c;
                 fresh.status           = evt.Status__c;
                 byToolCallId.put(tcId, fresh);
@@ -181,6 +188,7 @@ public with sharing class ApexAgentExecutionMessageHandler {
         for (ToolActionEntry e : entries) {
             result.add(new Map<String, Object>{
                 'toolCallId'       => e.toolCallId,
+                'toolName'         => e.toolName,
                 'executionMessage' => e.executionMessage,
                 'status'           => e.status
             });

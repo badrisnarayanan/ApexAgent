@@ -78,6 +78,8 @@ public with sharing class ApexAgentApiTypes {
         public String id;
         public List<Choice> choices;
         public Usage usage;
+        /** Present instead of `choices` on some 200-status provider failure modes. */
+        public Object error;
     }
 
     /** A single choice in the response choices array. */

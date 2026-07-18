@@ -84,6 +84,30 @@ private class UpsertRecordsTest {
             Assert.isTrue(e.getMessage().contains('records'), 'Should mention records');
         }
 
+        // wrong type for allOrNone (string instead of boolean) — must be a friendly
+        // validation error, not a raw ClassCastException
+        try {
+            tool.execute(new Map<String, Object>{
+                'objectApiName' => 'Account', 'allOrNone' => 'true', 'records' => new List<Object>{
+                    makeRecord(new List<Map<String, Object>>{ makeFieldEntry('Name', 'x', 'String') })
+                }
+            });
+            Assert.fail('Expected exception for non-boolean allOrNone');
+        } catch (IllegalArgumentException e) {
+            Assert.isTrue(e.getMessage().contains('allOrNone'), 'Should mention allOrNone');
+        }
+
+        // wrong type for records (a map instead of a list) — must be a friendly
+        // validation error, not a raw ClassCastException
+        try {
+            tool.execute(new Map<String, Object>{
+                'objectApiName' => 'Account', 'allOrNone' => true, 'records' => new Map<String, Object>()
+            });
+            Assert.fail('Expected exception for non-list records');
+        } catch (IllegalArgumentException e) {
+            Assert.isTrue(e.getMessage().contains('records'), 'Should mention records');
+        }
+
         // empty records list
         try {
             tool.execute(buildInput('Account', true, null, new List<Map<String, Object>>()));
@@ -293,16 +317,42 @@ private class UpsertRecordsTest {
             Assert.isTrue(e.getMessage().containsIgnoreCase('date'), 'Should mention date');
         }
 
-        // Datetime — ISO 8601 with Z
+        // Datetime — ISO 8601 with Z. Accessors must be the Gmt variants — the running
+        // org's default time zone would otherwise shift hour/minute and mask a UTC bug.
         Datetime dt = (Datetime) tool.convertValue('2024-06-15T13:30:45Z', 'DateTime', 'f', 0);
-        Assert.areEqual(2024, dt.year(),   'Year should be 2024');
-        Assert.areEqual(6,    dt.month(),  'Month should be 6');
-        Assert.areEqual(15,   dt.day(),    'Day should be 15');
-        Assert.areEqual(13,   dt.hour(),   'Hour should be 13');
-        Assert.areEqual(30,   dt.minute(), 'Minute should be 30');
+        Assert.areEqual(2024, dt.yearGmt(),   'Year should be 2024');
+        Assert.areEqual(6,    dt.monthGmt(),  'Month should be 6');
+        Assert.areEqual(15,   dt.dayGmt(),    'Day should be 15');
+        Assert.areEqual(13,   dt.hourGmt(),   'Hour should be 13');
+        Assert.areEqual(30,   dt.minuteGmt(), 'Minute should be 30');
         // Datetime — with milliseconds
         Datetime dtMs = (Datetime) tool.convertValue('2024-06-15T13:30:45.000Z', 'DateTime', 'f', 0);
-        Assert.areEqual(2024, dtMs.year(), 'Year should be 2024 (with ms)');
+        Assert.areEqual(2024, dtMs.yearGmt(), 'Year should be 2024 (with ms)');
+
+        // Datetime — explicit positive UTC offset (+05:30) must shift to the correct
+        // absolute UTC instant via valueOfGmt() + offset arithmetic, not
+        // Datetime.valueOf()'s local-time interpretation. Datetime accessor methods
+        // (hour/minute/second) always return GMT components, so this is unambiguous
+        // regardless of the running org's default time zone — 13:30:45+05:30 is
+        // 08:00:45 UTC.
+        Datetime dtPosOffset = (Datetime) tool.convertValue('2024-06-15T13:30:45+05:30', 'DateTime', 'f', 0);
+        Assert.areEqual(8,  dtPosOffset.hourGmt(),   '+05:30 offset should shift to 08:00:45 UTC (hour)');
+        Assert.areEqual(0,  dtPosOffset.minuteGmt(), '+05:30 offset should shift to 08:00:45 UTC (minute)');
+        Assert.areEqual(45, dtPosOffset.secondGmt(), '+05:30 offset should shift to 08:00:45 UTC (second)');
+
+        // Datetime — explicit negative UTC offset (-05:00): 13:30:45-05:00 is 18:30:45 UTC.
+        Datetime dtNegOffset = (Datetime) tool.convertValue('2024-06-15T13:30:45-05:00', 'DateTime', 'f', 0);
+        Assert.areEqual(18, dtNegOffset.hourGmt(),   '-05:00 offset should shift to 18:30:45 UTC (hour)');
+        Assert.areEqual(30, dtNegOffset.minuteGmt(), '-05:00 offset should shift to 18:30:45 UTC (minute)');
+
+        // Datetime — negative offset with fractional seconds present before the offset marker
+        Datetime dtNegOffsetMs = (Datetime) tool.convertValue('2024-06-15T13:30:45.500-05:00', 'DateTime', 'f', 0);
+        Assert.areEqual(18, dtNegOffsetMs.hourGmt(), '-05:00 offset with fractional seconds should still shift correctly');
+
+        // Datetime — Z always maps to a fixed UTC instant regardless of offset math
+        Datetime dtZ = (Datetime) tool.convertValue('2024-06-15T13:30:45Z', 'DateTime', 'f', 0);
+        Assert.areEqual(13, dtZ.hourGmt(), 'Z should map directly to 13:30:45 UTC');
+
         // Datetime — invalid throws
         try {
             tool.convertValue('not-a-datetime', 'DateTime', 'f', 0);

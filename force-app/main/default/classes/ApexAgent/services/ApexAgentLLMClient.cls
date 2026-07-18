@@ -35,29 +35,13 @@ public with sharing class ApexAgentLLMClient {
 
         while (true) {
             attempt++;
+
+            // Network-level failures (timeout, DNS, connection reset) are always
+            // transient and retryable — scoped to just the send() call so that
+            // non-retryable HTTP status codes below never pass through this catch.
+            HttpResponse resp;
             try {
-                HttpResponse resp = http.send(req);
-                Integer statusCode = resp.getStatusCode();
-
-                if (statusCode >= 200 && statusCode < 300) {
-                    return (ApexAgentApiTypes.ChatCompletionResponse) JSON.deserialize(
-                        resp.getBody(),
-                        ApexAgentApiTypes.ChatCompletionResponse.class
-                    );
-                }
-
-                if (!RETRYABLE_STATUS_CODES.contains(statusCode) || attempt > MAX_RETRIES) {
-                    throw new CalloutException(
-                        'LLM callout failed after ' + attempt + ' attempt(s).'
-                        + ' Status: ' + statusCode
-                        + ' Body: ' + resp.getBody()
-                    );
-                }
-
-                System.debug(LoggingLevel.WARN,
-                    'LLM callout attempt ' + attempt + ' returned ' + statusCode + '. Retrying...'
-                );
-
+                resp = http.send(req);
             } catch (CalloutException e) {
                 if (attempt > MAX_RETRIES) {
                     throw new CalloutException(
@@ -67,7 +51,38 @@ public with sharing class ApexAgentLLMClient {
                 System.debug(LoggingLevel.WARN,
                     'LLM callout attempt ' + attempt + ' threw exception: ' + e.getMessage() + '. Retrying...'
                 );
+                continue;
             }
+
+            Integer statusCode = resp.getStatusCode();
+
+            if (statusCode >= 200 && statusCode < 300) {
+                return (ApexAgentApiTypes.ChatCompletionResponse) JSON.deserialize(
+                    resp.getBody(),
+                    ApexAgentApiTypes.ChatCompletionResponse.class
+                );
+            }
+
+            if (!RETRYABLE_STATUS_CODES.contains(statusCode)) {
+                // Non-retryable status (e.g. 400) — fail immediately, do not retry.
+                throw new CalloutException(
+                    'LLM callout failed with non-retryable status.'
+                    + ' Status: ' + statusCode
+                    + ' Body: ' + resp.getBody()
+                );
+            }
+
+            if (attempt > MAX_RETRIES) {
+                throw new CalloutException(
+                    'LLM callout failed after ' + attempt + ' attempt(s).'
+                    + ' Status: ' + statusCode
+                    + ' Body: ' + resp.getBody()
+                );
+            }
+
+            System.debug(LoggingLevel.WARN,
+                'LLM callout attempt ' + attempt + ' returned ' + statusCode + '. Retrying...'
+            );
         }
         return null; // unreachable — while(true) always returns or throws, but Apex compiler requires this
     }

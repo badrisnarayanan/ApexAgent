@@ -2,9 +2,8 @@
 public with sharing class GetRecordDetails implements ApexAgentTool {
 
     public Object execute(Map<String, Object> input) {
-        validateInput(input);
-
-        String recordIdStr = String.valueOf(input.get('recordId')).trim();
+        ApexAgentToolInput.requireMap(input);
+        String recordIdStr = ApexAgentToolInput.requireString(input, 'recordId');
         Id recordId        = parseRecordId(recordIdStr);
 
         String objectApiName                   = ApexAgentUtils.getObjectApiNameFromId(recordId);
@@ -48,21 +47,6 @@ public with sharing class GetRecordDetails implements ApexAgentTool {
     }
 
     // ─── Input validation ────────────────────────────────────────────────────────
-
-    private void validateInput(Map<String, Object> input) {
-        if (input == null) {
-            throw new IllegalArgumentException('Input map must not be null');
-        }
-        if (!input.containsKey('recordId')) {
-            throw new IllegalArgumentException('Missing required input parameter: recordId');
-        }
-        if (input.get('recordId') == null) {
-            throw new IllegalArgumentException('Input parameter recordId must not be null');
-        }
-        if (String.isBlank(String.valueOf(input.get('recordId')))) {
-            throw new IllegalArgumentException('Input parameter recordId must not be blank');
-        }
-    }
 
     private Id parseRecordId(String recordIdStr) {
         try {
