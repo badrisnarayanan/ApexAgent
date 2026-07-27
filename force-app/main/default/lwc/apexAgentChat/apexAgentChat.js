@@ -594,11 +594,12 @@ export default class ApexAgentChat extends LightningElement {
     }
 
     _resetTextareaHeight() {
-        // Height reset only — clearing the value directly would fight the template's
-        // value={inputText} binding, which is the actual source of truth and is
-        // already reset to '' by the caller before this runs.
+        // Native <textarea> has no HTML value attribute (only a DOM property), so the
+        // declarative value={inputText} template binding doesn't reliably clear it once
+        // the user has typed — the DOM value must also be cleared imperatively here.
         const ta = this.template.querySelector('.message-input');
         if (ta) {
+            ta.value = '';
             ta.style.height = 'auto';
         }
     }
