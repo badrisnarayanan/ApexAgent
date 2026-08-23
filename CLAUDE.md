@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ApexAgent is a Salesforce DX project that provides a metadata-driven framework for building AI agents inside Salesforce. Agents are configured declaratively via custom objects — selecting an LLM, assigning topics (which carry instructions and tools), and logging all execution. Tools can be backed by either Apex classes or autolaunched Flows.
+ApexAgent is a Salesforce DX project that provides a metadata-driven framework for building AI agents inside Salesforce. Agents are configured declaratively via custom objects — selecting an LLM, assigning topics (which carry instructions and tools), and logging all execution. Tools are backed by Apex classes.
 
 **Salesforce API version:** 66.0
 **Package directory:** `force-app/`

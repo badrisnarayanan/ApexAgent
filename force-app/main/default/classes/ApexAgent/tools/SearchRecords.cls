@@ -1,7 +1,55 @@
-public with sharing class SearchRecords implements ApexAgentTool {
+/**
+ * Apex Action tool: fuzzy-matches records of a given object by Name via SOSL.
+ *
+ * Not bulk-mergeable: each input carries an independent search term and object,
+ * with no shared key to group on. ApexAgentToolExecutor only ever invokes this
+ * action with a single input.
+ */
+public with sharing class SearchRecords {
 
     private static final Integer SOSL_LIMIT = 50;
     private static final Integer MAX_RESULTS = 25;
+
+    public class Input {
+        @InvocableVariable(required=true label='Search Term' description='The term to fuzzy-match against record Names.')
+        public String searchTerm;
+
+        @InvocableVariable(required=true label='Object API Name' description='API name of the object to search (e.g. "Account").')
+        public String objectApiName;
+    }
+
+    public class Output {
+        @InvocableVariable(label='Result' description='JSON array of matching records, each with Id, Name, and a relevance score.')
+        public String resultJson;
+    }
+
+    @InvocableMethod(label='Search Records' description='Executes a fuzzy SOSL search for records by Name within a specified object. Returns up to 25 scored results, each containing Id, Name, and a relevance score\n\nWhen to use:\nUser asks "find", "search for", or "look up" a record by name or text.\nYou know the exact object but lack the record ID.\nThe search term fo record is ambiguous\n\nWhen not to use:\nYou already have the record ID → use GetRecordDetails.\nYou need filtered results by non-name fields → use QueryRecords with SOQL.')
+    public static List<Output> run(List<Input> inputs) {
+        List<Output> results = new List<Output>();
+        for (Input inp : inputs) {
+            results.add(processOne(inp));
+        }
+        return results;
+    }
+
+    private static Output processOne(Input inp) {
+        String searchTerm    = ApexAgentToolInput.requireNotBlank(inp.searchTerm, 'searchTerm');
+        String objectApiName = ApexAgentToolInput.requireNotBlank(inp.objectApiName, 'objectApiName');
+
+        Schema.DescribeSObjectResult describe = ApexAgentUtils.getDescribe(objectApiName);
+        if (!describe.isSearchable() || !describe.isAccessible()) {
+            throw new IllegalArgumentException(
+                'Object "' + objectApiName + '" is not searchable or not accessible by the current user'
+            );
+        }
+
+        String soslClause = buildSoslClause(searchTerm);
+        List<SObject> rawResults = executeSosl(soslClause, objectApiName);
+
+        Output o = new Output();
+        o.resultJson = JSON.serialize(scoreAndRank(rawResults, searchTerm));
+        return o;
+    }
 
     private static final Set<String> COMPANY_SUFFIXES = new Set<String>{
         'inc', 'llc', 'ltd', 'corp', 'co', 'group', 'holdings', 'limited',
@@ -29,32 +77,9 @@ public with sharing class SearchRecords implements ApexAgentTool {
         'cmpgn' => 'campaign',  'tsk'   => 'task'
     };
 
-    // ─── Entry point ────────────────────────────────────────────────────────────
-
-    public Object execute(Map<String, Object> input) {
-        ApexAgentToolInput.requireMap(input);
-        String searchTerm    = ApexAgentToolInput.requireString(input, 'searchTerm');
-        String objectApiName = ApexAgentToolInput.requireString(input, 'objectApiName');
-
-        Schema.DescribeSObjectResult describe = ApexAgentUtils.getDescribe(objectApiName);
-        if (!describe.isSearchable() || !describe.isAccessible()) {
-            throw new IllegalArgumentException(
-                'Object "' + objectApiName + '" is not searchable or not accessible by the current user'
-            );
-        }
-
-        String soslClause = buildSoslClause(searchTerm);
-        System.debug('SOSL clause: ' + soslClause);
-
-        List<SObject> rawResults = executeSosl(soslClause, objectApiName);
-        System.debug('SOSL returned ' + rawResults.size() + ' records');
-
-        return scoreAndRank(rawResults, searchTerm);
-    }
-
     // ─── SOSL execution ──────────────────────────────────────────────────────────
 
-    private List<SObject> executeSosl(String soslClause, String objectApiName) {
+    private static List<SObject> executeSosl(String soslClause, String objectApiName) {
         String query = 'FIND {' + soslClause + '} IN NAME FIELDS RETURNING '
             + objectApiName + '(Id, Name) LIMIT ' + SOSL_LIMIT;
         List<List<SObject>> results = Search.query(query, AccessLevel.USER_MODE);
@@ -63,7 +88,7 @@ public with sharing class SearchRecords implements ApexAgentTool {
 
     // ─── SOSL clause builder ─────────────────────────────────────────────────────
 
-    private String buildSoslClause(String searchTerm) {
+    private static String buildSoslClause(String searchTerm) {
         Set<String> variants = generateSoslVariants(searchTerm);
 
         // Wrap each variant in wildcards and escape SOSL reserved characters
@@ -81,7 +106,7 @@ public with sharing class SearchRecords implements ApexAgentTool {
     }
 
     @TestVisible
-    private String escapeSosl(String term) {
+    private static String escapeSosl(String term) {
         // Escape SOSL reserved characters: ? & | ! { } [ ] ( ) ^ ~ * : \ " ' + -
         // The term is interpolated into `FIND {...}` in executeSosl, and this method
         // also wraps each variant in its own '*' wildcards (buildSoslClause) — so any
@@ -111,7 +136,7 @@ public with sharing class SearchRecords implements ApexAgentTool {
     }
 
     @SuppressWarnings('PMD.NcssMethodCount')
-    private Set<String> generateSoslVariants(String searchTerm) {
+    private static Set<String> generateSoslVariants(String searchTerm) {
         Set<String> variants = new Set<String>();
         String lower = searchTerm.toLowerCase().trim();
 
@@ -211,7 +236,7 @@ public with sharing class SearchRecords implements ApexAgentTool {
         return cleaned;
     }
 
-    private String stripCompanySuffix(String name) {
+    private static String stripCompanySuffix(String name) {
         List<String> tokens = name.split('\\s+');
         while (!tokens.isEmpty() && COMPANY_SUFFIXES.contains(tokens[tokens.size() - 1].replaceAll('[.,]', ''))) {
             tokens.remove(tokens.size() - 1);
@@ -221,7 +246,7 @@ public with sharing class SearchRecords implements ApexAgentTool {
 
     // ─── Scoring & ranking ───────────────────────────────────────────────────────
 
-    private List<Map<String, Object>> scoreAndRank(List<SObject> records, String searchTerm) {
+    private static List<Map<String, Object>> scoreAndRank(List<SObject> records, String searchTerm) {
         String lowerSearch    = searchTerm.toLowerCase().trim();
         String cleanSearch    = stripCompanySuffix(lowerSearch);
         List<String> searchWords = splitCompound(searchTerm);
@@ -329,7 +354,7 @@ public with sharing class SearchRecords implements ApexAgentTool {
 
     // ─── String splitting helpers ────────────────────────────────────────────────
 
-    private List<String> splitCompound(String term) {
+    private static List<String> splitCompound(String term) {
         Set<String> wordSet = new Set<String>();
         for (String part : term.split('[\\s_]+')) {
             if (String.isNotBlank(part)) {
@@ -344,7 +369,7 @@ public with sharing class SearchRecords implements ApexAgentTool {
         return new List<String>(wordSet);
     }
 
-    private List<String> splitCamelCase(String term) {
+    private static List<String> splitCamelCase(String term) {
         List<String> words = new List<String>();
         String current = '';
         for (Integer i = 0; i < term.length(); i++) {
@@ -364,7 +389,7 @@ public with sharing class SearchRecords implements ApexAgentTool {
         return words;
     }
 
-    private Set<String> splitDoubledConsonants(String term) {
+    private static Set<String> splitDoubledConsonants(String term) {
         Set<String> parts = new Set<String>();
         String vowels = 'aeiou';
         for (Integer i = 1; i < term.length(); i++) {
@@ -382,7 +407,7 @@ public with sharing class SearchRecords implements ApexAgentTool {
         return parts;
     }
 
-    private Set<String> splitVowelConsonant(String term) {
+    private static Set<String> splitVowelConsonant(String term) {
         Set<String> parts = new Set<String>();
         String vowels = 'aeiou';
         if (term.length() < 8) {
@@ -403,7 +428,7 @@ public with sharing class SearchRecords implements ApexAgentTool {
         return parts;
     }
 
-    private Set<String> pluralSingularVariants(String word) {
+    private static Set<String> pluralSingularVariants(String word) {
         Set<String> variants = new Set<String>();
         if (String.isBlank(word) || word.length() < 2) {
             return variants;
@@ -436,7 +461,7 @@ public with sharing class SearchRecords implements ApexAgentTool {
 
     // ─── Levenshtein ─────────────────────────────────────────────────────────────
 
-    private Double levenshteinSimilarity(String s1, String s2) {
+    private static Double levenshteinSimilarity(String s1, String s2) {
         if (String.isBlank(s1) || String.isBlank(s2)) {
             return 0;
         }
@@ -447,7 +472,7 @@ public with sharing class SearchRecords implements ApexAgentTool {
         return 1.0 - ((Double) levenshteinDistance(s1, s2) / maxLen);
     }
 
-    private Integer levenshteinDistance(String s1, String s2) {
+    private static Integer levenshteinDistance(String s1, String s2) {
         Integer len1 = s1.length();
         Integer len2 = s2.length();
         List<Integer> prev = new List<Integer>();

@@ -1,4 +1,11 @@
-public with sharing class QueryRecords implements ApexAgentTool {
+/**
+ * Apex Action tool: runs an LLM-supplied SOQL query with a default row limit.
+ *
+ * Not bulk-mergeable: each input carries an independent, arbitrary query string,
+ * so there is no shared key to group on the way GetRecordDetails groups by object
+ * type. ApexAgentToolExecutor only ever invokes this action with a single input.
+ */
+public with sharing class QueryRecords {
 
     private static final Integer DEFAULT_LIMIT = 50;
 
@@ -6,31 +13,50 @@ public with sharing class QueryRecords implements ApexAgentTool {
     private static final Pattern SECURITY_ENFORCED_PATTERN =
         Pattern.compile('(?i)\\bWITH\\s+SECURITY_ENFORCED\\b');
 
-    public Object execute(Map<String, Object> input) {
-        ApexAgentToolInput.requireMap(input);
-        String soqlQuery = ApexAgentToolInput.requireString(input, 'soqlQuery');
+    public class Input {
+        @InvocableVariable(required=true label='SOQL Query' description='The SOQL query to execute. A default LIMIT of 50 is applied if none is specified.')
+        public String soqlQuery;
+    }
 
+    public class Output {
+        @InvocableVariable(label='Result' description='JSON object with the sanitized query, record count, and records (or a query exception message).')
+        public String resultJson;
+    }
+
+    @InvocableMethod(label='Query Records' description='Executes a SOQL query and returns matching records. Automatically caps results at 50 records (lower limits are respected, higher limits are reduced to 50). Aggregate queries are also supported\n\nCritical usage rules:\n- Always construct a valid SOQL query first based on the user\'s request, then pass it to this tool for execution.\n- If the object name is unfamiliar, use SearchObjects first to confirm it exists and get its exact API name.\n- Always use GetObjectDetails first (if not already called) to discover available fields on the object. Use GetFieldDetails if you need deeper field metadata before building your query. Never guess field names.\n\nWhen not to use:\n- You need fuzzy name search within one object → use SearchRecords.\n- You need a single record by ID → use GetRecordDetails.')
+    public static List<Output> run(List<Input> inputs) {
+        List<Output> results = new List<Output>();
+        for (Input inp : inputs) {
+            results.add(processOne(inp));
+        }
+        return results;
+    }
+
+    private static Output processOne(Input inp) {
+        String soqlQuery = ApexAgentToolInput.requireNotBlank(inp.soqlQuery, 'soqlQuery');
         String sanitized = sanitize(soqlQuery);
 
+        Output o = new Output();
         try {
             List<SObject> records = Database.query(sanitized, System.AccessLevel.USER_MODE);
-            return new Map<String, Object>{
+            o.resultJson = JSON.serialize(new Map<String, Object>{
                 'query'       => sanitized,
                 'recordCount' => records.size(),
                 'records'     => records
-            };
+            });
         } catch (QueryException e) {
-            return new Map<String, Object>{
+            o.resultJson = JSON.serialize(new Map<String, Object>{
                 'query'     => sanitized,
                 'exception' => e.getMessage()
-            };
+            });
         }
+        return o;
     }
 
     // ─── Query sanitization ──────────────────────────────────────────────────────
 
     @TestVisible
-    private String sanitize(String query) {
+    private static String sanitize(String query) {
         // 1. Trim
         query = query.trim();
 
@@ -56,7 +82,7 @@ public with sharing class QueryRecords implements ApexAgentTool {
      * whichever LIMIT appears first, which for a query with a subquery is the
      * subquery's, leaving the outer query unbounded.
      */
-    private String enforceLimit(String query) {
+    private static String enforceLimit(String query) {
         Integer searchFrom = query.lastIndexOf(')') + 1; // 0 when there's no subquery/tuple at all
         String outerRegion = query.substring(searchFrom);
 

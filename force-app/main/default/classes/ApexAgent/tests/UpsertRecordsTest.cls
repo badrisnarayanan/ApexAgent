@@ -3,128 +3,86 @@ private class UpsertRecordsTest {
 
     // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-    private static Map<String, Object> makeFieldEntry(String fieldApiName, Object value, String apexType) {
-        return new Map<String, Object>{
-            'fieldApiName' => fieldApiName,
-            'value'        => value,
-            'apexType'     => apexType
-        };
+    private static UpsertRecords.FieldEntry fieldEntry(String fieldApiName, String value, String apexType) {
+        UpsertRecords.FieldEntry fe = new UpsertRecords.FieldEntry();
+        fe.fieldApiName = fieldApiName;
+        fe.value = value;
+        fe.apexType = apexType;
+        return fe;
     }
 
-    private static Map<String, Object> makeRecord(List<Map<String, Object>> fields) {
-        return new Map<String, Object>{ 'fields' => fields };
+    private static UpsertRecords.RecordInput makeRecord(List<UpsertRecords.FieldEntry> fields) {
+        UpsertRecords.RecordInput ri = new UpsertRecords.RecordInput();
+        ri.fields = fields;
+        return ri;
     }
 
-    private static Map<String, Object> buildInput(
+    private static UpsertRecords.Input buildInput(
         String objectApiName,
         Boolean allOrNone,
         String externalIdFieldName,
-        List<Map<String, Object>> records
+        List<UpsertRecords.RecordInput> records
     ) {
-        Map<String, Object> input = new Map<String, Object>{
-            'objectApiName' => objectApiName,
-            'allOrNone'     => allOrNone,
-            'records'       => records
-        };
-        if (externalIdFieldName != null) {
-            input.put('externalIdFieldName', externalIdFieldName);
-        }
-        return input;
+        UpsertRecords.Input inp = new UpsertRecords.Input();
+        inp.objectApiName = objectApiName;
+        inp.allOrNone = allOrNone;
+        inp.externalIdFieldName = externalIdFieldName;
+        inp.records = records;
+        return inp;
+    }
+
+    private static Object run(UpsertRecords.Input inp) {
+        List<UpsertRecords.Output> out = UpsertRecords.run(new List<UpsertRecords.Input>{ inp });
+        return JSON.deserializeUntyped(out[0].resultJson);
     }
 
     // ─── Input validation ────────────────────────────────────────────────────────
 
     @IsTest
     static void testInputValidation() {
-        UpsertRecords tool = new UpsertRecords();
-
-        // null input
+        // missing/blank objectApiName
         try {
-            tool.execute(null);
-            Assert.fail('Expected exception for null input');
-        } catch (IllegalArgumentException e) {
-            Assert.isTrue(e.getMessage().contains('null'), 'Should mention null');
-        }
-
-        // missing objectApiName
-        try {
-            tool.execute(new Map<String, Object>{ 'allOrNone' => true, 'records' => new List<Object>() });
+            run(buildInput(null, true, null, new List<UpsertRecords.RecordInput>{
+                makeRecord(new List<UpsertRecords.FieldEntry>{ fieldEntry('Name', 'x', 'String') })
+            }));
             Assert.fail('Expected exception for missing objectApiName');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('objectApiName'), 'Should mention objectApiName');
         }
 
-        // blank objectApiName
-        try {
-            tool.execute(new Map<String, Object>{
-                'objectApiName' => '  ', 'allOrNone' => true, 'records' => new List<Object>()
-            });
-            Assert.fail('Expected exception for blank objectApiName');
-        } catch (IllegalArgumentException e) {
-            Assert.isTrue(e.getMessage().contains('blank'), 'Should mention blank');
-        }
-
         // missing allOrNone
         try {
-            tool.execute(new Map<String, Object>{
-                'objectApiName' => 'Account', 'records' => new List<Object>()
-            });
+            run(buildInput('Account', null, null, new List<UpsertRecords.RecordInput>{
+                makeRecord(new List<UpsertRecords.FieldEntry>{ fieldEntry('Name', 'x', 'String') })
+            }));
             Assert.fail('Expected exception for missing allOrNone');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('allOrNone'), 'Should mention allOrNone');
         }
 
-        // missing records
+        // missing/empty records
         try {
-            tool.execute(new Map<String, Object>{
-                'objectApiName' => 'Account', 'allOrNone' => true
-            });
+            run(buildInput('Account', true, null, null));
             Assert.fail('Expected exception for missing records');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('records'), 'Should mention records');
         }
-
-        // wrong type for allOrNone (string instead of boolean) — must be a friendly
-        // validation error, not a raw ClassCastException
         try {
-            tool.execute(new Map<String, Object>{
-                'objectApiName' => 'Account', 'allOrNone' => 'true', 'records' => new List<Object>{
-                    makeRecord(new List<Map<String, Object>>{ makeFieldEntry('Name', 'x', 'String') })
-                }
-            });
-            Assert.fail('Expected exception for non-boolean allOrNone');
-        } catch (IllegalArgumentException e) {
-            Assert.isTrue(e.getMessage().contains('allOrNone'), 'Should mention allOrNone');
-        }
-
-        // wrong type for records (a map instead of a list) — must be a friendly
-        // validation error, not a raw ClassCastException
-        try {
-            tool.execute(new Map<String, Object>{
-                'objectApiName' => 'Account', 'allOrNone' => true, 'records' => new Map<String, Object>()
-            });
-            Assert.fail('Expected exception for non-list records');
-        } catch (IllegalArgumentException e) {
-            Assert.isTrue(e.getMessage().contains('records'), 'Should mention records');
-        }
-
-        // empty records list
-        try {
-            tool.execute(buildInput('Account', true, null, new List<Map<String, Object>>()));
+            run(buildInput('Account', true, null, new List<UpsertRecords.RecordInput>()));
             Assert.fail('Expected exception for empty records');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('empty'), 'Should mention empty');
         }
 
         // records exceed 200
-        List<Map<String, Object>> bigList = new List<Map<String, Object>>();
+        List<UpsertRecords.RecordInput> bigList = new List<UpsertRecords.RecordInput>();
         for (Integer i = 0; i < 201; i++) {
-            bigList.add(makeRecord(new List<Map<String, Object>>{
-                makeFieldEntry('Name', 'Test', 'String')
+            bigList.add(makeRecord(new List<UpsertRecords.FieldEntry>{
+                fieldEntry('Name', 'Test', 'String')
             }));
         }
         try {
-            tool.execute(buildInput('Account', true, null, bigList));
+            run(buildInput('Account', true, null, bigList));
             Assert.fail('Expected exception for records > 200');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('200'), 'Should mention 200 limit');
@@ -132,9 +90,9 @@ private class UpsertRecordsTest {
 
         // unknown objectApiName
         try {
-            tool.execute(buildInput('NonExistentObject__xyz', true, null,
-                new List<Map<String, Object>>{ makeRecord(new List<Map<String, Object>>{
-                    makeFieldEntry('Name', 'x', 'String')
+            run(buildInput('NonExistentObject__xyz', true, null,
+                new List<UpsertRecords.RecordInput>{ makeRecord(new List<UpsertRecords.FieldEntry>{
+                    fieldEntry('Name', 'x', 'String')
                 }) }
             ));
             Assert.fail('Expected exception for unknown object');
@@ -142,20 +100,18 @@ private class UpsertRecordsTest {
             Assert.isTrue(e.getMessage().contains('NonExistentObject__xyz'), 'Should mention object name');
         }
 
-        // record with missing fields array
+        // record with missing/empty fields array
         try {
-            tool.execute(buildInput('Account', true, null,
-                new List<Map<String, Object>>{ new Map<String, Object>() }
+            run(buildInput('Account', true, null,
+                new List<UpsertRecords.RecordInput>{ makeRecord(null) }
             ));
             Assert.fail('Expected exception for missing fields');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('fields'), 'Should mention fields');
         }
-
-        // record with empty fields array
         try {
-            tool.execute(buildInput('Account', true, null,
-                new List<Map<String, Object>>{ makeRecord(new List<Map<String, Object>>()) }
+            run(buildInput('Account', true, null,
+                new List<UpsertRecords.RecordInput>{ makeRecord(new List<UpsertRecords.FieldEntry>()) }
             ));
             Assert.fail('Expected exception for empty fields');
         } catch (IllegalArgumentException e) {
@@ -164,9 +120,9 @@ private class UpsertRecordsTest {
 
         // missing fieldApiName
         try {
-            tool.execute(buildInput('Account', true, null,
-                new List<Map<String, Object>>{ makeRecord(new List<Map<String, Object>>{
-                    new Map<String, Object>{ 'value' => 'x', 'apexType' => 'String' }
+            run(buildInput('Account', true, null,
+                new List<UpsertRecords.RecordInput>{ makeRecord(new List<UpsertRecords.FieldEntry>{
+                    fieldEntry(null, 'x', 'String')
                 }) }
             ));
             Assert.fail('Expected exception for missing fieldApiName');
@@ -176,9 +132,9 @@ private class UpsertRecordsTest {
 
         // missing apexType
         try {
-            tool.execute(buildInput('Account', true, null,
-                new List<Map<String, Object>>{ makeRecord(new List<Map<String, Object>>{
-                    new Map<String, Object>{ 'fieldApiName' => 'Name', 'value' => 'x' }
+            run(buildInput('Account', true, null,
+                new List<UpsertRecords.RecordInput>{ makeRecord(new List<UpsertRecords.FieldEntry>{
+                    fieldEntry('Name', 'x', null)
                 }) }
             ));
             Assert.fail('Expected exception for missing apexType');
@@ -190,9 +146,9 @@ private class UpsertRecordsTest {
         Account acc = new Account(Name = 'ExtId Test');
         insert acc;
         try {
-            tool.execute(buildInput('Account', true, 'NonExistentField__xyz',
-                new List<Map<String, Object>>{ makeRecord(new List<Map<String, Object>>{
-                    makeFieldEntry('Name', 'Test', 'String')
+            run(buildInput('Account', true, 'NonExistentField__xyz',
+                new List<UpsertRecords.RecordInput>{ makeRecord(new List<UpsertRecords.FieldEntry>{
+                    fieldEntry('Name', 'Test', 'String')
                 }) }
             ));
             Assert.fail('Expected exception for non-existent external ID field');
@@ -205,9 +161,9 @@ private class UpsertRecordsTest {
 
         // invalid externalIdFieldName — non-external-ID standard field
         try {
-            tool.execute(buildInput('Account', true, 'Name',
-                new List<Map<String, Object>>{ makeRecord(new List<Map<String, Object>>{
-                    makeFieldEntry('Name', 'Test', 'String')
+            run(buildInput('Account', true, 'Name',
+                new List<UpsertRecords.RecordInput>{ makeRecord(new List<UpsertRecords.FieldEntry>{
+                    fieldEntry('Name', 'Test', 'String')
                 }) }
             ));
             Assert.fail('Expected exception for non-external-ID field');
@@ -220,98 +176,80 @@ private class UpsertRecordsTest {
     }
 
     // ─── convertValue — all types ────────────────────────────────────────────────
+    // @InvocableVariable does not support a generic Object type, so field values
+    // arrive as strings exclusively — every case here reflects that constraint.
 
     @IsTest
     static void testConvertValue() {
-        UpsertRecords tool = new UpsertRecords();
-
         // null value always returns null regardless of type
-        Assert.isNull(tool.convertValue(null, 'String',   'f', 0), 'null → null for String');
-        Assert.isNull(tool.convertValue(null, 'Boolean',  'f', 0), 'null → null for Boolean');
-        Assert.isNull(tool.convertValue(null, 'Integer',  'f', 0), 'null → null for Integer');
-        Assert.isNull(tool.convertValue(null, 'Date',     'f', 0), 'null → null for Date');
+        Assert.isNull(UpsertRecords.convertValue(null, 'String',  'f', 0), 'null → null for String');
+        Assert.isNull(UpsertRecords.convertValue(null, 'Boolean', 'f', 0), 'null → null for Boolean');
+        Assert.isNull(UpsertRecords.convertValue(null, 'Integer', 'f', 0), 'null → null for Integer');
+        Assert.isNull(UpsertRecords.convertValue(null, 'Date',    'f', 0), 'null → null for Date');
 
         // String
-        Assert.areEqual('hello', tool.convertValue('hello', 'String', 'f', 0));
-        Assert.areEqual('42',    tool.convertValue(42,      'String', 'f', 0));
+        Assert.areEqual('hello', UpsertRecords.convertValue('hello', 'String', 'f', 0));
 
         // ID — from string
         Account acc = new Account(Name = 'ID Test');
         insert acc;
-        String accIdStr = String.valueOf(acc.Id);
-        Object convertedId = tool.convertValue(accIdStr, 'ID', 'f', 0);
+        Object convertedId = UpsertRecords.convertValue(String.valueOf(acc.Id), 'ID', 'f', 0);
         Assert.areEqual(acc.Id, (Id) convertedId, 'ID from string should match');
-
-        // ID — invalid string throws
         try {
-            tool.convertValue('not-a-real-id', 'ID', 'f', 0);
+            UpsertRecords.convertValue('not-a-real-id', 'ID', 'f', 0);
             Assert.fail('Expected exception for invalid ID');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('not a valid Salesforce ID'), 'Should mention invalid ID');
         }
 
-        // Boolean — already boolean
-        Assert.areEqual(true,  tool.convertValue(true,    'Boolean', 'f', 0));
-        Assert.areEqual(false, tool.convertValue(false,   'Boolean', 'f', 0));
         // Boolean — from string
-        Assert.areEqual(true,  tool.convertValue('true',  'Boolean', 'f', 0));
-        Assert.areEqual(false, tool.convertValue('false', 'Boolean', 'f', 0));
-        // Boolean — invalid throws
+        Assert.areEqual(true,  UpsertRecords.convertValue('true',  'Boolean', 'f', 0));
+        Assert.areEqual(false, UpsertRecords.convertValue('false', 'Boolean', 'f', 0));
         try {
-            tool.convertValue('yes', 'Boolean', 'f', 0);
+            UpsertRecords.convertValue('yes', 'Boolean', 'f', 0);
             Assert.fail('Expected exception for invalid boolean string');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().containsIgnoreCase('boolean'), 'Should mention boolean');
         }
 
         // Integer
-        Assert.areEqual(5,   (Integer) tool.convertValue(5,       'Integer', 'f', 0));
-        Assert.areEqual(7,   (Integer) tool.convertValue(7.9,     'Integer', 'f', 0)); // truncates
-        Assert.areEqual(42,  (Integer) tool.convertValue('42',    'Integer', 'f', 0));
+        Assert.areEqual(42, (Integer) UpsertRecords.convertValue('42', 'Integer', 'f', 0));
         try {
-            tool.convertValue('abc', 'Integer', 'f', 0);
+            UpsertRecords.convertValue('abc', 'Integer', 'f', 0);
             Assert.fail('Expected exception for invalid integer');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().containsIgnoreCase('integer'), 'Should mention Integer');
         }
 
         // Decimal
-        Assert.areEqual(3.14, (Decimal) tool.convertValue(3.14,  'Decimal', 'f', 0));
-        Assert.areEqual(10,   (Decimal) tool.convertValue(10,    'Decimal', 'f', 0));
-        Assert.areEqual(1.5,  (Decimal) tool.convertValue('1.5', 'Decimal', 'f', 0));
+        Assert.areEqual(1.5, (Decimal) UpsertRecords.convertValue('1.5', 'Decimal', 'f', 0));
         try {
-            tool.convertValue('xyz', 'Decimal', 'f', 0);
+            UpsertRecords.convertValue('xyz', 'Decimal', 'f', 0);
             Assert.fail('Expected exception for invalid decimal');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().containsIgnoreCase('decimal'), 'Should mention Decimal');
         }
 
         // Long
-        Assert.areEqual(9999999999L, (Long) tool.convertValue(9999999999L,  'Long', 'f', 0));
-        Assert.areEqual(5L,          (Long) tool.convertValue(5,            'Long', 'f', 0));
-        Assert.areEqual(100L,        (Long) tool.convertValue('100',        'Long', 'f', 0));
+        Assert.areEqual(100L, (Long) UpsertRecords.convertValue('100', 'Long', 'f', 0));
         try {
-            tool.convertValue('nope', 'Long', 'f', 0);
+            UpsertRecords.convertValue('nope', 'Long', 'f', 0);
             Assert.fail('Expected exception for invalid long');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().containsIgnoreCase('long'), 'Should mention Long');
         }
 
         // Date — ISO YYYY-MM-DD
-        Date isoDate = (Date) tool.convertValue('2024-06-15', 'Date', 'f', 0);
+        Date isoDate = (Date) UpsertRecords.convertValue('2024-06-15', 'Date', 'f', 0);
         Assert.areEqual(Date.newInstance(2024, 6, 15), isoDate, 'ISO date should parse');
         // Date — MM/DD/YYYY
-        Date slashDate = (Date) tool.convertValue('06/15/2024', 'Date', 'f', 0);
+        Date slashDate = (Date) UpsertRecords.convertValue('06/15/2024', 'Date', 'f', 0);
         Assert.areEqual(Date.newInstance(2024, 6, 15), slashDate, 'MM/DD/YYYY should parse');
         // Date — DD-MM-YYYY
-        Date euDate = (Date) tool.convertValue('15-06-2024', 'Date', 'f', 0);
+        Date euDate = (Date) UpsertRecords.convertValue('15-06-2024', 'Date', 'f', 0);
         Assert.areEqual(Date.newInstance(2024, 6, 15), euDate, 'DD-MM-YYYY should parse');
-        // Date — already a Date instance
-        Date d = Date.newInstance(2024, 1, 1);
-        Assert.areEqual(d, (Date) tool.convertValue(d, 'Date', 'f', 0), 'Date instance passthrough');
-        // Date — invalid throws
         try {
-            tool.convertValue('not-a-date', 'Date', 'f', 0);
+            UpsertRecords.convertValue('not-a-date', 'Date', 'f', 0);
             Assert.fail('Expected exception for invalid date');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().containsIgnoreCase('date'), 'Should mention date');
@@ -319,14 +257,14 @@ private class UpsertRecordsTest {
 
         // Datetime — ISO 8601 with Z. Accessors must be the Gmt variants — the running
         // org's default time zone would otherwise shift hour/minute and mask a UTC bug.
-        Datetime dt = (Datetime) tool.convertValue('2024-06-15T13:30:45Z', 'DateTime', 'f', 0);
+        Datetime dt = (Datetime) UpsertRecords.convertValue('2024-06-15T13:30:45Z', 'DateTime', 'f', 0);
         Assert.areEqual(2024, dt.yearGmt(),   'Year should be 2024');
         Assert.areEqual(6,    dt.monthGmt(),  'Month should be 6');
         Assert.areEqual(15,   dt.dayGmt(),    'Day should be 15');
         Assert.areEqual(13,   dt.hourGmt(),   'Hour should be 13');
         Assert.areEqual(30,   dt.minuteGmt(), 'Minute should be 30');
         // Datetime — with milliseconds
-        Datetime dtMs = (Datetime) tool.convertValue('2024-06-15T13:30:45.000Z', 'DateTime', 'f', 0);
+        Datetime dtMs = (Datetime) UpsertRecords.convertValue('2024-06-15T13:30:45.000Z', 'DateTime', 'f', 0);
         Assert.areEqual(2024, dtMs.yearGmt(), 'Year should be 2024 (with ms)');
 
         // Datetime — explicit positive UTC offset (+05:30) must shift to the correct
@@ -335,44 +273,42 @@ private class UpsertRecordsTest {
         // (hour/minute/second) always return GMT components, so this is unambiguous
         // regardless of the running org's default time zone — 13:30:45+05:30 is
         // 08:00:45 UTC.
-        Datetime dtPosOffset = (Datetime) tool.convertValue('2024-06-15T13:30:45+05:30', 'DateTime', 'f', 0);
+        Datetime dtPosOffset = (Datetime) UpsertRecords.convertValue('2024-06-15T13:30:45+05:30', 'DateTime', 'f', 0);
         Assert.areEqual(8,  dtPosOffset.hourGmt(),   '+05:30 offset should shift to 08:00:45 UTC (hour)');
         Assert.areEqual(0,  dtPosOffset.minuteGmt(), '+05:30 offset should shift to 08:00:45 UTC (minute)');
         Assert.areEqual(45, dtPosOffset.secondGmt(), '+05:30 offset should shift to 08:00:45 UTC (second)');
 
         // Datetime — explicit negative UTC offset (-05:00): 13:30:45-05:00 is 18:30:45 UTC.
-        Datetime dtNegOffset = (Datetime) tool.convertValue('2024-06-15T13:30:45-05:00', 'DateTime', 'f', 0);
+        Datetime dtNegOffset = (Datetime) UpsertRecords.convertValue('2024-06-15T13:30:45-05:00', 'DateTime', 'f', 0);
         Assert.areEqual(18, dtNegOffset.hourGmt(),   '-05:00 offset should shift to 18:30:45 UTC (hour)');
         Assert.areEqual(30, dtNegOffset.minuteGmt(), '-05:00 offset should shift to 18:30:45 UTC (minute)');
 
         // Datetime — negative offset with fractional seconds present before the offset marker
-        Datetime dtNegOffsetMs = (Datetime) tool.convertValue('2024-06-15T13:30:45.500-05:00', 'DateTime', 'f', 0);
+        Datetime dtNegOffsetMs = (Datetime) UpsertRecords.convertValue('2024-06-15T13:30:45.500-05:00', 'DateTime', 'f', 0);
         Assert.areEqual(18, dtNegOffsetMs.hourGmt(), '-05:00 offset with fractional seconds should still shift correctly');
 
         // Datetime — Z always maps to a fixed UTC instant regardless of offset math
-        Datetime dtZ = (Datetime) tool.convertValue('2024-06-15T13:30:45Z', 'DateTime', 'f', 0);
+        Datetime dtZ = (Datetime) UpsertRecords.convertValue('2024-06-15T13:30:45Z', 'DateTime', 'f', 0);
         Assert.areEqual(13, dtZ.hourGmt(), 'Z should map directly to 13:30:45 UTC');
 
-        // Datetime — invalid throws
         try {
-            tool.convertValue('not-a-datetime', 'DateTime', 'f', 0);
+            UpsertRecords.convertValue('not-a-datetime', 'DateTime', 'f', 0);
             Assert.fail('Expected exception for invalid datetime');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().containsIgnoreCase('datetime'), 'Should mention Datetime');
         }
 
         // Time — HH:mm:ss
-        Time t = (Time) tool.convertValue('13:30:45', 'Time', 'f', 0);
+        Time t = (Time) UpsertRecords.convertValue('13:30:45', 'Time', 'f', 0);
         Assert.areEqual(Time.newInstance(13, 30, 45, 0), t, 'Time should parse HH:mm:ss');
         // Time — with trailing Z and milliseconds
-        Time tZ = (Time) tool.convertValue('09:05:00.000Z', 'Time', 'f', 0);
+        Time tZ = (Time) UpsertRecords.convertValue('09:05:00.000Z', 'Time', 'f', 0);
         Assert.areEqual(Time.newInstance(9, 5, 0, 0), tZ, 'Time should strip Z and ms');
         // Time — HH:mm (no seconds)
-        Time tShort = (Time) tool.convertValue('08:00', 'Time', 'f', 0);
+        Time tShort = (Time) UpsertRecords.convertValue('08:00', 'Time', 'f', 0);
         Assert.areEqual(Time.newInstance(8, 0, 0, 0), tShort, 'Time should handle HH:mm');
-        // Time — invalid throws
         try {
-            tool.convertValue('not-a-time', 'Time', 'f', 0);
+            UpsertRecords.convertValue('not-a-time', 'Time', 'f', 0);
             Assert.fail('Expected exception for invalid time');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().containsIgnoreCase('time'), 'Should mention Time');
@@ -380,7 +316,7 @@ private class UpsertRecordsTest {
 
         // Unsupported type throws
         try {
-            tool.convertValue('x', 'Blob', 'f', 0);
+            UpsertRecords.convertValue('x', 'Blob', 'f', 0);
             Assert.fail('Expected exception for unsupported type');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('Blob'), 'Should mention the unsupported type');
@@ -391,21 +327,17 @@ private class UpsertRecordsTest {
 
     @IsTest
     static void testInsertAndUpdate() {
-        UpsertRecords tool = new UpsertRecords();
-
         // ── Insert: two new Account records (no Id → creates) ──────────────────
-        List<Map<String, Object>> insertRecords = new List<Map<String, Object>>{
-            makeRecord(new List<Map<String, Object>>{
-                makeFieldEntry('Name', 'UpsertTest Alpha', 'String')
+        List<UpsertRecords.RecordInput> insertRecords = new List<UpsertRecords.RecordInput>{
+            makeRecord(new List<UpsertRecords.FieldEntry>{
+                fieldEntry('Name', 'UpsertTest Alpha', 'String')
             }),
-            makeRecord(new List<Map<String, Object>>{
-                makeFieldEntry('Name', 'UpsertTest Beta',  'String')
+            makeRecord(new List<UpsertRecords.FieldEntry>{
+                fieldEntry('Name', 'UpsertTest Beta',  'String')
             })
         };
 
-        List<Object> insertResult = (List<Object>) tool.execute(
-            buildInput('Account', true, null, insertRecords)
-        );
+        List<Object> insertResult = (List<Object>) run(buildInput('Account', true, null, insertRecords));
 
         Assert.areEqual(2, insertResult.size(), 'Result should have 2 entries');
 
@@ -421,20 +353,18 @@ private class UpsertRecordsTest {
         Assert.isNotNull(id1, 'Second result should have an id');
 
         // ── Update: re-upsert the same records by Id ───────────────────────────
-        List<Map<String, Object>> updateRecords = new List<Map<String, Object>>{
-            makeRecord(new List<Map<String, Object>>{
-                makeFieldEntry('Id',   id0,                    'ID'),
-                makeFieldEntry('Name', 'UpsertTest Alpha v2',  'String')
+        List<UpsertRecords.RecordInput> updateRecords = new List<UpsertRecords.RecordInput>{
+            makeRecord(new List<UpsertRecords.FieldEntry>{
+                fieldEntry('Id',   id0,                    'ID'),
+                fieldEntry('Name', 'UpsertTest Alpha v2',  'String')
             }),
-            makeRecord(new List<Map<String, Object>>{
-                makeFieldEntry('Id',   id1,                    'ID'),
-                makeFieldEntry('Name', 'UpsertTest Beta v2',   'String')
+            makeRecord(new List<UpsertRecords.FieldEntry>{
+                fieldEntry('Id',   id1,                    'ID'),
+                fieldEntry('Name', 'UpsertTest Beta v2',   'String')
             })
         };
 
-        List<Object> updateResult = (List<Object>) tool.execute(
-            buildInput('Account', true, null, updateRecords)
-        );
+        List<Object> updateResult = (List<Object>) run(buildInput('Account', true, null, updateRecords));
 
         Assert.areEqual(false, ((Map<String, Object>) updateResult[0]).get('created'),
             'Record 0 should be updated, not created');
@@ -449,26 +379,22 @@ private class UpsertRecordsTest {
         Assert.areEqual('UpsertTest Beta v2',  accounts[1].Name, 'Name should be updated for Beta');
     }
 
-    // ─── DML error handling and parameter definition ──────────────────────────────
+    // ─── DML error handling ────────────────────────────────────────────────────────
 
     @IsTest
-    static void testDmlErrorAndParamDefinition() {
-        UpsertRecords tool = new UpsertRecords();
-
-        // ── allOrNone=false: one valid record + one record setting a required
-        //    field to blank — partial success should be returned ────────────────
-        List<Map<String, Object>> partialRecords = new List<Map<String, Object>>{
-            makeRecord(new List<Map<String, Object>>{
-                makeFieldEntry('Name', 'UpsertTest Partial OK', 'String')
+    static void testDmlError() {
+        // allOrNone=false: one valid record + one record clearing a required
+        // field (omitted value → null) — partial success should be returned.
+        List<UpsertRecords.RecordInput> partialRecords = new List<UpsertRecords.RecordInput>{
+            makeRecord(new List<UpsertRecords.FieldEntry>{
+                fieldEntry('Name', 'UpsertTest Partial OK', 'String')
             }),
-            makeRecord(new List<Map<String, Object>>{
-                makeFieldEntry('Name', null, 'String') // Account.Name is required — will fail
+            makeRecord(new List<UpsertRecords.FieldEntry>{
+                fieldEntry('Name', null, 'String') // Account.Name is required — will fail
             })
         };
 
-        List<Object> partialResult = (List<Object>) tool.execute(
-            buildInput('Account', false, null, partialRecords)
-        );
+        List<Object> partialResult = (List<Object>) run(buildInput('Account', false, null, partialRecords));
 
         Assert.areEqual(2, partialResult.size(), 'Should have 2 result entries');
 
@@ -492,35 +418,40 @@ private class UpsertRecordsTest {
         Assert.isTrue(successCt >= 1, 'At least one record should succeed');
         Assert.isTrue(failCount  >= 1, 'At least one record should fail');
         Assert.isTrue(foundErrors,     'At least one result entry should have errors');
+    }
 
-        // ── UpsertRecordsRecordsParam definition shape ────────────────────────
-        UpsertRecordsRecordsParam paramDef = new UpsertRecordsRecordsParam();
-        Map<String, Object> def = paramDef.getDefinition();
+    // ─── End-to-end via the real Invocable.Action dispatch path ──────────────────
 
-        Assert.areEqual('array', def.get('type'), 'Top-level type should be array');
-        Assert.isNotNull(def.get('items'), 'Should have items');
+    @IsTest
+    static void testHappyPathViaInvocableAction() {
+        // Invocable.Action.setInvocations() cannot coerce a raw List<Object>/Map literal
+        // into a nested Apex-defined wrapper type (List<UpsertRecords.RecordInput> whose
+        // own "fields" is itself List<FieldEntry>) — the same platform limitation
+        // ApexAgentToolExecutor.buildTypedList() works around for real tool calls. The
+        // invocation map must carry genuinely-typed objects for such parameters, not maps.
+        List<UpsertRecords.RecordInput> records = new List<UpsertRecords.RecordInput>{
+            makeRecord(new List<UpsertRecords.FieldEntry>{
+                fieldEntry('Name', 'UpsertTest Invocable', 'String')
+            })
+        };
 
-        Map<String, Object> items = (Map<String, Object>) def.get('items');
-        Assert.areEqual('object', items.get('type'), 'Item type should be object');
-        Assert.areEqual(false,    items.get('additionalProperties'), 'additionalProperties should be false');
+        Invocable.Action action = Invocable.Action.createCustomAction('apex', 'UpsertRecords');
+        action.setInvocations(new List<Map<String, Object>>{
+            new Map<String, Object>{
+                'objectApiName' => 'Account',
+                'allOrNone'     => true,
+                'records'       => records
+            }
+        });
 
-        Map<String, Object> itemProps = (Map<String, Object>) items.get('properties');
-        Assert.isTrue(itemProps.containsKey('fields'), 'items.properties should have fields');
+        Test.startTest();
+        List<Invocable.Action.Result> results = action.invoke();
+        Test.stopTest();
 
-        Map<String, Object> fieldsDef = (Map<String, Object>) itemProps.get('fields');
-        Assert.areEqual('array', fieldsDef.get('type'), 'fields should be array');
-
-        Map<String, Object> fieldItemDef = (Map<String, Object>) fieldsDef.get('items');
-        Assert.areEqual('object', fieldItemDef.get('type'), 'field item type should be object');
-        Assert.areEqual(false,    fieldItemDef.get('additionalProperties'), 'field item additionalProperties should be false');
-
-        Map<String, Object> fieldItemProps = (Map<String, Object>) fieldItemDef.get('properties');
-        Assert.isTrue(fieldItemProps.containsKey('fieldApiName'), 'Should have fieldApiName');
-        Assert.isTrue(fieldItemProps.containsKey('value'),        'Should have value');
-        Assert.isTrue(fieldItemProps.containsKey('apexType'),     'Should have apexType');
-
-        Map<String, Object> apexTypeDef = (Map<String, Object>) fieldItemProps.get('apexType');
-        List<Object> enumVals = (List<Object>) apexTypeDef.get('enum');
-        Assert.isTrue(enumVals.size() == 9, 'apexType enum should have 9 values');
+        Assert.isTrue(results[0].isSuccess(), 'Action invocation should succeed');
+        Map<String, Object> outputs = results[0].getOutputParameters();
+        List<Object> parsed = (List<Object>) JSON.deserializeUntyped((String) outputs.get('resultJson'));
+        Assert.areEqual(1, parsed.size(), 'Should have one result entry');
+        Assert.areEqual(true, ((Map<String, Object>) parsed[0]).get('success'), 'Record should succeed');
     }
 }

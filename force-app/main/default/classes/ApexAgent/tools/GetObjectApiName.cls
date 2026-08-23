@@ -1,20 +1,29 @@
-public with sharing class GetObjectApiName implements ApexAgentTool {
+/**
+ * Apex Action tool: resolves the Salesforce object API name for a record Id.
+ */
+public with sharing class GetObjectApiName {
 
-    public Object execute(Map<String, Object> input) {
-        if (input == null) {
-            throw new IllegalArgumentException('Input map must not be null');
-        }
-        if (!input.containsKey('recordId')) {
-            throw new IllegalArgumentException('Missing required input parameter: recordId');
-        }
-        if (input.get('recordId') == null) {
-            throw new IllegalArgumentException('Input parameter recordId must not be null');
-        }
-        if (String.isBlank(String.valueOf(input.get('recordId')))) {
-            throw new IllegalArgumentException('Input parameter recordId must not be blank');
-        }
+    public class Input {
+        @InvocableVariable(required=true label='Record Id' description='The Salesforce record Id to determine the object type for.')
+        public String recordId;
+    }
 
-        String recordIdStr = String.valueOf(input.get('recordId')).trim();
+    public class Output {
+        @InvocableVariable(label='Result' description='JSON object with the resolved objectApiName.')
+        public String resultJson;
+    }
+
+    @InvocableMethod(label='Get Object API Name' description='Resolves the object API name from a Salesforce record ID. Use this when you have a record ID but don\'t know which object it belongs to.\n\nWhen to use:\n\nYou have an unknown record ID and need to determine its object type.\nA user pastes an ID without context and you need to route to the right tool.\n\nWhen not to use:\n\nYou already know the object → skip this.')
+    public static List<Output> run(List<Input> inputs) {
+        List<Output> results = new List<Output>();
+        for (Input inp : inputs) {
+            results.add(processOne(inp));
+        }
+        return results;
+    }
+
+    private static Output processOne(Input inp) {
+        String recordIdStr = ApexAgentToolInput.requireNotBlank(inp.recordId, 'recordId');
         Id recordId;
         try {
             recordId = Id.valueOf(recordIdStr);
@@ -22,8 +31,10 @@ public with sharing class GetObjectApiName implements ApexAgentTool {
             throw new IllegalArgumentException('recordId is not a valid Salesforce ID: ' + recordIdStr);
         }
 
-        return new Map<String, Object>{
+        Output o = new Output();
+        o.resultJson = JSON.serialize(new Map<String, Object>{
             'objectApiName' => ApexAgentUtils.getObjectApiNameFromId(recordId)
-        };
+        });
+        return o;
     }
 }

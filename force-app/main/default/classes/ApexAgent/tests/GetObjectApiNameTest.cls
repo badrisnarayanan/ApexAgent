@@ -5,59 +5,35 @@ private class GetObjectApiNameTest {
 
     @IsTest
     static void testInputValidation() {
-        GetObjectApiName tool = new GetObjectApiName();
-
         try {
-            tool.execute(null);
-            Assert.fail('Expected exception for null input');
-        } catch (IllegalArgumentException e) {
-            Assert.isTrue(e.getMessage().contains('null'), 'Message should mention null');
-        }
-
-        try {
-            tool.execute(new Map<String, Object>());
-            Assert.fail('Expected exception for missing recordId');
-        } catch (IllegalArgumentException e) {
-            Assert.isTrue(e.getMessage().contains('recordId'), 'Message should mention recordId');
-        }
-
-        try {
-            tool.execute(new Map<String, Object>{ 'recordId' => null });
-            Assert.fail('Expected exception for null recordId');
-        } catch (IllegalArgumentException e) {
-            Assert.isTrue(e.getMessage().contains('null'), 'Message should mention null');
-        }
-
-        try {
-            tool.execute(new Map<String, Object>{ 'recordId' => '   ' });
+            GetObjectApiName.run(new List<GetObjectApiName.Input>{ buildInput(null) });
             Assert.fail('Expected exception for blank recordId');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('blank'), 'Message should mention blank');
         }
 
         try {
-            tool.execute(new Map<String, Object>{ 'recordId' => 'not-a-valid-id' });
+            GetObjectApiName.run(new List<GetObjectApiName.Input>{ buildInput('   ') });
+            Assert.fail('Expected exception for blank recordId');
+        } catch (IllegalArgumentException e) {
+            Assert.isTrue(e.getMessage().contains('blank'), 'Message should mention blank');
+        }
+
+        try {
+            GetObjectApiName.run(new List<GetObjectApiName.Input>{ buildInput('not-a-valid-id') });
             Assert.fail('Expected exception for invalid ID');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('not a valid Salesforce ID'), 'Message should mention invalid ID');
         }
     }
 
-    // ─── Happy path ──────────────────────────────────────────────────────────────
+    // ─── Happy path — direct static call ─────────────────────────────────────────
 
     @IsTest
-    static void testHappyPath() {
+    static void testHappyPathDirectCall() {
         Account acc = new Account(Name = 'Test GetObjectApiName');
         insert acc;
 
-        GetObjectApiName tool   = new GetObjectApiName();
-        Map<String, Object> res = (Map<String, Object>) tool.execute(
-            new Map<String, Object>{ 'recordId' => String.valueOf(acc.Id) }
-        );
-
-        Assert.areEqual('Account', res.get('objectApiName'), 'objectApiName should be Account');
-
-        // Custom object ID
         ApexAgent_LLM__c llm = new ApexAgent_LLM__c(
             Name                = 'Test LLM',
             Model_API_Name__c   = 'test-model',
@@ -66,10 +42,48 @@ private class GetObjectApiNameTest {
         );
         insert llm;
 
-        res = (Map<String, Object>) tool.execute(
-            new Map<String, Object>{ 'recordId' => String.valueOf(llm.Id) }
+        List<GetObjectApiName.Output> accResults = GetObjectApiName.run(
+            new List<GetObjectApiName.Input>{ buildInput(String.valueOf(acc.Id)) }
+        );
+        List<GetObjectApiName.Output> llmResults = GetObjectApiName.run(
+            new List<GetObjectApiName.Input>{ buildInput(String.valueOf(llm.Id)) }
         );
 
-        Assert.areEqual('ApexAgent_LLM__c', res.get('objectApiName'), 'objectApiName should be ApexAgent_LLM__c');
+        Assert.areEqual('Account', resultMap(accResults[0]).get('objectApiName'), 'objectApiName should be Account');
+        Assert.areEqual('ApexAgent_LLM__c', resultMap(llmResults[0]).get('objectApiName'), 'objectApiName should be ApexAgent_LLM__c');
+    }
+
+    // ─── Happy path — through the real Invocable.Action dispatch path ────────────
+
+    @IsTest
+    static void testHappyPathViaInvocableAction() {
+        Account acc = new Account(Name = 'Test GetObjectApiName Invocable');
+        insert acc;
+
+        Invocable.Action action = Invocable.Action.createCustomAction('apex', 'GetObjectApiName');
+        action.setInvocations(new List<Map<String, Object>>{
+            new Map<String, Object>{ 'recordId' => String.valueOf(acc.Id) }
+        });
+
+        Test.startTest();
+        List<Invocable.Action.Result> results = action.invoke();
+        Test.stopTest();
+
+        Assert.isTrue(results[0].isSuccess(), 'Action invocation should succeed');
+        Map<String, Object> outputs = results[0].getOutputParameters();
+        Map<String, Object> res = (Map<String, Object>) JSON.deserializeUntyped((String) outputs.get('resultJson'));
+        Assert.areEqual('Account', res.get('objectApiName'), 'objectApiName should be Account');
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+    private static GetObjectApiName.Input buildInput(String recordId) {
+        GetObjectApiName.Input inp = new GetObjectApiName.Input();
+        inp.recordId = recordId;
+        return inp;
+    }
+
+    private static Map<String, Object> resultMap(GetObjectApiName.Output output) {
+        return (Map<String, Object>) JSON.deserializeUntyped(output.resultJson);
     }
 }

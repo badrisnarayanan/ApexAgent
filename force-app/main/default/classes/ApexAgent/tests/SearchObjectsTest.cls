@@ -5,35 +5,15 @@ private class SearchObjectsTest {
 
     @IsTest
     static void testInvalidInput() {
-        SearchObjects tool = new SearchObjects();
-
-        // null input
         try {
-            tool.execute(null);
-            Assert.fail('Expected exception for null input');
-        } catch (IllegalArgumentException e) {
-            Assert.isTrue(e.getMessage().contains('searchTerm'), 'Message should mention searchTerm');
-        }
-
-        // missing searchTerm key
-        try {
-            tool.execute(new Map<String, Object>{ 'foo' => 'bar' });
-            Assert.fail('Expected exception for missing searchTerm key');
-        } catch (IllegalArgumentException e) {
-            Assert.isTrue(e.getMessage().contains('searchTerm'), 'Message should mention searchTerm');
-        }
-
-        // null searchTerm value
-        try {
-            tool.execute(new Map<String, Object>{ 'searchTerm' => null });
+            search(null);
             Assert.fail('Expected exception for null searchTerm');
         } catch (IllegalArgumentException e) {
-            Assert.isTrue(e.getMessage().toLowerCase().contains('null'), 'Message should mention null');
+            Assert.isTrue(e.getMessage().toLowerCase().contains('blank'), 'Message should mention blank');
         }
 
-        // blank searchTerm
         try {
-            tool.execute(new Map<String, Object>{ 'searchTerm' => '   ' });
+            search('   ');
             Assert.fail('Expected exception for blank searchTerm');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().toLowerCase().contains('blank'), 'Message should mention blank');
@@ -44,27 +24,20 @@ private class SearchObjectsTest {
 
     @IsTest
     static void testResultStructureAndOrdering() {
-        SearchObjects tool = new SearchObjects();
-        List<Map<String, Object>> results = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'account' }
-        );
+        List<Object> results = search('account');
 
         Assert.isNotNull(results, 'Results should not be null');
         Assert.isTrue(results.size() > 0, 'Should return at least one result for "account"');
         Assert.isTrue(results.size() <= 10, 'Should return at most 10 results');
 
-        // Every result must have required keys
-        for (Map<String, Object> r : results) {
+        Double prevScore = 9999999;
+        for (Object raw : results) {
+            Map<String, Object> r = (Map<String, Object>) raw;
             Assert.isTrue(r.containsKey('QualifiedApiName'), 'Each result must have QualifiedApiName');
             Assert.isTrue(r.containsKey('Label'), 'Each result must have Label');
             Assert.isTrue(r.containsKey('score'), 'Each result must have score');
-            Assert.isTrue((Double) r.get('score') > 0, 'Score must be positive');
-        }
-
-        // Results must be in descending score order
-        Double prevScore = 9999999;
-        for (Map<String, Object> r : results) {
             Double score = (Double) r.get('score');
+            Assert.isTrue(score > 0, 'Score must be positive');
             Assert.isTrue(score <= prevScore, 'Results must be in descending score order');
             prevScore = score;
         }
@@ -74,61 +47,39 @@ private class SearchObjectsTest {
 
     @IsTest
     static void testKnownTerms() {
-        SearchObjects tool = new SearchObjects();
-
-        // "case" — exact match expected
-        List<Map<String, Object>> caseResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'case' }
-        );
+        List<Object> caseResults = search('case');
         Assert.isTrue(caseResults.size() > 0, '"case" should return results');
-        String topCase = (String) caseResults[0].get('QualifiedApiName');
-        Assert.areEqual('Case', topCase, '"case" top result should be Case');
+        Assert.areEqual('Case', qualifiedApiName(caseResults[0]), '"case" top result should be Case');
 
-        // "account" — exact match expected
-        List<Map<String, Object>> accResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'account' }
-        );
+        List<Object> accResults = search('account');
         Assert.isTrue(accResults.size() > 0, '"account" should return results');
-        String topAcc = (String) accResults[0].get('QualifiedApiName');
-        Assert.isTrue(topAcc.toLowerCase().contains('account'), '"account" top result should contain account');
+        Assert.isTrue(qualifiedApiName(accResults[0]).toLowerCase().contains('account'), '"account" top result should contain account');
 
-        // "contact" — exact match expected
-        List<Map<String, Object>> contactResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'contact' }
-        );
+        List<Object> contactResults = search('contact');
         Assert.isTrue(contactResults.size() > 0, '"contact" should return results');
-        String topContact = (String) contactResults[0].get('QualifiedApiName');
-        Assert.isTrue(topContact.toLowerCase().contains('contact'), '"contact" top result should contain contact');
+        Assert.isTrue(qualifiedApiName(contactResults[0]).toLowerCase().contains('contact'), '"contact" top result should contain contact');
     }
 
     // ─── Abbreviation expansion ──────────────────────────────────────────────────
 
     @IsTest
     static void testAbbreviations() {
-        SearchObjects tool = new SearchObjects();
-
-        // "acc" → should score Account highly
-        List<Map<String, Object>> accResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'acc' }
-        );
+        List<Object> accResults = search('acc');
         Assert.isTrue(accResults.size() > 0, '"acc" should return results');
         Boolean foundAccount = false;
-        for (Map<String, Object> r : accResults) {
-            if (String.valueOf(r.get('QualifiedApiName')).equalsIgnoreCase('Account')) {
+        for (Object r : accResults) {
+            if (qualifiedApiName(r).equalsIgnoreCase('Account')) {
                 foundAccount = true;
                 break;
             }
         }
         Assert.isTrue(foundAccount, '"acc" should include Account in results');
 
-        // "wo" → should score WorkOrder highly
-        List<Map<String, Object>> woResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'wo' }
-        );
+        List<Object> woResults = search('wo');
         Assert.isTrue(woResults.size() > 0, '"wo" should return results');
         Boolean foundWorkOrder = false;
-        for (Map<String, Object> r : woResults) {
-            if (String.valueOf(r.get('QualifiedApiName')).equalsIgnoreCase('WorkOrder')) {
+        for (Object r : woResults) {
+            if (qualifiedApiName(r).equalsIgnoreCase('WorkOrder')) {
                 foundWorkOrder = true;
                 break;
             }
@@ -140,25 +91,30 @@ private class SearchObjectsTest {
 
     @IsTest
     static void testMultiWordAndCamelCase() {
-        SearchObjects tool = new SearchObjects();
-
-        // "work order" (space-separated)
-        List<Map<String, Object>> woResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'work order' }
-        );
+        List<Object> woResults = search('work order');
         Assert.isTrue(woResults.size() > 0, '"work order" should return results');
-        String topWo = (String) woResults[0].get('QualifiedApiName');
-        Assert.isTrue(topWo.toLowerCase().contains('workorder') || topWo.toLowerCase().contains('work'),
+        String topWo = qualifiedApiName(woResults[0]).toLowerCase();
+        Assert.isTrue(topWo.contains('workorder') || topWo.contains('work'),
             '"work order" top result should relate to WorkOrder');
 
-        // "WorkOrder" (camelCase)
-        List<Map<String, Object>> ccResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'WorkOrder' }
-        );
+        List<Object> ccResults = search('WorkOrder');
         Assert.isTrue(ccResults.size() > 0, '"WorkOrder" should return results');
         Assert.isTrue(
-            String.valueOf(ccResults[0].get('QualifiedApiName')).equalsIgnoreCase('WorkOrder'),
+            qualifiedApiName(ccResults[0]).equalsIgnoreCase('WorkOrder'),
             '"WorkOrder" camelCase top result should be WorkOrder'
         );
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+    private static List<Object> search(String searchTerm) {
+        SearchObjects.Input inp = new SearchObjects.Input();
+        inp.searchTerm = searchTerm;
+        List<SearchObjects.Output> results = SearchObjects.run(new List<SearchObjects.Input>{ inp });
+        return (List<Object>) JSON.deserializeUntyped(results[0].resultJson);
+    }
+
+    private static String qualifiedApiName(Object rawResult) {
+        return (String) ((Map<String, Object>) rawResult).get('QualifiedApiName');
     }
 }

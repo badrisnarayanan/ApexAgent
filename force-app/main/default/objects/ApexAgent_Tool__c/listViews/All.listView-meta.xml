@@ -2,9 +2,7 @@
 <ListView xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>All</fullName>
     <columns>NAME</columns>
-    <columns>Tool_API_Name__c</columns>
-    <columns>Execution_Type__c</columns>
-    <columns>Execution_Name__c</columns>
+    <columns>Apex_Class_Name__c</columns>
     <columns>Modifies_Salesforce_Data__c</columns>
     <columns>CREATED_DATE</columns>
     <columns>LAST_UPDATE</columns>

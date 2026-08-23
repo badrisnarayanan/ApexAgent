@@ -9,7 +9,6 @@ private class ApexAgentDmlBridgeResourceTest {
     @IsTest
     static void testExecuteSuccessWritesRawJsonBody() {
         Map<String, Object> requestBody = new Map<String, Object>{
-            'executionType' => 'Apex',
             'executionName' => 'GetObjectApiName',
             'inputs' => new Map<String, Object>{ 'recordId' => UserInfo.getUserId() }
         };
@@ -31,7 +30,6 @@ private class ApexAgentDmlBridgeResourceTest {
     @IsTest
     static void testExecuteErrorWritesStatus500AndErrorBody() {
         Map<String, Object> requestBody = new Map<String, Object>{
-            'executionType' => 'Apex',
             'executionName' => 'DoesNotExistTool',
             'inputs' => new Map<String, Object>()
         };
