@@ -1,20 +1,45 @@
+/**
+ * Apex Action tool: describes one or more fields on an SObject.
+ */
 @SuppressWarnings('PMD.EagerlyLoadedDescribeSObjectResult')
-public with sharing class GetFieldDetails implements ApexAgentTool {
+public with sharing class GetFieldDetails {
 
-    public Object execute(Map<String, Object> input) {
-        validateInput(input);
+    public class Input {
+        @InvocableVariable(required=true label='Object API Name' description='API name of the object the fields belong to (e.g. "Account").')
+        public String objectApiName;
 
-        String objectApiName = String.valueOf(input.get('objectApiName')).trim();
-        List<String> fieldNames = parseFieldList(input.get('fieldApiNameList'));
+        @InvocableVariable(required=true label='Field API Name List' description='List of field API names to retrieve details for (e.g. ["Name", "OwnerId"]).')
+        public List<String> fieldApiNameList;
+    }
+
+    public class Output {
+        @InvocableVariable(label='Result' description='JSON object with per-field details (type, required-ness, picklist values, etc.).')
+        public String resultJson;
+    }
+
+    @InvocableMethod(label='Get Field Details' description='Returns detailed metadata for specific fields on an object: data type, SOAP type, required flag, access levels (createable, updateable, filterable), picklist values, lookup targets, length/precision, and behavioral flags.\n\nWhen to use:\n\nYou need deep metadata on specific fields after discovering their API names.\nYou wanna know about about field types, picklist options, validation requirements, or lookup relationships, access levels\nYou are building a query or automation and need to verify field constraints.\n\nCritical usage rules:\n\nAlways call GetObjectDetails first to discover exact field API names. Do not guess or invent field names.\nIf you don\'t know the object API name, use SearchObjects first to find it.')
+    public static List<Output> run(List<Input> inputs) {
+        List<Output> results = new List<Output>();
+        for (Input inp : inputs) {
+            results.add(processOne(inp));
+        }
+        return results;
+    }
+
+    private static Output processOne(Input inp) {
+        String objectApiName = ApexAgentToolInput.requireNotBlank(inp.objectApiName, 'objectApiName');
+        List<String> fieldNames = validateFieldList(inp.fieldApiNameList);
 
         Schema.DescribeSObjectResult describe = ApexAgentUtils.getDescribe(objectApiName);
 
+        Output o = new Output();
         if (!describe.isAccessible()) {
-            return new Map<String, Object>{
+            o.resultJson = JSON.serialize(new Map<String, Object>{
                 'objectApiName' => describe.getName(),
                 'isAccessible'  => false,
                 'message'       => 'Object is not accessible by the running user'
-            };
+            });
+            return o;
         }
 
         Map<String, Schema.SObjectField> fieldMap = describe.fields.getMap();
@@ -24,65 +49,30 @@ public with sharing class GetFieldDetails implements ApexAgentTool {
             fieldDetails.add(buildFieldDetail(fieldMap, fieldName.trim()));
         }
 
-        return new Map<String, Object>{
+        o.resultJson = JSON.serialize(new Map<String, Object>{
             'objectApiName' => describe.getName(),
             'fields'        => fieldDetails
-        };
+        });
+        return o;
     }
 
     // ─── Input validation ────────────────────────────────────────────────────────
 
-    private void validateInput(Map<String, Object> input) {
-        if (input == null) {
-            throw new IllegalArgumentException('Input map must not be null');
-        }
-        if (!input.containsKey('objectApiName') || input.get('objectApiName') == null) {
-            throw new IllegalArgumentException('Missing required input parameter: objectApiName');
-        }
-        if (String.isBlank(String.valueOf(input.get('objectApiName')))) {
-            throw new IllegalArgumentException('Input parameter objectApiName must not be blank');
-        }
-        if (!input.containsKey('fieldApiNameList') || input.get('fieldApiNameList') == null) {
-            throw new IllegalArgumentException('Missing required input parameter: fieldApiNameList');
-        }
-    }
-
-    // ─── Field list parsing ──────────────────────────────────────────────────────
-
-    private List<String> parseFieldList(Object raw) {
-        List<String> result;
-
-        if (raw instanceof List<Object>) {
-            result = new List<String>();
-            for (Object item : (List<Object>) raw) {
-                if (item == null) {
-                    throw new IllegalArgumentException('fieldApiNameList must not contain null values');
-                }
-                result.add(String.valueOf(item));
-            }
-        } else if (raw instanceof String) {
-            try {
-                result = (List<String>) JSON.deserialize((String) raw, List<String>.class);
-            } catch (Exception e) {
-                throw new IllegalArgumentException(
-                    'fieldApiNameList string value could not be parsed as a JSON array: ' + (String) raw
-                );
-            }
-        } else {
-            throw new IllegalArgumentException(
-                'fieldApiNameList must be a list or a JSON array string'
-            );
-        }
-
-        if (result == null || result.isEmpty()) {
+    private static List<String> validateFieldList(List<String> fieldApiNameList) {
+        if (fieldApiNameList == null || fieldApiNameList.isEmpty()) {
             throw new IllegalArgumentException('fieldApiNameList must not be empty');
         }
-        return result;
+        for (String fieldName : fieldApiNameList) {
+            if (String.isBlank(fieldName)) {
+                throw new IllegalArgumentException('fieldApiNameList must not contain blank values');
+            }
+        }
+        return fieldApiNameList;
     }
 
     // ─── Per-field detail builder ────────────────────────────────────────────────
 
-    private Map<String, Object> buildFieldDetail(
+    private static Map<String, Object> buildFieldDetail(
         Map<String, Schema.SObjectField> fieldMap,
         String fieldName
     ) {

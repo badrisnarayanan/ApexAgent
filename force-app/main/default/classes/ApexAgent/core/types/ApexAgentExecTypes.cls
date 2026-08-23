@@ -8,7 +8,6 @@ public with sharing class ApexAgentExecTypes {
     public class ToolResult {
         public String toolId;
         public String name;
-        public String type;
         public String implementation;
         public String inputArguments;
         public String output;

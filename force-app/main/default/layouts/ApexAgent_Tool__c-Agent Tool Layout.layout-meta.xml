@@ -9,11 +9,7 @@
         <layoutColumns>
             <layoutItems>
                 <behavior>Required</behavior>
-                <field>Execution_Name__c</field>
-            </layoutItems>
-            <layoutItems>
-                <behavior>Required</behavior>
-                <field>Tool_API_Name__c</field>
+                <field>Apex_Class_Name__c</field>
             </layoutItems>
             <layoutItems>
                 <behavior>Required</behavior>
@@ -24,6 +20,10 @@
             <layoutItems>
                 <behavior>Edit</behavior>
                 <field>OwnerId</field>
+            </layoutItems>
+            <layoutItems>
+                <behavior>Edit</behavior>
+                <field>Modifies_Salesforce_Data__c</field>
             </layoutItems>
         </layoutColumns>
         <style>TwoColumnsTopToBottom</style>
@@ -58,8 +58,7 @@
         <style>CustomLinks</style>
     </layoutSections>
     <miniLayout>
-        <fields>Execution_Name__c</fields>
-        <fields>Tool_API_Name__c</fields>
+        <fields>Apex_Class_Name__c</fields>
     </miniLayout>
     <relatedLists>
         <relatedList>RelatedEntityHistoryList</relatedList>

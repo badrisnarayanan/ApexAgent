@@ -1,95 +1,115 @@
+/**
+ * Apex Action tool: inserts or updates records via Database.upsert.
+ *
+ * Field values arrive as strings (@InvocableVariable does not support a generic
+ * Object type), converted per the caller-supplied apexType. Omitting a field's
+ * value (or passing null) explicitly clears that field on the record.
+ */
 @SuppressWarnings('PMD.EagerlyLoadedDescribeSObjectResult')
-public with sharing class UpsertRecords implements ApexAgentTool {
+public with sharing class UpsertRecords {
 
     private static final Integer MAX_RECORDS = 200;
 
-    // ─── Entry point ─────────────────────────────────────────────────────────────
+    public class FieldEntry {
+        @InvocableVariable(required=true label='Field Api Name' description='API name of the field (e.g. "Name", "Amount__c", "CloseDate").')
+        public String fieldApiName;
 
-    public Object execute(Map<String, Object> input) {
-        validateInput(input);
+        @InvocableVariable(required=false label='Value' description='The value to set, always as a string (e.g. "42", "true", "2024-06-15") — converted per apexType. Omit to explicitly clear the field.')
+        public String value;
 
-        String       objectApiName       = (String)       input.get('objectApiName');
-        Boolean      allOrNone           = (Boolean)      input.get('allOrNone');
-        String       externalIdFieldName = (String)       input.get('externalIdFieldName');
-        List<Object> rawRecords          = (List<Object>) input.get('records');
+        @InvocableVariable(required=true label='Apex Type' description='Apex data type used to convert value before setting it on the record. Valid values: String, Boolean, Integer, Decimal, Date, DateTime, ID, Time, Long.')
+        public String apexType;
+    }
 
-        Schema.SObjectType sObjectType = ApexAgentUtils.getSObjectType(objectApiName);
-        List<SObject>      records     = convertRecords(rawRecords, sObjectType);
+    public class RecordInput {
+        @InvocableVariable(required=true label='Fields' description='Field values to set on this record.')
+        public List<FieldEntry> fields;
+    }
+
+    public class Input {
+        @InvocableVariable(required=true label='Object API Name' description='API name of the object to upsert (e.g. "Account").')
+        public String objectApiName;
+
+        @InvocableVariable(required=true label='All Or None' description='If true, the entire operation rolls back on any record failure. If false, partial success is allowed and per-record errors are returned.')
+        public Boolean allOrNone;
+
+        @InvocableVariable(required=false label='External Id Field Name' description='API name of the external ID field to upsert on. Omit to upsert by the standard Id field.')
+        public String externalIdFieldName;
+
+        @InvocableVariable(required=true label='Records' description='Records to upsert (maximum 200 per call).')
+        public List<RecordInput> records;
+    }
+
+    public class Output {
+        @InvocableVariable(label='Result' description='JSON array of per-record DML results (id/success/errors), or a structured error object if the whole operation failed.')
+        public String resultJson;
+    }
+
+    @InvocableMethod(label='Upsert Records' description='Creates new records or updates existing ones in a single operation. Supports up to 200 records per call. Returns upsert results with success/error status per record.\n\nCritical usage rules:\n- Always confirm with the user before executing — this modifies data.\n- Always use GetObjectDetails first to discover field API names and required fields.\n- Always verify field types using GetFieldDetails if unsure about the Apex type.\n- Each record must include Id or an external ID field to update existing records. Without either, new records are always created.\n- Max 200 records per call — split larger batches.')
+    public static List<Output> run(List<Input> inputs) {
+        List<Output> results = new List<Output>();
+        for (Input inp : inputs) {
+            results.add(processOne(inp));
+        }
+        return results;
+    }
+
+    private static Output processOne(Input inp) {
+        validateInput(inp);
+
+        Schema.SObjectType sObjectType = ApexAgentUtils.getSObjectType(inp.objectApiName);
+        List<SObject> records = convertRecords(inp.records, sObjectType);
 
         Schema.SObjectField externalIdField = null;
-        if (String.isNotBlank(externalIdFieldName)) {
-            externalIdField = getExternalIdField(sObjectType, externalIdFieldName, objectApiName);
+        if (String.isNotBlank(inp.externalIdFieldName)) {
+            externalIdField = getExternalIdField(sObjectType, inp.externalIdFieldName, inp.objectApiName);
         }
 
-        return performUpsert(records, externalIdField, allOrNone);
+        Output o = new Output();
+        o.resultJson = JSON.serialize(performUpsert(records, externalIdField, inp.allOrNone));
+        return o;
     }
 
     // ─── Input validation ────────────────────────────────────────────────────────
 
-    private void validateInput(Map<String, Object> input) {
-        ApexAgentToolInput.requireMap(input);
-        ApexAgentToolInput.requireString(input, 'objectApiName');
-        ApexAgentToolInput.requireBoolean(input, 'allOrNone');
-        ApexAgentToolInput.optionalString(input, 'externalIdFieldName');
-
-        List<Object> rawRecords = ApexAgentToolInput.requireList(input, 'records');
-        if (rawRecords.isEmpty()) {
+    private static void validateInput(Input inp) {
+        ApexAgentToolInput.requireNotBlank(inp.objectApiName, 'objectApiName');
+        if (inp.allOrNone == null) {
+            throw new IllegalArgumentException('Missing required input parameter: allOrNone (expected true or false)');
+        }
+        if (inp.records == null || inp.records.isEmpty()) {
             throw new IllegalArgumentException('Input parameter records must not be empty');
         }
-        if (rawRecords.size() > MAX_RECORDS) {
+        if (inp.records.size() > MAX_RECORDS) {
             throw new IllegalArgumentException(
                 'Input parameter records exceeds the maximum allowed size of ' + MAX_RECORDS
-                + '. Received ' + rawRecords.size() + ' records. Split into smaller batches.'
+                + '. Received ' + inp.records.size() + ' records. Split into smaller batches.'
             );
         }
     }
 
     // ─── Record conversion ───────────────────────────────────────────────────────
 
-    private List<SObject> convertRecords(List<Object> rawRecords, Schema.SObjectType sObjectType) {
+    private static List<SObject> convertRecords(List<RecordInput> recordInputs, Schema.SObjectType sObjectType) {
         List<SObject> records = new List<SObject>();
         Integer idx = 0;
 
-        for (Object rawRecord : rawRecords) {
-            Map<String, Object> recordMap = (Map<String, Object>) rawRecord;
-
-            Object rawFields = recordMap.get('fields');
-            if (rawFields == null) {
-                throw new IllegalArgumentException(
-                    'Record at index ' + idx + ' is missing the required "fields" array'
-                );
-            }
-
-            List<Object> fields = (List<Object>) rawFields;
-            if (fields.isEmpty()) {
+        for (RecordInput ri : recordInputs) {
+            if (ri.fields == null || ri.fields.isEmpty()) {
                 throw new IllegalArgumentException(
                     'Record at index ' + idx + ' has an empty "fields" array — at least one field is required'
                 );
             }
 
             SObject record = sObjectType.newSObject();
-
-            for (Object rawField : fields) {
-                Map<String, Object> fieldMap = (Map<String, Object>) rawField;
-
-                String fieldApiName = (String) fieldMap.get('fieldApiName');
-                String apexType     = (String) fieldMap.get('apexType');
-                Object value        = fieldMap.get('value');
-
-                if (String.isBlank(fieldApiName)) {
-                    throw new IllegalArgumentException(
-                        'Record at index ' + idx + ': "fieldApiName" is required and must not be blank'
-                    );
-                }
-                if (String.isBlank(apexType)) {
-                    throw new IllegalArgumentException(
-                        'Record at index ' + idx + ', field "' + fieldApiName
-                        + '": "apexType" is required and must not be blank'
-                    );
-                }
-
-                Object converted = convertValue(value, apexType, fieldApiName, idx);
-                record.put(fieldApiName, converted);
+            for (FieldEntry fe : ri.fields) {
+                String fieldApiName = ApexAgentToolInput.requireNotBlank(
+                    fe.fieldApiName, 'records[' + idx + '].fields.fieldApiName'
+                );
+                String apexType = ApexAgentToolInput.requireNotBlank(
+                    fe.apexType, 'records[' + idx + '].fields.apexType'
+                );
+                record.put(fieldApiName, convertValue(fe.value, apexType, fieldApiName, idx));
             }
 
             records.add(record);
@@ -102,21 +122,18 @@ public with sharing class UpsertRecords implements ApexAgentTool {
     // ─── Type conversion ─────────────────────────────────────────────────────────
 
     @TestVisible
-    private Object convertValue(Object value, String apexType, String fieldApiName, Integer recordIdx) {
+    private static Object convertValue(String value, String apexType, String fieldApiName, Integer recordIdx) {
         if (value == null) {
             return null;
         }
 
         switch on apexType.toUpperCase() {
             when 'STRING' {
-                return String.valueOf(value);
+                return value;
             }
             when 'ID' {
-                if (value instanceof Id) {
-                    return (Id) value;
-                }
                 try {
-                    return Id.valueOf(String.valueOf(value));
+                    return Id.valueOf(value);
                 } catch (Exception e) {
                     throw new IllegalArgumentException(
                         'Record ' + recordIdx + ', field "' + fieldApiName + '": "'
@@ -125,10 +142,7 @@ public with sharing class UpsertRecords implements ApexAgentTool {
                 }
             }
             when 'BOOLEAN' {
-                if (value instanceof Boolean) {
-                    return (Boolean) value;
-                }
-                String boolStr = String.valueOf(value).trim().toLowerCase();
+                String boolStr = value.trim().toLowerCase();
                 if (boolStr == 'true')  { return true; }
                 if (boolStr == 'false') { return false; }
                 throw new IllegalArgumentException(
@@ -137,12 +151,8 @@ public with sharing class UpsertRecords implements ApexAgentTool {
                 );
             }
             when 'INTEGER' {
-                if (value instanceof Integer) {
-                    return (Integer) value;
-                }
                 try {
-                    if (value instanceof Decimal) { return ((Decimal) value).intValue(); }
-                    return Integer.valueOf(String.valueOf(value));
+                    return Integer.valueOf(value);
                 } catch (Exception e) {
                     throw new IllegalArgumentException(
                         'Record ' + recordIdx + ', field "' + fieldApiName
@@ -151,12 +161,8 @@ public with sharing class UpsertRecords implements ApexAgentTool {
                 }
             }
             when 'DECIMAL' {
-                if (value instanceof Decimal) {
-                    return (Decimal) value;
-                }
                 try {
-                    if (value instanceof Integer) { return Decimal.valueOf((Integer) value); }
-                    return Decimal.valueOf(String.valueOf(value));
+                    return Decimal.valueOf(value);
                 } catch (Exception e) {
                     throw new IllegalArgumentException(
                         'Record ' + recordIdx + ', field "' + fieldApiName
@@ -165,13 +171,8 @@ public with sharing class UpsertRecords implements ApexAgentTool {
                 }
             }
             when 'LONG' {
-                if (value instanceof Long) {
-                    return (Long) value;
-                }
                 try {
-                    if (value instanceof Integer) { return Long.valueOf(String.valueOf(value)); }
-                    if (value instanceof Decimal) { return ((Decimal) value).longValue(); }
-                    return Long.valueOf(String.valueOf(value));
+                    return Long.valueOf(value);
                 } catch (Exception e) {
                     throw new IllegalArgumentException(
                         'Record ' + recordIdx + ', field "' + fieldApiName
@@ -180,22 +181,13 @@ public with sharing class UpsertRecords implements ApexAgentTool {
                 }
             }
             when 'DATE' {
-                if (value instanceof Date) {
-                    return (Date) value;
-                }
-                return parseDate(String.valueOf(value), fieldApiName, recordIdx);
+                return parseDate(value, fieldApiName, recordIdx);
             }
             when 'DATETIME' {
-                if (value instanceof Datetime) {
-                    return (Datetime) value;
-                }
-                return parseDatetime(String.valueOf(value), fieldApiName, recordIdx);
+                return parseDatetime(value, fieldApiName, recordIdx);
             }
             when 'TIME' {
-                if (value instanceof Time) {
-                    return (Time) value;
-                }
-                return parseTime(String.valueOf(value), fieldApiName, recordIdx);
+                return parseTime(value, fieldApiName, recordIdx);
             }
             when else {
                 throw new IllegalArgumentException(
@@ -209,7 +201,7 @@ public with sharing class UpsertRecords implements ApexAgentTool {
 
     // ─── Date / Datetime / Time parsers ──────────────────────────────────────────
 
-    private Date parseDate(String value, String fieldApiName, Integer recordIdx) {
+    private static Date parseDate(String value, String fieldApiName, Integer recordIdx) {
         String v = value.trim();
 
         // 1. YYYY-MM-DD (ISO) — length 10, dash separator, 4-char year, no slash
@@ -272,7 +264,7 @@ public with sharing class UpsertRecords implements ApexAgentTool {
         );
     }
 
-    private Datetime parseDatetime(String value, String fieldApiName, Integer recordIdx) {
+    private static Datetime parseDatetime(String value, String fieldApiName, Integer recordIdx) {
         String trimmed = value.trim();
         if (!trimmed.contains('T')) {
             return parseNaiveDatetime(trimmed, value, fieldApiName, recordIdx);
@@ -288,7 +280,7 @@ public with sharing class UpsertRecords implements ApexAgentTool {
      * shift a UTC timestamp by the org/user's offset. A string with no zone marker at
      * all is genuinely naive and falls back to local-time parsing.
      */
-    private Datetime parseIso8601Datetime(String trimmed, String original, String fieldApiName, Integer recordIdx) {
+    private static Datetime parseIso8601Datetime(String trimmed, String original, String fieldApiName, Integer recordIdx) {
         String body = trimmed.replace('T', ' ');
         Integer offsetSeconds = 0;
         Boolean hasZoneMarker = false;
@@ -335,7 +327,7 @@ public with sharing class UpsertRecords implements ApexAgentTool {
         }
     }
 
-    private Integer parseOffsetSeconds(String offsetStr, String original, String fieldApiName, Integer recordIdx) {
+    private static Integer parseOffsetSeconds(String offsetStr, String original, String fieldApiName, Integer recordIdx) {
         try {
             Integer sign = offsetStr.startsWith('-') ? -1 : 1;
             List<String> parts = offsetStr.substring(1).split(':');
@@ -350,7 +342,7 @@ public with sharing class UpsertRecords implements ApexAgentTool {
         }
     }
 
-    private Datetime parseNaiveDatetime(String body, String original, String fieldApiName, Integer recordIdx) {
+    private static Datetime parseNaiveDatetime(String body, String original, String fieldApiName, Integer recordIdx) {
         try {
             return Datetime.valueOf(body);
         } catch (Exception firstEx) {
@@ -366,7 +358,7 @@ public with sharing class UpsertRecords implements ApexAgentTool {
         }
     }
 
-    private Boolean areAllNumeric(List<String> parts) {
+    private static Boolean areAllNumeric(List<String> parts) {
         for (String part : parts) {
             if (String.isBlank(part)) { return false; }
             for (Integer i = 0; i < part.length(); i++) {
@@ -377,7 +369,7 @@ public with sharing class UpsertRecords implements ApexAgentTool {
         return true;
     }
 
-    private Time parseTime(String value, String fieldApiName, Integer recordIdx) {
+    private static Time parseTime(String value, String fieldApiName, Integer recordIdx) {
         try {
             String s = value.trim();
             if (s.endsWith('Z')) {
@@ -407,7 +399,7 @@ public with sharing class UpsertRecords implements ApexAgentTool {
     // ─── External ID field resolution ────────────────────────────────────────────
 
     @TestVisible
-    private Schema.SObjectField getExternalIdField(
+    private static Schema.SObjectField getExternalIdField(
         Schema.SObjectType sObjectType,
         String fieldName,
         String objectApiName
@@ -436,7 +428,7 @@ public with sharing class UpsertRecords implements ApexAgentTool {
 
     // ─── DML execution ───────────────────────────────────────────────────────────
 
-    private Object performUpsert(
+    private static Object performUpsert(
         List<SObject> records,
         Schema.SObjectField externalIdField,
         Boolean allOrNone
@@ -460,7 +452,7 @@ public with sharing class UpsertRecords implements ApexAgentTool {
         return JSON.deserializeUntyped(JSON.serialize(results));
     }
 
-    private Map<String, Object> buildDmlErrorResponse(DmlException e) {
+    private static Map<String, Object> buildDmlErrorResponse(DmlException e) {
         List<Map<String, Object>> dmlErrors = new List<Map<String, Object>>();
         for (Integer i = 0; i < e.getNumDml(); i++) {
             dmlErrors.add(new Map<String, Object>{

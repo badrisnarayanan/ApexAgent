@@ -31,7 +31,7 @@ public with sharing class ApexAgentTopicLoader {
 
             topics = buildTopicData(orderedTopicIds, topicsById, toolsById);
             for (ApexAgent_Tool__c tool : toolsById.values()) {
-                toolsByName.put(tool.Tool_API_Name__c, tool);
+                toolsByName.put(tool.Apex_Class_Name__c, tool);
             }
         }
 
@@ -40,23 +40,6 @@ public with sharing class ApexAgentTopicLoader {
         result.topics = topics;
         result.toolsByName = toolsByName;
         return result;
-    }
-
-    /**
-     * Builds the OpenRouter function-calling tool definitions array
-     * from the tool map populated by load().
-     * When showExecutionMessage is true, an execution_message parameter is injected
-     * into every tool's schema so the LLM can provide a user-friendly status description.
-     */
-    public static List<Map<String, Object>> buildToolDefinitions(
-        Map<String, ApexAgent_Tool__c> toolsByName,
-        Boolean showExecutionMessage
-    ) {
-        List<Map<String, Object>> defs = new List<Map<String, Object>>();
-        for (ApexAgent_Tool__c tool : toolsByName.values()) {
-            defs.add(buildSingleToolDef(tool, showExecutionMessage == true));
-        }
-        return defs;
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -155,16 +138,14 @@ public with sharing class ApexAgentTopicLoader {
         return ids;
     }
 
-    /** Query C — Tools with their parameter child records. */
+    /** Query C — Tools. Parameter schema is now derived by reflecting on each
+     * tool's Apex Action (see ApexAgentToolSchemaBuilder), not from child records. */
     private static Map<Id, ApexAgent_Tool__c> queryTools(Set<Id> toolIds) {
         if (toolIds.isEmpty()) {
             return new Map<Id, ApexAgent_Tool__c>();
         }
         return new Map<Id, ApexAgent_Tool__c>([
-            SELECT Id, Tool_API_Name__c, Description__c, Execution_Type__c,
-                   Execution_Name__c, Modifies_Salesforce_Data__c,
-                (SELECT Name, Type__c, Description__c, Required__c, Definition_Class__c
-                 FROM Tool_Parameters__r)
+            SELECT Id, Apex_Class_Name__c, Modifies_Salesforce_Data__c
             FROM ApexAgent_Tool__c
             WHERE Id IN :toolIds
             WITH USER_MODE
@@ -203,78 +184,12 @@ public with sharing class ApexAgentTopicLoader {
             for (ApexAgent_Topic_Tool_Map__c ttm : topic.Topic_Tool_Maps__r) {
                 ApexAgent_Tool__c tool = toolsById.get(ttm.Tool__c);
                 if (tool != null) {
-                    td.toolApiNames.add(tool.Tool_API_Name__c);
+                    td.toolApiNames.add(tool.Apex_Class_Name__c);
                 }
             }
 
             result.add(td);
         }
         return result;
-    }
-
-    // ─────────────────────────────────────────────────────────────────
-    // Private: tool definition builder
-    // ─────────────────────────────────────────────────────────────────
-
-    private static Map<String, Object> buildSingleToolDef(ApexAgent_Tool__c tool, Boolean showExecutionMessage) {
-        Map<String, Object> properties = new Map<String, Object>();
-        List<String> required = new List<String>();
-
-        for (ApexAgent_Tool_Parameter__c param : tool.Tool_Parameters__r) {
-            Map<String, Object> propDef;
-
-            if (String.isNotBlank(param.Definition_Class__c)) {
-                Type defType = Type.forName(param.Definition_Class__c);
-                if (defType != null) {
-                    ApexAgentParameterDefinition defInstance =
-                        (ApexAgentParameterDefinition) defType.newInstance();
-                    propDef = defInstance.getDefinition();
-                } else {
-                    propDef = new Map<String, Object>{
-                        'type' => param.Type__c,
-                        'description' => param.Description__c
-                    };
-                }
-            } else {
-                propDef = new Map<String, Object>{
-                    'type' => param.Type__c,
-                    'description' => param.Description__c
-                };
-            }
-
-            properties.put(param.Name, propDef);
-            if (param.Required__c) {
-                required.add(param.Name);
-            }
-        }
-
-        if (showExecutionMessage) {
-            properties.put('execution_message', new Map<String, Object>{
-                'type'        => 'string',
-                'description' => 'Brief, user-friendly description of what you are doing '
-                    + 'with this specific tool call, in present continuous tense '
-                    + '(e.g. \'Searching for account records\'). '
-                    + 'Under 60 characters. Do not end with ellipsis.'
-            });
-            required.add('execution_message');
-        }
-
-        Map<String, Object> parameters = new Map<String, Object>{
-            'type' => 'object',
-            'properties' => properties
-        };
-        if (!required.isEmpty()) {
-            parameters.put('required', required);
-        }
-
-        parameters.put('additionalProperties', false);
-        return new Map<String, Object>{
-            'type' => 'function',
-            'function' => new Map<String, Object>{
-                'name'        => tool.Tool_API_Name__c,
-                'description' => tool.Description__c,
-                'parameters'  => parameters
-            }
-        };
     }
 }

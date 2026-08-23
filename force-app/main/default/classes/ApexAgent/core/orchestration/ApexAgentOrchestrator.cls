@@ -75,7 +75,7 @@ public with sharing class ApexAgentOrchestrator {
             ApexAgentConfigTypes.LoadResult loaded = ApexAgentTopicLoader.load(agentName);
             config = loaded.config;
             List<Map<String, Object>> toolDefs =
-                ApexAgentTopicLoader.buildToolDefinitions(loaded.toolsByName, config.showExecutionMessage);
+                ApexAgentToolSchemaBuilder.buildToolDefinitions(loaded.toolsByName, config.showExecutionMessage);
 
             // ── 2. Build messages array ───────────────────────────────
             List<Object> messages = new List<Object>();
@@ -91,7 +91,21 @@ public with sharing class ApexAgentOrchestrator {
             }
 
             messages.add(ApexAgentMessageBuilder.buildUserMessage(userMessage));
-            messages.add(ApexAgentMessageBuilder.buildContextMessage(additionalContext));
+
+            // Built once per turn, but deliberately kept OUT of `messages` — appended only to
+            // the wire payload for each LLM call below, always as the trailing element. It's
+            // live-computed (current datetime/user) and never persisted or replayed by
+            // buildThreadHistory, so if it lived inside `messages` anywhere before the tail,
+            // every future turn's replayed history would reconstruct that same stretch
+            // (user -> tool_calls -> tool_results) WITHOUT it — a structural mismatch against
+            // what was actually live-sent and cached this turn, breaking provider-side
+            // prompt-cache alignment for the whole tool-call exchange on every subsequent turn.
+            // Keeping `messages` itself context-free and appending it fresh at the true tail on
+            // every call means the reusable exchange stays byte-identical across turns and
+            // remains cache-matchable, while context is still visible to the model on every
+            // call — including before it decides which tools to use.
+            ApexAgentApiTypes.ChatMessage contextMsg =
+                ApexAgentMessageBuilder.buildContextMessage(additionalContext);
 
             // ── 3. Agentic loop ───────────────────────────────────────
             Integer iteration = 0;
@@ -110,8 +124,13 @@ public with sharing class ApexAgentOrchestrator {
                     ? toolDefs
                     : new List<Map<String, Object>>();
 
+                // Context always trails as the last element of the actual wire payload — see
+                // the comment where contextMsg is built above. `messages` itself never gets it.
+                List<Object> wireMessages = messages.clone();
+                wireMessages.add(contextMsg);
+
                 ApexAgentApiTypes.ChatCompletionResponse resp =
-                    ApexAgentLLMClient.call(config, messages, currentTools);
+                    ApexAgentLLMClient.call(config, wireMessages, currentTools);
 
                 if (resp.choices == null || resp.choices.isEmpty()) {
                     throw new IllegalArgumentException(

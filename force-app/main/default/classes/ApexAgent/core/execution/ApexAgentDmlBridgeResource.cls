@@ -25,8 +25,7 @@ global with sharing class ApexAgentDmlBridgeResource {
      *
      * Expected request body:
      * {
-     *   "executionType": "Apex" | "Flow",
-     *   "executionName": "<class or flow API name>",
+     *   "executionName": "<Apex class name implementing the @InvocableMethod action>",
      *   "inputs": { ... }
      * }
      */
@@ -38,11 +37,10 @@ global with sharing class ApexAgentDmlBridgeResource {
                 RestContext.request.requestBody.toString()
             );
 
-            String executionType = (String) body.get('executionType');
             String executionName = (String) body.get('executionName');
             Map<String, Object> inputs = (Map<String, Object>) body.get('inputs');
 
-            responseBody = ApexAgentToolExecutor.executeInline(executionType, executionName, inputs);
+            responseBody = ApexAgentToolExecutor.executeInline(executionName, inputs);
 
         } catch (Exception e) {
             RestContext.response.statusCode = 500;

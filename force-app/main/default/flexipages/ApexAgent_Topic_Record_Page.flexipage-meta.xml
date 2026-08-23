@@ -345,7 +345,7 @@
                             <value>ApexAgent_Tool__c.NAME</value>
                         </valueListItems>
                         <valueListItems>
-                            <value>ApexAgent_Tool__c.Execution_Type__c</value>
+                            <value>ApexAgent_Tool__c.Apex_Class_Name__c</value>
                         </valueListItems>
                         <valueListItems>
                             <value>Active__c</value>

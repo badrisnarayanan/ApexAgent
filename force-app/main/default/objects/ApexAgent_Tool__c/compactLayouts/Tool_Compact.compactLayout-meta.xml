@@ -2,8 +2,7 @@
 <CompactLayout xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Tool_Compact</fullName>
     <fields>Name</fields>
-    <fields>Tool_API_Name__c</fields>
-    <fields>Execution_Type__c</fields>
+    <fields>Apex_Class_Name__c</fields>
     <fields>Modifies_Salesforce_Data__c</fields>
     <label>Tool Compact Layout</label>
 </CompactLayout>

@@ -5,47 +5,15 @@ private class GetRecordDetailsTest {
 
     @IsTest
     static void testInputValidation() {
-        GetRecordDetails tool = new GetRecordDetails();
-
         try {
-            tool.execute(null);
-            Assert.fail('Expected exception for null input');
-        } catch (IllegalArgumentException e) {
-            Assert.isTrue(e.getMessage().contains('null'), 'Message should mention null');
-        }
-
-        try {
-            tool.execute(new Map<String, Object>());
-            Assert.fail('Expected exception for missing recordId key');
-        } catch (IllegalArgumentException e) {
-            Assert.isTrue(e.getMessage().contains('recordId'), 'Message should mention recordId');
-        }
-
-        try {
-            tool.execute(new Map<String, Object>{ 'recordId' => null });
-            Assert.fail('Expected exception for null recordId');
-        } catch (IllegalArgumentException e) {
-            // Shared ApexAgentToolInput validation unifies missing-key and null-value
-            // wording into a single "Missing required input parameter" message.
-            Assert.isTrue(e.getMessage().contains('recordId'), 'Message should mention recordId');
-        }
-
-        try {
-            tool.execute(new Map<String, Object>{ 'recordId' => 42 });
-            Assert.fail('Expected exception for non-string recordId');
-        } catch (IllegalArgumentException e) {
-            Assert.isTrue(e.getMessage().contains('recordId'), 'Message should mention recordId');
-        }
-
-        try {
-            tool.execute(new Map<String, Object>{ 'recordId' => '   ' });
+            run('   ');
             Assert.fail('Expected exception for blank recordId');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('blank'), 'Message should mention blank');
         }
 
         try {
-            tool.execute(new Map<String, Object>{ 'recordId' => 'not-a-valid-id' });
+            run('not-a-valid-id');
             Assert.fail('Expected exception for invalid ID');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('not a valid Salesforce ID'), 'Message should mention invalid ID');
@@ -59,16 +27,38 @@ private class GetRecordDetailsTest {
         Account acc = new Account(Name = 'Test Account GetRecordDetails');
         insert acc;
 
-        GetRecordDetails tool   = new GetRecordDetails();
-        Map<String, Object> res = (Map<String, Object>) tool.execute(
-            new Map<String, Object>{ 'recordId' => String.valueOf(acc.Id) }
-        );
+        Map<String, Object> res = run(String.valueOf(acc.Id));
 
         // JSON.serialize produces flat fields + nested 'attributes' with type info
         Assert.areEqual('Test Account GetRecordDetails', res.get('Name'), 'Name should match');
         Assert.areEqual(String.valueOf(acc.Id), res.get('Id'), 'Id should match');
         Map<String, Object> attrs = (Map<String, Object>) res.get('attributes');
         Assert.areEqual('Account', attrs.get('type'), 'attributes.type should be Account');
+    }
+
+    // ─── Bulk-safe: multiple records across object types in one call ─────────────
+
+    @IsTest
+    static void testMultipleRecordsAcrossObjectTypes() {
+        Account acc = new Account(Name = 'Bulk Test Account');
+        insert acc;
+        ApexAgent_LLM__c llm = new ApexAgent_LLM__c(
+            Name = 'Bulk Test LLM', Model_API_Name__c = 'test-model',
+            Family__c = 'Anthropic', Named_Credential__c = 'TestCredential'
+        );
+        insert llm;
+
+        List<GetRecordDetails.Input> inputs = new List<GetRecordDetails.Input>{
+            buildInput(String.valueOf(acc.Id)),
+            buildInput(String.valueOf(llm.Id))
+        };
+        List<GetRecordDetails.Output> outputs = GetRecordDetails.run(inputs);
+
+        Assert.areEqual(2, outputs.size(), 'Should return one output per input, in order');
+        Map<String, Object> accResult = (Map<String, Object>) JSON.deserializeUntyped(outputs[0].resultJson);
+        Map<String, Object> llmResult = (Map<String, Object>) JSON.deserializeUntyped(outputs[1].resultJson);
+        Assert.areEqual('Bulk Test Account', accResult.get('Name'), 'First output should be the Account');
+        Assert.areEqual('Bulk Test LLM', llmResult.get('Name'), 'Second output should be the LLM');
     }
 
     // ─── Field filtering: long text areas excluded ────────────────────────────────
@@ -79,10 +69,7 @@ private class GetRecordDetailsTest {
         Account acc = new Account(Name = 'Filter Test', Description = 'Some description text');
         insert acc;
 
-        GetRecordDetails tool   = new GetRecordDetails();
-        Map<String, Object> res = (Map<String, Object>) tool.execute(
-            new Map<String, Object>{ 'recordId' => String.valueOf(acc.Id) }
-        );
+        Map<String, Object> res = run(String.valueOf(acc.Id));
 
         Assert.isFalse(res.containsKey('Description'), 'Description (long textarea) should be excluded');
         Assert.isTrue(res.containsKey('Name'),          'Name (short text) should be included');
@@ -98,10 +85,7 @@ private class GetRecordDetailsTest {
         Id ghostId = acc.Id;
         delete acc;
 
-        GetRecordDetails tool   = new GetRecordDetails();
-        Map<String, Object> res = (Map<String, Object>) tool.execute(
-            new Map<String, Object>{ 'recordId' => String.valueOf(ghostId) }
-        );
+        Map<String, Object> res = run(String.valueOf(ghostId));
 
         Assert.areEqual(false, res.get('found'),   'found should be false');
         Assert.isNotNull(res.get('message'),        'message should be present');
@@ -128,10 +112,7 @@ private class GetRecordDetailsTest {
         );
         insert agent;
 
-        GetRecordDetails tool   = new GetRecordDetails();
-        Map<String, Object> res = (Map<String, Object>) tool.execute(
-            new Map<String, Object>{ 'recordId' => String.valueOf(agent.Id) }
-        );
+        Map<String, Object> res = run(String.valueOf(agent.Id));
 
         // Custom lookup field itself
         Assert.areEqual(String.valueOf(llm.Id), res.get('LLM__c'), 'LLM__c should hold the LLM record Id');
@@ -139,5 +120,18 @@ private class GetRecordDetailsTest {
         Map<String, Object> llmRel = (Map<String, Object>) res.get('LLM__r');
         Assert.isNotNull(llmRel,                        'LLM__r should be present via enrichment');
         Assert.areEqual('Test LLM', llmRel.get('Name'), 'LLM__r.Name should match the LLM record name');
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+    private static GetRecordDetails.Input buildInput(String recordId) {
+        GetRecordDetails.Input inp = new GetRecordDetails.Input();
+        inp.recordId = recordId;
+        return inp;
+    }
+
+    private static Map<String, Object> run(String recordId) {
+        List<GetRecordDetails.Output> out = GetRecordDetails.run(new List<GetRecordDetails.Input>{ buildInput(recordId) });
+        return (Map<String, Object>) JSON.deserializeUntyped(out[0].resultJson);
     }
 }

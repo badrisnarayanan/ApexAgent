@@ -36,14 +36,28 @@ private class SearchRecordsTest {
         insert contacts;
     }
 
-    // ─── Helper ───────────────────────────────────────────────────────────────────
+    // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-    private static void assertThrows(SearchRecords tool, Map<String, Object> input, String scenario) {
+    private static List<Map<String, Object>> search(String searchTerm, String objectApiName) {
+        SearchRecords.Input inp = new SearchRecords.Input();
+        inp.searchTerm = searchTerm;
+        inp.objectApiName = objectApiName;
+        List<SearchRecords.Output> out = SearchRecords.run(new List<SearchRecords.Input>{ inp });
+        List<Object> raw = (List<Object>) JSON.deserializeUntyped(out[0].resultJson);
+        List<Map<String, Object>> results = new List<Map<String, Object>>();
+        for (Object o : raw) {
+            results.add((Map<String, Object>) o);
+        }
+        return results;
+    }
+
+    private static void assertThrows(String searchTerm, String objectApiName, String scenario) {
+        SearchRecords.Input inp = new SearchRecords.Input();
+        inp.searchTerm = searchTerm;
+        inp.objectApiName = objectApiName;
         Boolean threw = false;
         try {
-            tool.execute(input);
-        } catch (IllegalArgumentException e) {
-            threw = true;
+            SearchRecords.run(new List<SearchRecords.Input>{ inp });
         } catch (Exception e) {
             threw = true;
         }
@@ -54,16 +68,11 @@ private class SearchRecordsTest {
 
     @isTest
     static void testInputValidation() {
-        SearchRecords tool = new SearchRecords();
-
-        assertThrows(tool, null,                                                                         'null input map');
-        assertThrows(tool, new Map<String, Object>{ 'objectApiName' => 'Account' },                     'missing searchTerm');
-        assertThrows(tool, new Map<String, Object>{ 'searchTerm' => 'Acme' },                           'missing objectApiName');
-        assertThrows(tool, new Map<String, Object>{ 'searchTerm' => null,  'objectApiName' => 'Account' }, 'null searchTerm');
-        assertThrows(tool, new Map<String, Object>{ 'searchTerm' => '   ', 'objectApiName' => 'Account' }, 'blank searchTerm');
-        assertThrows(tool, new Map<String, Object>{ 'searchTerm' => 'Acme', 'objectApiName' => null },  'null objectApiName');
-        assertThrows(tool, new Map<String, Object>{ 'searchTerm' => 'Acme', 'objectApiName' => '  ' }, 'blank objectApiName');
-        assertThrows(tool, new Map<String, Object>{ 'searchTerm' => 'Acme', 'objectApiName' => 'FakeObject__c' }, 'unknown object');
+        assertThrows(null,   'Account',      'missing/null searchTerm');
+        assertThrows('Acme', null,           'missing/null objectApiName');
+        assertThrows('   ',  'Account',      'blank searchTerm');
+        assertThrows('Acme', '  ',           'blank objectApiName');
+        assertThrows('Acme', 'FakeObject__c','unknown object');
     }
 
     // ─── 2. Scoring: exact > starts-with > contains ───────────────────────────────
@@ -81,10 +90,7 @@ private class SearchRecordsTest {
         });
 
         Test.startTest();
-        SearchRecords tool = new SearchRecords();
-        List<Map<String, Object>> results = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'Acme Inc', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> results = search('Acme Inc', 'Account');
         Test.stopTest();
 
         Assert.isFalse(results.isEmpty(), 'Expected results');
@@ -115,10 +121,7 @@ private class SearchRecordsTest {
         Test.setFixedSearchResults(bulkIds);
 
         Test.startTest();
-        SearchRecords tool = new SearchRecords();
-        List<Map<String, Object>> results = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'Test Company', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> results = search('Test Company', 'Account');
         Test.stopTest();
 
         Assert.isTrue(results.size() <= 25, 'Must be capped at 25, got: ' + results.size());
@@ -140,14 +143,10 @@ private class SearchRecordsTest {
         Contact johnAdams = [SELECT Id FROM Contact WHERE FirstName = 'John' AND LastName = 'Adams' LIMIT 1];
         Contact janeDoe   = [SELECT Id FROM Contact WHERE FirstName = 'Jane' AND LastName = 'Doe'   LIMIT 1];
 
-        SearchRecords tool = new SearchRecords();
-
         // First name only — both Johns
         Test.setFixedSearchResults(new List<Id>{ johnSmith.Id, johnAdams.Id });
         Test.startTest();
-        List<Map<String, Object>> byFirst = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'John', 'objectApiName' => 'Contact' }
-        );
+        List<Map<String, Object>> byFirst = search('John', 'Contact');
         Test.stopTest();
         Assert.areEqual(2, byFirst.size(), 'Both Johns must be returned');
         for (Map<String, Object> r : byFirst) {
@@ -156,39 +155,29 @@ private class SearchRecordsTest {
 
         // Last name only
         Test.setFixedSearchResults(new List<Id>{ johnSmith.Id });
-        List<Map<String, Object>> byLast = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'Smith', 'objectApiName' => 'Contact' }
-        );
+        List<Map<String, Object>> byLast = search('Smith', 'Contact');
         Assert.isFalse(byLast.isEmpty(), 'Last-name search must return Smith');
 
         // Full name — John Smith #1
         Test.setFixedSearchResults(new List<Id>{ johnSmith.Id, janeDoe.Id });
-        List<Map<String, Object>> byFull = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'John Smith', 'objectApiName' => 'Contact' }
-        );
+        List<Map<String, Object>> byFull = search('John Smith', 'Contact');
         Assert.areEqual('John Smith', byFull[0].get('Name'), 'Full name must rank first');
 
         // Transposed: "Smith John" still returns John Smith
         Test.setFixedSearchResults(new List<Id>{ johnSmith.Id });
-        List<Map<String, Object>> byTransposed = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'Smith John', 'objectApiName' => 'Contact' }
-        );
+        List<Map<String, Object>> byTransposed = search('Smith John', 'Contact');
         Assert.isFalse(byTransposed.isEmpty(), 'Transposed name must return results');
         Assert.isTrue(((Double) byTransposed[0].get('score')) > 0, 'Transposed name must score > 0');
 
         // Typo: "Jon Smith" — Levenshtein handles it
         Test.setFixedSearchResults(new List<Id>{ johnSmith.Id });
-        List<Map<String, Object>> byTypo = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'Jon Smith', 'objectApiName' => 'Contact' }
-        );
+        List<Map<String, Object>> byTypo = search('Jon Smith', 'Contact');
         Assert.isFalse(byTypo.isEmpty(), 'Typo must return results via Levenshtein');
         Assert.isTrue(((Double) byTypo[0].get('score')) > 0, 'Typo must score > 0');
 
         // Full name scores >= first-name-only for the same record
         Test.setFixedSearchResults(new List<Id>{ johnSmith.Id });
-        List<Map<String, Object>> firstOnly = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'John', 'objectApiName' => 'Contact' }
-        );
+        List<Map<String, Object>> firstOnly = search('John', 'Contact');
         Assert.isTrue(((Double) byFull[0].get('score')) >= ((Double) firstOnly[0].get('score')),
             'Full name must score >= first-name-only');
     }
@@ -202,14 +191,10 @@ private class SearchRecordsTest {
         Account techNova = [SELECT Id FROM Account WHERE Name = 'TechNova Group Holdings' LIMIT 1];
         Account globalAcc = [SELECT Id FROM Account WHERE Name = 'Global Solutions LLC' LIMIT 1];
 
-        SearchRecords tool = new SearchRecords();
-
         // Clean name (no suffix): both Acme accounts returned
         Test.setFixedSearchResults(new List<Id>{ acmeInc.Id, acmeCorp.Id });
         Test.startTest();
-        List<Map<String, Object>> byClean = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'Acme', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> byClean = search('Acme', 'Account');
         Test.stopTest();
         Set<String> returnedNames = new Set<String>();
         for (Map<String, Object> r : byClean) { returnedNames.add((String) r.get('Name')); }
@@ -218,28 +203,20 @@ private class SearchRecordsTest {
 
         // Exact with suffix: "Acme Inc" is #1 with high score
         Test.setFixedSearchResults(new List<Id>{ acmeInc.Id, acmeCorp.Id });
-        List<Map<String, Object>> byFullCompany = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'Acme Inc', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> byFullCompany = search('Acme Inc', 'Account');
         Assert.areEqual('Acme Inc', byFullCompany[0].get('Name'), 'Acme Inc must rank first');
         Assert.isTrue(((Double) byFullCompany[0].get('score')) >= 100, 'Exact company must score >= 100');
 
         // Multi-word found by brand word
         Test.setFixedSearchResults(new List<Id>{ techNova.Id });
-        List<Map<String, Object>> byBrand = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'TechNova', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> byBrand = search('TechNova', 'Account');
         Assert.isFalse(byBrand.isEmpty(), 'TechNova must be found by brand name');
 
         // Suffix-only "LLC" should score much lower than an exact match
         Test.setFixedSearchResults(new List<Id>{ globalAcc.Id });
-        List<Map<String, Object>> bySuffix = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'LLC', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> bySuffix = search('LLC', 'Account');
         Test.setFixedSearchResults(new List<Id>{ acmeInc.Id });
-        List<Map<String, Object>> byExact = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'Acme Inc', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> byExact = search('Acme Inc', 'Account');
         if (!bySuffix.isEmpty()) {
             Assert.isTrue(
                 ((Double) byExact[0].get('score')) > ((Double) bySuffix[0].get('score')),
@@ -266,24 +243,18 @@ private class SearchRecordsTest {
         Contact jpContact    = [SELECT Id FROM Contact WHERE FirstName = 'Jean-Pierre' AND LastName = 'Dupont' LIMIT 1];
         Contact johnSmith    = [SELECT Id FROM Contact WHERE FirstName = 'John' AND LastName = 'Smith'  LIMIT 1];
 
-        SearchRecords tool = new SearchRecords();
         Test.startTest();
 
         // ── Acronym: "IBM" → IBM Global Services ──────────────────────────────
-        // Expects: starts-with(+60) + contains(+30) + word-overlap(+40) = 130+
         Test.setFixedSearchResults(new List<Id>{ ibmAcc.Id });
-        List<Map<String, Object>> ibmResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'IBM', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> ibmResults = search('IBM', 'Account');
         Assert.isFalse(ibmResults.isEmpty(), 'IBM must return results');
         Assert.isTrue(((Double) ibmResults[0].get('score')) >= 100,
             'IBM acronym should score >= 100 (starts-with + contains + word match)');
 
         // ── Case insensitivity: "ibm" == "IBM" score ───────────────────────────
         Test.setFixedSearchResults(new List<Id>{ ibmAcc.Id });
-        List<Map<String, Object>> ibmLower = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'ibm', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> ibmLower = search('ibm', 'Account');
         Assert.areEqual(
             (Double) ibmResults[0].get('score'),
             (Double) ibmLower[0].get('score'),
@@ -292,95 +263,67 @@ private class SearchRecordsTest {
 
         // ── Numeric company name: "3M" → 3M Corporation ───────────────────────
         Test.setFixedSearchResults(new List<Id>{ acc3m.Id });
-        List<Map<String, Object>> results3m = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => '3M', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> results3m = search('3M', 'Account');
         Assert.isFalse(results3m.isEmpty(), '3M must return results');
         Assert.isTrue(((Double) results3m[0].get('score')) > 0, '3M must score > 0');
 
         // ── CamelCase brand: "quickbooks" → QuickBooks Online ─────────────────
-        // Contains check fires: "quickbooks online".contains("quickbooks") = true (+60 +30 +40)
         Test.setFixedSearchResults(new List<Id>{ qbAcc.Id });
-        List<Map<String, Object>> qbResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'quickbooks', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> qbResults = search('quickbooks', 'Account');
         Assert.isFalse(qbResults.isEmpty(), 'quickbooks must find QuickBooks Online');
         Assert.isTrue(((Double) qbResults[0].get('score')) >= 100,
             'quickbooks should score >= 100 (starts-with + contains + word match)');
 
         // ── Hyphenated company: "Smith Jones" → Smith-Jones Consulting ──────────
-        // Contains fires on individual words, Levenshtein provides similarity
         Test.setFixedSearchResults(new List<Id>{ smithJonesAcc.Id });
-        List<Map<String, Object>> hyphenResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'Smith Jones', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> hyphenResults = search('Smith Jones', 'Account');
         Assert.isFalse(hyphenResults.isEmpty(), 'Smith Jones must find Smith-Jones Consulting');
         Assert.isTrue(((Double) hyphenResults[0].get('score')) > 0, 'Hyphenated company must score > 0');
 
         // ── Fuzzy / typo: "saleforce" → Salesforce Inc (1 missing char) ────────
-        // Only Levenshtein fires; expect low but positive score
         Test.setFixedSearchResults(new List<Id>{ sfAcc.Id });
-        List<Map<String, Object>> fuzzyResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'saleforce', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> fuzzyResults = search('saleforce', 'Account');
         Assert.isFalse(fuzzyResults.isEmpty(), 'Typo "saleforce" must return Salesforce via Levenshtein');
         Assert.isTrue(((Double) fuzzyResults[0].get('score')) > 0, 'Fuzzy match must score > 0');
 
         // ── Apostrophe in name: "OBrien" → Mary O'Brien ───────────────────────
-        // Apostrophe prevents exact contains; Levenshtein provides a positive score
         Test.setFixedSearchResults(new List<Id>{ maryContact.Id });
-        List<Map<String, Object>> obrienResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'OBrien', 'objectApiName' => 'Contact' }
-        );
+        List<Map<String, Object>> obrienResults = search('OBrien', 'Contact');
         Assert.isFalse(obrienResults.isEmpty(), 'OBrien must return Mary O\'Brien');
         Assert.isTrue(((Double) obrienResults[0].get('score')) > 0, 'Apostrophe name must score > 0');
 
         // ── Hyphenated first name: "Jean Pierre" → Jean-Pierre Dupont ──────────
         Test.setFixedSearchResults(new List<Id>{ jpContact.Id });
-        List<Map<String, Object>> jpResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'Jean-Pierre Dupont', 'objectApiName' => 'Contact' }
-        );
+        List<Map<String, Object>> jpResults = search('Jean-Pierre Dupont', 'Contact');
         Assert.isFalse(jpResults.isEmpty(), 'Jean-Pierre Dupont must return results');
         Assert.isTrue(((Double) jpResults[0].get('score')) > 0, 'Hyphenated first name must score > 0');
 
         // ── Three-token person: "Raj Kumar" (exact) ───────────────────────────
-        // Exact match: score >= 100
         Test.setFixedSearchResults(new List<Id>{ rajContact.Id });
-        List<Map<String, Object>> rajResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'Raj Kumar', 'objectApiName' => 'Contact' }
-        );
+        List<Map<String, Object>> rajResults = search('Raj Kumar', 'Contact');
         Assert.isFalse(rajResults.isEmpty(), 'Raj Kumar must return results');
         Assert.areEqual('Raj Kumar', rajResults[0].get('Name'), 'Raj Kumar must be top result');
         Assert.isTrue(((Double) rajResults[0].get('score')) >= 100, 'Exact person name must score >= 100');
 
         // ── Partial company word: "solutions" → Global Solutions LLC ──────────
-        // Word overlap fires (solutions in name word set) + contains → expect score >= 50
         Test.setFixedSearchResults(new List<Id>{ globalAcc.Id });
-        List<Map<String, Object>> partialWordResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'solutions', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> partialWordResults = search('solutions', 'Account');
         Assert.isFalse(partialWordResults.isEmpty(), '"solutions" must find Global Solutions LLC');
         Assert.isTrue(((Double) partialWordResults[0].get('score')) >= 50,
             '"solutions" word match + contains should score >= 50');
 
         // ── Initials: "J Smith" → John Smith ──────────────────────────────────
         Test.setFixedSearchResults(new List<Id>{ johnSmith.Id });
-        List<Map<String, Object>> initialsResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'J Smith', 'objectApiName' => 'Contact' }
-        );
+        List<Map<String, Object>> initialsResults = search('J Smith', 'Contact');
         Assert.isFalse(initialsResults.isEmpty(), '"J Smith" initials must return John Smith');
         Assert.isTrue(((Double) initialsResults[0].get('score')) > 0, 'Initials must score > 0');
 
         // ── Mixed case term: "ACME INC" same score as "Acme Inc" ─────────────
         Account acmeInc = [SELECT Id FROM Account WHERE Name = 'Acme Inc' LIMIT 1];
         Test.setFixedSearchResults(new List<Id>{ acmeInc.Id });
-        List<Map<String, Object>> upperResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'ACME INC', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> upperResults = search('ACME INC', 'Account');
         Test.setFixedSearchResults(new List<Id>{ acmeInc.Id });
-        List<Map<String, Object>> mixedResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'Acme Inc', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> mixedResults = search('Acme Inc', 'Account');
         Assert.areEqual(
             (Double) upperResults[0].get('score'),
             (Double) mixedResults[0].get('score'),
@@ -395,13 +338,10 @@ private class SearchRecordsTest {
     @isTest
     static void testResultStructure() {
         Account acmeInc = [SELECT Id FROM Account WHERE Name = 'Acme Inc' LIMIT 1];
-        SearchRecords tool = new SearchRecords();
 
         Test.setFixedSearchResults(new List<Id>{ acmeInc.Id });
         Test.startTest();
-        List<Map<String, Object>> results = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'Acme', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> results = search('Acme', 'Account');
         Test.stopTest();
 
         Assert.isFalse(results.isEmpty(), 'Expected at least one result');
@@ -416,9 +356,7 @@ private class SearchRecordsTest {
 
         // Empty SOSL → empty list, no exception
         Test.setFixedSearchResults(new List<Id>());
-        List<Map<String, Object>> emptyResults = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => 'Acme', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> emptyResults = search('Acme', 'Account');
         Assert.areEqual(0, emptyResults.size(), 'Empty SOSL must produce empty list');
     }
 
@@ -429,21 +367,19 @@ private class SearchRecordsTest {
 
     @isTest
     static void testEscapeSoslEscapesAllReservedCharacters() {
-        SearchRecords tool = new SearchRecords();
-
-        Assert.areEqual('a\\{b\\}c',  tool.escapeSosl('a{b}c'),  'Curly braces must be escaped');
-        Assert.areEqual('a\\(b\\)c',  tool.escapeSosl('a(b)c'),  'Parentheses must be escaped');
-        Assert.areEqual('a\\*b',      tool.escapeSosl('a*b'),    'Asterisk must be escaped');
-        Assert.areEqual('a\\?b',      tool.escapeSosl('a?b'),    'Question mark must be escaped');
-        Assert.areEqual('a\\[b\\]c',  tool.escapeSosl('a[b]c'),  'Square brackets must be escaped');
-        Assert.areEqual('a\\\\b',     tool.escapeSosl('a\\b'),   'Backslash must be escaped');
-        Assert.areEqual('a\\"b',      tool.escapeSosl('a"b'),    'Double quote must be escaped');
+        Assert.areEqual('a\\{b\\}c',  SearchRecords.escapeSosl('a{b}c'),  'Curly braces must be escaped');
+        Assert.areEqual('a\\(b\\)c',  SearchRecords.escapeSosl('a(b)c'),  'Parentheses must be escaped');
+        Assert.areEqual('a\\*b',      SearchRecords.escapeSosl('a*b'),    'Asterisk must be escaped');
+        Assert.areEqual('a\\?b',      SearchRecords.escapeSosl('a?b'),    'Question mark must be escaped');
+        Assert.areEqual('a\\[b\\]c',  SearchRecords.escapeSosl('a[b]c'),  'Square brackets must be escaped');
+        Assert.areEqual('a\\\\b',     SearchRecords.escapeSosl('a\\b'),   'Backslash must be escaped');
+        Assert.areEqual('a\\"b',      SearchRecords.escapeSosl('a"b'),    'Double quote must be escaped');
 
         // A term combining several reserved characters, including one that would
         // otherwise close the FIND {...} block early
         Assert.areEqual(
             '\\{escape\\}\\*me\\?',
-            tool.escapeSosl('{escape}*me?'),
+            SearchRecords.escapeSosl('{escape}*me?'),
             'Combined reserved characters must all be escaped'
         );
 
@@ -453,9 +389,7 @@ private class SearchRecordsTest {
         // query string itself)
         Test.setFixedSearchResults(new List<Id>());
         Test.startTest();
-        List<Map<String, Object>> results = (List<Map<String, Object>>) tool.execute(
-            new Map<String, Object>{ 'searchTerm' => '{Acme} (Inc)*?', 'objectApiName' => 'Account' }
-        );
+        List<Map<String, Object>> results = search('{Acme} (Inc)*?', 'Account');
         Test.stopTest();
         Assert.isNotNull(results, 'Search with reserved characters must not throw');
     }

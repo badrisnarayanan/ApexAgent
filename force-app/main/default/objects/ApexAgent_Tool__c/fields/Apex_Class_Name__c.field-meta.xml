@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Apex_Class_Name__c</fullName>
+    <description>The Apex class implementing this tool's @InvocableMethod action. This is also the name the LLM uses to call the tool, so it must exactly match the class name and be unique across all tools.</description>
+    <externalId>false</externalId>
+    <inlineHelpText>Must exactly match the name of a top-level Apex class implementing an @InvocableMethod action. The LLM calls the tool by this name.</inlineHelpText>
+    <label>Apex Class Name</label>
+    <length>100</length>
+    <required>true</required>
+    <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>true</unique>
+</CustomField>

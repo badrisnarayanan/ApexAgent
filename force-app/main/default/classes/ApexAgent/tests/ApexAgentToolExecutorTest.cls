@@ -16,29 +16,27 @@ private class ApexAgentToolExecutorTest {
         return tc;
     }
 
-    private static ApexAgent_Tool__c buildTool(String apiName, Boolean modifiesData) {
+    private static ApexAgent_Tool__c buildTool(String apexClassName, Boolean modifiesData) {
         return new ApexAgent_Tool__c(
-            Tool_API_Name__c           = apiName,
-            Execution_Type__c          = 'Apex',
-            Execution_Name__c          = 'GetObjectApiName',
+            Apex_Class_Name__c           = apexClassName,
             Modifies_Salesforce_Data__c = modifiesData
         );
     }
 
     @IsTest
     static void testExecuteInlineNonDmlToolSuccess() {
-        ApexAgent_Tool__c tool = buildTool('getObjectApiName', false);
+        ApexAgent_Tool__c tool = buildTool('GetObjectApiName', false);
         Map<String, ApexAgent_Tool__c> toolsByName = new Map<String, ApexAgent_Tool__c>{
-            'getObjectApiName' => tool
+            'GetObjectApiName' => tool
         };
         String args = JSON.serialize(new Map<String, Object>{ 'recordId' => UserInfo.getUserId() });
-        ApexAgentApiTypes.ToolCall tc = buildToolCall('call-1', 'getObjectApiName', args);
+        ApexAgentApiTypes.ToolCall tc = buildToolCall('call-1', 'GetObjectApiName', args);
 
         Test.startTest();
         ApexAgentExecTypes.ToolResult result = ApexAgentToolExecutor.execute(toolsByName, tc);
         Test.stopTest();
 
-        Assert.areEqual('success', result.status, 'Inline tool should succeed');
+        Assert.areEqual('success', result.status, 'Inline tool should succeed. errorMessage=' + result.errorMessage);
         Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(result.output);
         Assert.areEqual('User', parsed.get('objectApiName'), 'Should resolve the object type from the ID');
     }
@@ -58,12 +56,12 @@ private class ApexAgentToolExecutorTest {
 
     @IsTest
     static void testExecuteViaDmlBridgeRoundTripSuccess() {
-        ApexAgent_Tool__c tool = buildTool('dmlTool', true);
+        ApexAgent_Tool__c tool = buildTool('GetObjectApiName', true);
         Map<String, ApexAgent_Tool__c> toolsByName = new Map<String, ApexAgent_Tool__c>{
-            'dmlTool' => tool
+            'GetObjectApiName' => tool
         };
         String args = JSON.serialize(new Map<String, Object>{ 'recordId' => UserInfo.getUserId() });
-        ApexAgentApiTypes.ToolCall tc = buildToolCall('call-3', 'dmlTool', args);
+        ApexAgentApiTypes.ToolCall tc = buildToolCall('call-3', 'GetObjectApiName', args);
 
         Test.setMock(HttpCalloutMock.class, new ApexAgentDmlBridgeRoundTripMock());
         Test.startTest();
@@ -78,16 +76,11 @@ private class ApexAgentToolExecutorTest {
 
     @IsTest
     static void testExecuteViaDmlBridgeErrorSurfacesBridgeException() {
-        ApexAgent_Tool__c tool = new ApexAgent_Tool__c(
-            Tool_API_Name__c           = 'brokenDmlTool',
-            Execution_Type__c          = 'Apex',
-            Execution_Name__c          = 'NoSuchApexClass',
-            Modifies_Salesforce_Data__c = true
-        );
+        ApexAgent_Tool__c tool = buildTool('NoSuchApexClass', true);
         Map<String, ApexAgent_Tool__c> toolsByName = new Map<String, ApexAgent_Tool__c>{
-            'brokenDmlTool' => tool
+            'NoSuchApexClass' => tool
         };
-        ApexAgentApiTypes.ToolCall tc = buildToolCall('call-4', 'brokenDmlTool', '{}');
+        ApexAgentApiTypes.ToolCall tc = buildToolCall('call-4', 'NoSuchApexClass', '{}');
 
         Test.setMock(HttpCalloutMock.class, new ApexAgentDmlBridgeRoundTripMock());
         Test.startTest();

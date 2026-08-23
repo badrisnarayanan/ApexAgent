@@ -1,23 +1,44 @@
+/**
+ * Apex Action tool: describes an SObject's fields, record types, and child relationships.
+ */
 @SuppressWarnings('PMD.EagerlyLoadedDescribeSObjectResult')
-public with sharing class GetObjectDetails implements ApexAgentTool {
+public with sharing class GetObjectDetails {
 
-    public Object execute(Map<String, Object> input) {
-        validateInput(input);
+    public class Input {
+        @InvocableVariable(required=true label='Object API Name' description='API name of the object to describe (e.g. "Account").')
+        public String objectApiName;
+    }
 
-        String objectApiName = String.valueOf(input.get('objectApiName')).trim();
+    public class Output {
+        @InvocableVariable(label='Result' description='JSON object with field, record type, and child relationship details.')
+        public String resultJson;
+    }
+
+    @InvocableMethod(label='Get Object Details' description='Returns full metadata for a Salesforce object: API name, label, CRUD flags, fields (grouped by SOAP type), required fields, name field, record types, and child relationships.\n\nWhen to use:\n\nExploring an object\'s structure before querying or building automation.\nYou wanna know "what fields are on X?", "what are the record types?", or "is this object editable?".\nYou need to understand relationships, lookup targets, or child objects.\n\nCritical usage rules:\n\nIf you do not know the object API name - do not assume - use SearchObjects first if you dont know the exact API Name.\nAlways call this tool first to discover field API names before using GetFieldDetails. You cannot know field API names without it.\nDo not call this multiple times for the same object in a single chat. The output is deterministic and will not change. Cache the results mentally.')
+    public static List<Output> run(List<Input> inputs) {
+        List<Output> results = new List<Output>();
+        for (Input inp : inputs) {
+            results.add(processOne(inp));
+        }
+        return results;
+    }
+
+    private static Output processOne(Input inp) {
+        String objectApiName = ApexAgentToolInput.requireNotBlank(inp.objectApiName, 'objectApiName');
         Schema.DescribeSObjectResult describe = ApexAgentUtils.getDescribe(objectApiName);
 
+        Output o = new Output();
         if (!describe.isAccessible()) {
-            return new Map<String, Object>{
+            o.resultJson = JSON.serialize(new Map<String, Object>{
                 'objectAPIName' => describe.getName(),
                 'label'         => describe.getLabel(),
                 'isAccessible'  => false,
                 'message'       => 'Object is not accessible by the running user'
-            };
+            });
+            return o;
         }
 
         Map<String, Object> result = new Map<String, Object>();
-
         result.put('objectAPIName',  describe.getName());
         result.put('label',          describe.getLabel());
         result.put('isCustom',       describe.isCustom());
@@ -33,29 +54,13 @@ public with sharing class GetObjectDetails implements ApexAgentTool {
         buildRecordTypes(describe, result);
         buildChildRelationships(describe, result);
 
-        return result;
-    }
-
-    // ─── Input validation ────────────────────────────────────────────────────────
-
-    private void validateInput(Map<String, Object> input) {
-        if (input == null) {
-            throw new IllegalArgumentException('Input map must not be null');
-        }
-        if (!input.containsKey('objectApiName')) {
-            throw new IllegalArgumentException('Missing required input parameter: objectApiName');
-        }
-        if (input.get('objectApiName') == null) {
-            throw new IllegalArgumentException('Input parameter objectApiName must not be null');
-        }
-        if (String.isBlank(String.valueOf(input.get('objectApiName')))) {
-            throw new IllegalArgumentException('Input parameter objectApiName must not be blank');
-        }
+        o.resultJson = JSON.serialize(result);
+        return o;
     }
 
     // ─── Fields, required fields, and name field (single pass) ──────────────────
 
-    private void buildFieldData(Schema.DescribeSObjectResult describe, Map<String, Object> result) {
+    private static void buildFieldData(Schema.DescribeSObjectResult describe, Map<String, Object> result) {
         Map<String, List<List<String>>> fieldsByType = new Map<String, List<List<String>>>();
         List<String> required = new List<String>();
         String nameField = null;
@@ -102,7 +107,7 @@ public with sharing class GetObjectDetails implements ApexAgentTool {
 
     // ─── Record types ────────────────────────────────────────────────────────────
 
-    private void buildRecordTypes(Schema.DescribeSObjectResult describe, Map<String, Object> result) {
+    private static void buildRecordTypes(Schema.DescribeSObjectResult describe, Map<String, Object> result) {
         List<List<String>> recordTypes = new List<List<String>>();
         for (Schema.RecordTypeInfo rtInfo : describe.getRecordTypeInfos()) {
             recordTypes.add(new List<String>{ rtInfo.getName(), rtInfo.getRecordTypeId() });
@@ -113,7 +118,7 @@ public with sharing class GetObjectDetails implements ApexAgentTool {
 
     // ─── Child relationships ──────────────────────────────────────────────────────
 
-    private void buildChildRelationships(Schema.DescribeSObjectResult describe, Map<String, Object> result) {
+    private static void buildChildRelationships(Schema.DescribeSObjectResult describe, Map<String, Object> result) {
         List<List<String>> childRels = new List<List<String>>();
         for (Schema.ChildRelationship cr : describe.getChildRelationships()) {
             if (cr.getRelationshipName() == null) {

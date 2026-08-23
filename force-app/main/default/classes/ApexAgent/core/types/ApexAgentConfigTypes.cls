@@ -39,7 +39,7 @@ public with sharing class ApexAgentConfigTypes {
     public class LoadResult {
         public AgentConfig config;
         public List<TopicData> topics;
-        /** Keyed on Tool_API_Name__c; values include Tool_Parameters__r sub-records. */
+        /** Keyed on Apex_Class_Name__c — also the LLM-facing tool/function name. */
         public Map<String, ApexAgent_Tool__c> toolsByName;
     }
 }

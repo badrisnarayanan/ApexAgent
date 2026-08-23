@@ -1,6 +1,44 @@
-public with sharing class SearchObjects implements ApexAgentTool {
+/**
+ * Apex Action tool: fuzzy-matches a search term against object API names/labels.
+ *
+ * Not bulk-mergeable: each input carries an independent search term with no
+ * shared key to group on. ApexAgentToolExecutor only ever invokes this action
+ * with a single input.
+ */
+public with sharing class SearchObjects {
 
     private static final Integer MAX_RESULTS = 10;
+
+    public class Input {
+        @InvocableVariable(required=true label='Search Term' description='The term to fuzzy-match against Salesforce object API names and labels.')
+        public String searchTerm;
+    }
+
+    public class Output {
+        @InvocableVariable(label='Result' description='JSON array of matching objects, each with QualifiedApiName, Label, and a relevance score.')
+        public String resultJson;
+    }
+
+    @InvocableMethod(label='Search Objects' description='Searches for Salesforce objects that closely match a given term.\nUsage:\n- Use when the user provides an unfamiliar or ambiguous object name.\n- If multiple searches return no results, assume the object does not exist or is inaccessible to the user.')
+    public static List<Output> run(List<Input> inputs) {
+        List<Output> results = new List<Output>();
+        for (Input inp : inputs) {
+            results.add(processOne(inp));
+        }
+        return results;
+    }
+
+    private static Output processOne(Input inp) {
+        String searchTerm = ApexAgentToolInput.requireNotBlank(inp.searchTerm, 'searchTerm');
+
+        Set<String> patterns = generatePatterns(searchTerm);
+        Map<String, EntityDefinition> resultMap = queryEntities(patterns);
+        List<Map<String, Object>> scored = scoreAndRank(resultMap, searchTerm);
+
+        Output o = new Output();
+        o.resultJson = JSON.serialize(scored);
+        return o;
+    }
 
     private static final Map<String, String> ABBREVIATIONS = new Map<String, String>{
         'acc' => 'account',
@@ -72,36 +110,7 @@ public with sharing class SearchObjects implements ApexAgentTool {
         'ctrct' => 'contract'
     };
 
-    public Object execute(Map<String, Object> input) {
-        if (input == null || !input.containsKey('searchTerm')) {
-            throw new IllegalArgumentException('Missing required input parameter: searchTerm');
-        }
-        Object rawTerm = input.get('searchTerm');
-        if (rawTerm == null) {
-            throw new IllegalArgumentException('Input parameter searchTerm must not be null');
-        }
-        String searchTerm = String.valueOf(rawTerm).trim();
-        if (String.isBlank(searchTerm)) {
-            throw new IllegalArgumentException('Input parameter searchTerm must not be blank');
-        }
-        searchTerm = searchTerm.trim();
-
-        Set<String> patterns = generatePatterns(searchTerm);
-        System.debug('Generated ' + patterns.size() + ' patterns for: ' + searchTerm);
-        System.debug('Patterns: ' + patterns);
-
-        Map<String, EntityDefinition> resultMap = queryEntities(patterns);
-        System.debug('Found ' + resultMap.size() + ' unique entities');
-
-        List<Map<String, Object>> scored = scoreAndRank(resultMap, searchTerm);
-        System.debug('Top results for "' + searchTerm + '":');
-        for (Map<String, Object> r : scored) {
-            System.debug('  ' + r.get('QualifiedApiName') + ' (' + r.get('Label') + ') score=' + r.get('score'));
-        }
-        return scored;
-    }
-
-    private Set<String> generatePatterns(String searchTerm) {
+    private static Set<String> generatePatterns(String searchTerm) {
         Set<String> patterns = new Set<String>();
         String lower = searchTerm.toLowerCase().trim();
 
@@ -114,7 +123,6 @@ public with sharing class SearchObjects implements ApexAgentTool {
 
         // Split compound words by multiple strategies
         List<String> words = splitCompound(searchTerm);
-        System.debug('Split words: ' + words);
 
         // Add each individual word + singular/plural
         for (String word : words) {
@@ -182,7 +190,7 @@ public with sharing class SearchObjects implements ApexAgentTool {
         return cleaned;
     }
 
-    private List<String> splitCompound(String term) {
+    private static List<String> splitCompound(String term) {
         Set<String> wordSet = new Set<String>();
 
         // Split by spaces and underscores first
@@ -207,7 +215,7 @@ public with sharing class SearchObjects implements ApexAgentTool {
         return new List<String>(wordSet);
     }
 
-    private List<String> splitCamelCase(String term) {
+    private static List<String> splitCamelCase(String term) {
         List<String> words = new List<String>();
         String current = '';
 
@@ -230,7 +238,7 @@ public with sharing class SearchObjects implements ApexAgentTool {
         return words;
     }
 
-    private Set<String> splitDoubledConsonants(String term) {
+    private static Set<String> splitDoubledConsonants(String term) {
         Set<String> parts = new Set<String>();
         String vowels = 'aeiou';
 
@@ -249,7 +257,7 @@ public with sharing class SearchObjects implements ApexAgentTool {
         return parts;
     }
 
-    private Set<String> splitVowelConsonant(String term) {
+    private static Set<String> splitVowelConsonant(String term) {
         Set<String> parts = new Set<String>();
         String vowels = 'aeiou';
 
@@ -277,7 +285,7 @@ public with sharing class SearchObjects implements ApexAgentTool {
         return parts;
     }
 
-    private Set<String> pluralSingularVariants(String word) {
+    private static Set<String> pluralSingularVariants(String word) {
         Set<String> variants = new Set<String>();
         if (String.isBlank(word) || word.length() < 2) {
             return variants;
@@ -309,7 +317,7 @@ public with sharing class SearchObjects implements ApexAgentTool {
     }
 
     @SuppressWarnings('PMD.ApexCRUDViolation')
-    private Map<String, EntityDefinition> queryEntities(Set<String> patterns) {
+    private static Map<String, EntityDefinition> queryEntities(Set<String> patterns) {
         Map<String, EntityDefinition> resultMap = new Map<String, EntityDefinition>();
 
         List<String> likePatterns = new List<String>();
@@ -342,7 +350,7 @@ public with sharing class SearchObjects implements ApexAgentTool {
         return resultMap;
     }
 
-    private List<Map<String, Object>> scoreAndRank(Map<String, EntityDefinition> resultMap, String searchTerm) {
+    private static List<Map<String, Object>> scoreAndRank(Map<String, EntityDefinition> resultMap, String searchTerm) {
         String lowerSearch = searchTerm.toLowerCase();
         List<String> searchWords = splitCompound(searchTerm);
         String searchNoSeparators = lowerSearch.replaceAll('[\\s_]', '');
@@ -440,7 +448,7 @@ public with sharing class SearchObjects implements ApexAgentTool {
         return results;
     }
 
-    private Double levenshteinSimilarity(String s1, String s2) {
+    private static Double levenshteinSimilarity(String s1, String s2) {
         if (String.isBlank(s1) || String.isBlank(s2)) {
             return 0;
         }
@@ -452,7 +460,7 @@ public with sharing class SearchObjects implements ApexAgentTool {
         return 1.0 - ((Double) dist / maxLen);
     }
 
-    private Integer levenshteinDistance(String s1, String s2) {
+    private static Integer levenshteinDistance(String s1, String s2) {
         Integer len1 = s1.length();
         Integer len2 = s2.length();
 
