@@ -1,66 +1,54 @@
 /**
- * Verifies ApexAgentToolSchemaBuilder assembles correct OpenAI-style tool
- * definitions by reflecting on real deployed tool classes: base parameter
- * schema + execution_message injection for a tool with only primitive
- * parameters, nested-object schema resolution (via a mocked Tooling API
- * callout) for a tool with an Apex-defined wrapper parameter, and graceful
- * per-class degradation when one tool class in the batch is invalid.
+ * Verifies ApexAgentToolSchemaBuilder's two responsibilities:
+ *  - buildDefinitions(): reflects on real deployed tool classes to produce the
+ *    definition ApexAgentToolSchemaRegenQueueable persists to Schema__c —
+ *    base parameter schema, nested-object schema resolution (via a mocked
+ *    Tooling API callout), and graceful per-class degradation when one class
+ *    in the batch is invalid.
+ *  - buildToolDefinitionsFromSchema(): the live per-turn path, which only ever
+ *    reads each tool's precomputed Schema__c — execution_message injection,
+ *    and skipping (never failing the turn for) a tool with a blank or corrupt
+ *    stored schema.
  */
 @IsTest
 private class ApexAgentToolSchemaBuilderTest {
 
     @IsTest
-    static void testBuildToolDefinitionsHandlesNullAndEmptyInput() {
-        Assert.isTrue(ApexAgentToolSchemaBuilder.buildToolDefinitions(null, false).isEmpty(),
-            'A null tool map should produce no definitions');
-        Assert.isTrue(ApexAgentToolSchemaBuilder.buildToolDefinitions(new Map<String, ApexAgent_Tool__c>(), false).isEmpty(),
-            'An empty tool map should produce no definitions');
-    }
-
-    @IsTest
-    static void testBuildToolDefinitionsForSimpleToolWithAndWithoutExecutionMessage() {
-        Map<String, ApexAgent_Tool__c> toolsByName = new Map<String, ApexAgent_Tool__c>{
-            'GetFieldDetails' => new ApexAgent_Tool__c(Apex_Class_Name__c = 'GetFieldDetails')
-        };
-
+    static void testBuildDefinitionsReflectsRealToolClassesAndDropsInvalidOnes() {
         Test.startTest();
-        List<Map<String, Object>> plainDefs = ApexAgentToolSchemaBuilder.buildToolDefinitions(toolsByName, false);
-        List<Map<String, Object>> withMessageDefs = ApexAgentToolSchemaBuilder.buildToolDefinitions(toolsByName, true);
+        Map<String, Map<String, Object>> emptyResult = ApexAgentToolSchemaBuilder.buildDefinitions(new Set<String>());
+        Map<String, Map<String, Object>> defsByClass = ApexAgentToolSchemaBuilder.buildDefinitions(new Set<String>{
+            'GetFieldDetails',
+            // Real class with no @InvocableMethod — simulates a stale/typo'd Apex_Class_Name__c.
+            'ApexAgentToolInput'
+        });
         Test.stopTest();
 
-        Assert.areEqual(1, plainDefs.size(), 'Should produce exactly one definition for the one requested tool');
-        Map<String, Object> function = (Map<String, Object>) plainDefs[0].get('function');
+        Assert.isTrue(emptyResult.isEmpty(), 'An empty class name set should produce no definitions');
+        Assert.areEqual(1, defsByClass.size(),
+            'One invalid tool class must be dropped, not fail schema-building for the whole batch');
+
+        Map<String, Object> def = defsByClass.get('GetFieldDetails');
+        Assert.isNotNull(def, 'The remaining valid tool must still build correctly');
+        Map<String, Object> function = (Map<String, Object>) def.get('function');
         Assert.areEqual('GetFieldDetails', function.get('name'), 'Function name should be the Apex class name');
         Map<String, Object> parameters = (Map<String, Object>) function.get('parameters');
         Map<String, Object> properties = (Map<String, Object>) parameters.get('properties');
         Assert.isTrue(properties.containsKey('objectApiName'), 'Should expose the tool\'s declared input parameters');
         Assert.isFalse(properties.containsKey('execution_message'),
-            'execution_message must not be injected when showExecutionMessage is false');
-
-        Map<String, Object> withMessageFunction = (Map<String, Object>) withMessageDefs[0].get('function');
-        Map<String, Object> withMessageParameters = (Map<String, Object>) withMessageFunction.get('parameters');
-        Map<String, Object> withMessageProperties = (Map<String, Object>) withMessageParameters.get('properties');
-        Assert.isTrue(withMessageProperties.containsKey('execution_message'),
-            'execution_message must be injected when showExecutionMessage is true');
-        List<Object> required = (List<Object>) withMessageParameters.get('required');
-        Assert.isTrue(required.contains('execution_message'), 'execution_message must be marked required');
-        Assert.isFalse(properties.containsKey('execution_message'),
-            'Injecting execution_message into one build must not mutate the cached base definition');
+            'execution_message is a per-turn addition, never part of the persisted base definition');
     }
 
     @IsTest
-    static void testBuildToolDefinitionsResolvesNestedApexClassParamViaSymbolTable() {
+    static void testBuildDefinitionsResolvesNestedApexClassParamViaSymbolTable() {
         Test.setMock(HttpCalloutMock.class, new ApexAgentToolingQueryMock(200, JSON.serialize(buildUpsertRecordsSymbolTableResponse())));
 
-        Map<String, ApexAgent_Tool__c> toolsByName = new Map<String, ApexAgent_Tool__c>{
-            'UpsertRecords' => new ApexAgent_Tool__c(Apex_Class_Name__c = 'UpsertRecords')
-        };
-
         Test.startTest();
-        List<Map<String, Object>> defs = ApexAgentToolSchemaBuilder.buildToolDefinitions(toolsByName, false);
+        Map<String, Map<String, Object>> defsByClass =
+            ApexAgentToolSchemaBuilder.buildDefinitions(new Set<String>{ 'UpsertRecords' });
         Test.stopTest();
 
-        Map<String, Object> function = (Map<String, Object>) defs[0].get('function');
+        Map<String, Object> function = (Map<String, Object>) defsByClass.get('UpsertRecords').get('function');
         Map<String, Object> parameters = (Map<String, Object>) function.get('parameters');
         Map<String, Object> properties = (Map<String, Object>) parameters.get('properties');
 
@@ -83,21 +71,55 @@ private class ApexAgentToolSchemaBuilderTest {
     }
 
     @IsTest
-    static void testBuildToolDefinitionsSkipsInvalidToolClassWithoutFailingBatch() {
+    static void testBuildToolDefinitionsFromSchemaInjectsExecutionMessageAndSkipsBadSchema() {
+        String storedSchema = JSON.serialize(new Map<String, Object>{
+            'type' => 'function',
+            'function' => new Map<String, Object>{
+                'name' => 'GetFieldDetails',
+                'description' => 'Looks up field metadata.',
+                'parameters' => new Map<String, Object>{
+                    'type' => 'object',
+                    'properties' => new Map<String, Object>{
+                        'objectApiName' => new Map<String, Object>{ 'type' => 'string' }
+                    },
+                    'additionalProperties' => false
+                }
+            }
+        });
+
         Map<String, ApexAgent_Tool__c> toolsByName = new Map<String, ApexAgent_Tool__c>{
-            'GetFieldDetails' => new ApexAgent_Tool__c(Apex_Class_Name__c = 'GetFieldDetails'),
-            // Real class with no @InvocableMethod — simulates a stale/typo'd Apex_Class_Name__c.
-            'ApexAgentToolInput' => new ApexAgent_Tool__c(Apex_Class_Name__c = 'ApexAgentToolInput')
+            'GetFieldDetails' => new ApexAgent_Tool__c(Apex_Class_Name__c = 'GetFieldDetails', Schema__c = storedSchema),
+            // Never generated (e.g. Apex class invalid) — must be skipped, not fail the turn.
+            'NeverGenerated' => new ApexAgent_Tool__c(Apex_Class_Name__c = 'NeverGenerated', Schema__c = null),
+            // Corrupted stored value — must also be skipped, not throw.
+            'Corrupt' => new ApexAgent_Tool__c(Apex_Class_Name__c = 'Corrupt', Schema__c = '{not json')
         };
 
-        Test.startTest();
-        List<Map<String, Object>> defs = ApexAgentToolSchemaBuilder.buildToolDefinitions(toolsByName, false);
-        Test.stopTest();
+        Assert.isTrue(ApexAgentToolSchemaBuilder.buildToolDefinitionsFromSchema(null, false).isEmpty(),
+            'A null tool map should produce no definitions');
+        Assert.isTrue(ApexAgentToolSchemaBuilder.buildToolDefinitionsFromSchema(new Map<String, ApexAgent_Tool__c>(), false).isEmpty(),
+            'An empty tool map should produce no definitions');
 
-        Assert.areEqual(1, defs.size(),
-            'One invalid tool class must be dropped, not fail schema-building for the whole batch');
-        Map<String, Object> function = (Map<String, Object>) defs[0].get('function');
-        Assert.areEqual('GetFieldDetails', function.get('name'), 'The remaining valid tool must still build correctly');
+        List<Map<String, Object>> plainDefs = ApexAgentToolSchemaBuilder.buildToolDefinitionsFromSchema(toolsByName, false);
+        List<Map<String, Object>> withMessageDefs = ApexAgentToolSchemaBuilder.buildToolDefinitionsFromSchema(toolsByName, true);
+
+        Assert.areEqual(1, plainDefs.size(),
+            'The blank and corrupt stored schemas must be skipped, leaving only the one good definition');
+        Map<String, Object> function = (Map<String, Object>) plainDefs[0].get('function');
+        Map<String, Object> parameters = (Map<String, Object>) function.get('parameters');
+        Map<String, Object> properties = (Map<String, Object>) parameters.get('properties');
+        Assert.isFalse(properties.containsKey('execution_message'),
+            'execution_message must not be injected when showExecutionMessage is false');
+
+        Map<String, Object> withMessageFunction = (Map<String, Object>) withMessageDefs[0].get('function');
+        Map<String, Object> withMessageParameters = (Map<String, Object>) withMessageFunction.get('parameters');
+        Map<String, Object> withMessageProperties = (Map<String, Object>) withMessageParameters.get('properties');
+        Assert.isTrue(withMessageProperties.containsKey('execution_message'),
+            'execution_message must be injected when showExecutionMessage is true');
+        List<Object> required = (List<Object>) withMessageParameters.get('required');
+        Assert.isTrue(required.contains('execution_message'), 'execution_message must be marked required');
+        Assert.isFalse(properties.containsKey('execution_message'),
+            'Injecting execution_message into one build must not leak into a separately parsed build');
     }
 
     // ─────────────────────────────────────────────────────────────────

@@ -16,6 +16,10 @@
         <apexClass>ApexAgentDmlBridgeResource</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>ApexAgentToolSchemaController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <description>Full admin access to all ApexAgent objects, fields, tabs, and the ApexAgent Setup Portal app.</description>
     <externalCredentialPrincipalAccesses>
         <enabled>true</enabled>
@@ -279,6 +283,11 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>ApexAgent_Tool__c.Modifies_Salesforce_Data__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>ApexAgent_Tool__c.Schema__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>

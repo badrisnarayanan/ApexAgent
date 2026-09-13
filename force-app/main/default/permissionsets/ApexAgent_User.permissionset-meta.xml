@@ -42,6 +42,11 @@
         <field>ApexAgent_Message_Log__c.Agent_Message_UUID__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>ApexAgent_Tool__c.Schema__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <hasActivationRequired>false</hasActivationRequired>
     <label>ApexAgent User</label>
     <objectPermissions>

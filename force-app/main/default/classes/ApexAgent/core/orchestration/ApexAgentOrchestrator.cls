@@ -75,7 +75,7 @@ public with sharing class ApexAgentOrchestrator {
             ApexAgentConfigTypes.LoadResult loaded = ApexAgentTopicLoader.load(agentName);
             config = loaded.config;
             List<Map<String, Object>> toolDefs =
-                ApexAgentToolSchemaBuilder.buildToolDefinitions(loaded.toolsByName, config.showExecutionMessage);
+                ApexAgentToolSchemaBuilder.buildToolDefinitionsFromSchema(loaded.toolsByName, config.showExecutionMessage);
 
             // ── 2. Build messages array ───────────────────────────────
             List<Object> messages = new List<Object>();

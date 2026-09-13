@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Schema__c</fullName>
+    <label>Schema</label>
+    <type>LongTextArea</type>
+    <length>131072</length>
+    <visibleLines>10</visibleLines>
+    <description>OpenAI-style function-calling tool definition (JSON), precomputed by ApexAgentToolSchemaRegenQueueable from the tool&apos;s Apex Action. Populated automatically after insert or after Apex_Class_Name__c changes, and on demand via the Regenerate Schema quick action. Left unchanged when the most recent generation attempt failed, so a prior valid schema is never overwritten with a broken one. Not history-tracked, unlike this object&apos;s other fields: it&apos;s a machine-regenerated derivative of the Apex class, not user-entered configuration, and Long Text Area history only records the first/last 255 characters of a change — noise for a JSON blob that gets rewritten on every insert or class-name edit.</description>
+    <inlineHelpText>Precomputed tool definition JSON used by the agent loop. Read-only — use the Regenerate Schema quick action to refresh it after changing the Apex class.</inlineHelpText>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+</CustomField>

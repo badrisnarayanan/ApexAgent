@@ -138,14 +138,16 @@ public with sharing class ApexAgentTopicLoader {
         return ids;
     }
 
-    /** Query C — Tools. Parameter schema is now derived by reflecting on each
-     * tool's Apex Action (see ApexAgentToolSchemaBuilder), not from child records. */
+    /** Query C — Tools. Parameter schema is precomputed by
+     * ApexAgentToolSchemaRegenQueueable onto Schema__c (see
+     * ApexAgentToolSchemaBuilder.buildToolDefinitionsFromSchema) rather than
+     * reflected on the Apex class live. */
     private static Map<Id, ApexAgent_Tool__c> queryTools(Set<Id> toolIds) {
         if (toolIds.isEmpty()) {
             return new Map<Id, ApexAgent_Tool__c>();
         }
         return new Map<Id, ApexAgent_Tool__c>([
-            SELECT Id, Apex_Class_Name__c, Modifies_Salesforce_Data__c
+            SELECT Id, Apex_Class_Name__c, Modifies_Salesforce_Data__c, Schema__c
             FROM ApexAgent_Tool__c
             WHERE Id IN :toolIds
             WITH USER_MODE
@@ -183,7 +185,11 @@ public with sharing class ApexAgentTopicLoader {
 
             for (ApexAgent_Topic_Tool_Map__c ttm : topic.Topic_Tool_Maps__r) {
                 ApexAgent_Tool__c tool = toolsById.get(ttm.Tool__c);
-                if (tool != null) {
+                // A tool with no generated Schema__c yet (pending regeneration, or
+                // permanently failing) has no function definition in the tools array
+                // ApexAgentToolSchemaBuilder sends the LLM — listing it here anyway
+                // would let the model try to call a tool it was never actually given.
+                if (tool != null && String.isNotBlank(tool.Schema__c)) {
                     td.toolApiNames.add(tool.Apex_Class_Name__c);
                 }
             }

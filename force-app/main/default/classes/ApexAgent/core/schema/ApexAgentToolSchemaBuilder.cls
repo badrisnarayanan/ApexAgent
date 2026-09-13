@@ -1,7 +1,14 @@
 /**
- * Builds the OpenAI-style function-calling tool definitions array by reflecting
- * on each tool's Apex Action (`@InvocableMethod`) rather than reading hand-maintained
- * parameter records. Replaces the old ApexAgentTopicLoader.buildSingleToolDef().
+ * Builds OpenAI-style function-calling tool definitions by reflecting on each
+ * tool's Apex Action (`@InvocableMethod`), and separately assembles the live
+ * per-turn tool array the agent loop sends to the LLM.
+ *
+ * The reflection side (buildDefinitions) is the expensive part — one Tooling API
+ * callout for nested Apex-defined parameter types — and only ever runs from
+ * ApexAgentToolSchemaRegenQueueable, which persists its result onto each
+ * ApexAgent_Tool__c.Schema__c. The agent loop never reflects live: it reads
+ * Schema__c and only adds the per-turn execution_message parameter
+ * (buildToolDefinitionsFromSchema).
  *
  * For each tool:
  *  - `Invocable.Action.createCustomAction('apex', className).getDescribe()` supplies
@@ -15,21 +22,10 @@
  *  - The Output class's fields are folded into the function's description text
  *    (there is no standard "output schema" slot in OpenAI's tool-calling spec) so
  *    the model still learns the result shape before calling the tool.
- *
- * Per-class results are cached in the dedicated ApexAgentToolSchema Platform Cache
- * partition, keyed by class name + the Apex class's LastModifiedDate, so this
- * reflection doesn't re-run on every agent turn. Kept separate from the
- * ApexAgentExecution partition (high-churn, short-TTL live tool-status entries) —
- * this cache is low-churn (one entry per tool class) and long-TTL (24h).
  */
 public with sharing class ApexAgentToolSchemaBuilder {
 
     private static final String ACTION_TYPE = 'apex';
-    // Cache.Org keys are strictly <namespace>.<partition>.<key>, and the key segment
-    // itself must be pure alphanumeric — no dots, underscores, or hyphens — so class
-    // name and version are simply concatenated.
-    private static final String CACHE_PARTITION = 'local.ApexAgentToolSchema';
-    private static final Integer CACHE_TTL_SECONDS = 86400;
     private static final Integer MAX_NESTING_DEPTH = 5;
 
     private static final Set<String> KNOWN_APEX_PRIMITIVES = new Set<String>{
@@ -37,16 +33,20 @@ public with sharing class ApexAgentToolSchemaBuilder {
     };
 
     /**
-     * Builds the OpenRouter function-calling tool definitions array for every tool
-     * in toolsByName (keyed by Apex_Class_Name__c). When showExecutionMessage is true,
-     * an execution_message parameter is injected into every tool's schema so the LLM
-     * can provide a user-friendly status description.
+     * Builds the per-turn function-calling tool definitions array for every tool
+     * in toolsByName (keyed by Apex_Class_Name__c) by reading each tool's
+     * precomputed Schema__c — never by reflecting on the Apex class live. A tool
+     * whose Schema__c is blank (never generated, or last generation attempt
+     * failed) or holds corrupt JSON is skipped rather than failing the whole turn.
+     * When showExecutionMessage is true, an execution_message parameter is
+     * injected into every tool's schema so the LLM can provide a user-friendly
+     * status description.
      *
      * @param toolsByName tools to build definitions for, keyed by Apex class name
      * @param showExecutionMessage whether to inject the synthetic execution_message param
      * @return one OpenAI-style {type:'function', function:{...}} map per tool
      */
-    public static List<Map<String, Object>> buildToolDefinitions(
+    public static List<Map<String, Object>> buildToolDefinitionsFromSchema(
         Map<String, ApexAgent_Tool__c> toolsByName,
         Boolean showExecutionMessage
     ) {
@@ -55,72 +55,47 @@ public with sharing class ApexAgentToolSchemaBuilder {
             return defs;
         }
 
-        Map<String, Map<String, Object>> baseDefsByClass = buildBaseDefinitions(toolsByName.keySet());
-
         for (String className : toolsByName.keySet()) {
-            Map<String, Object> baseDef = baseDefsByClass.get(className);
-            if (baseDef == null) {
-                continue;
+            Map<String, Object> def = buildSingleToolDefinitionFromSchema(
+                className, toolsByName.get(className).Schema__c, showExecutionMessage == true
+            );
+            if (def != null) {
+                defs.add(def);
             }
-            defs.add(applyExecutionMessage(baseDef, showExecutionMessage == true));
         }
         return defs;
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    // Cache-aware base definition assembly
-    // ─────────────────────────────────────────────────────────────────
-
-    private static Map<String, Map<String, Object>> buildBaseDefinitions(Set<String> classNames) {
-        Map<String, Map<String, Object>> result = new Map<String, Map<String, Object>>();
-        Map<String, Datetime> lastModifiedByClass = queryLastModifiedDates(classNames);
-
-        Map<String, String> cacheKeyByClass = new Map<String, String>();
-        Set<String> classesToBuild = new Set<String>();
-
-        for (String className : classNames) {
-            String cacheKey = buildCacheKey(className, lastModifiedByClass.get(className));
-            cacheKeyByClass.put(className, cacheKey);
-
-            Object cached = Cache.Org.get(cacheKey);
-            if (cached instanceof String) {
-                result.put(className, (Map<String, Object>) JSON.deserializeUntyped((String) cached));
-            } else {
-                classesToBuild.add(className);
-            }
+    /**
+     * Parsing and execution_message injection are wrapped in one try/catch —
+     * Schema__c is directly editable (an admin can hand-edit or paste into it),
+     * so a value that's syntactically valid JSON but structurally incomplete
+     * (e.g. missing the expected function/parameters/properties shape) must be
+     * skipped here too, not just a hard JSON parse failure, or one bad tool's
+     * NullPointerException inside applyExecutionMessage would fail the whole turn.
+     */
+    private static Map<String, Object> buildSingleToolDefinitionFromSchema(
+        String className, String schemaJson, Boolean showExecutionMessage
+    ) {
+        if (String.isBlank(schemaJson)) {
+            System.debug(LoggingLevel.WARN, 'Skipping tool class (schema not yet generated): ' + className);
+            return null;
         }
-
-        if (!classesToBuild.isEmpty()) {
-            Map<String, Map<String, Object>> freshlyBuilt = buildDefinitions(classesToBuild);
-            for (String className : freshlyBuilt.keySet()) {
-                Map<String, Object> def = freshlyBuilt.get(className);
-                result.put(className, def);
-                Cache.Org.put(cacheKeyByClass.get(className), JSON.serialize(def), CACHE_TTL_SECONDS);
-            }
+        try {
+            Map<String, Object> baseDef = (Map<String, Object>) JSON.deserializeUntyped(schemaJson);
+            return applyExecutionMessage(baseDef, showExecutionMessage);
+        } catch (Exception e) {
+            System.debug(LoggingLevel.WARN, 'Skipping tool class (invalid stored schema): ' + className + ' — ' + e.getMessage());
+            return null;
         }
-
-        return result;
-    }
-
-    private static String buildCacheKey(String className, Datetime lastModified) {
-        String version = lastModified != null ? String.valueOf(lastModified.getTime()) : 'v0';
-        return CACHE_PARTITION + '.schema' + className + version;
-    }
-
-    @SuppressWarnings('PMD.ApexCRUDViolation')
-    private static Map<String, Datetime> queryLastModifiedDates(Set<String> classNames) {
-        Map<String, Datetime> byName = new Map<String, Datetime>();
-        for (ApexClass ac : [SELECT Name, LastModifiedDate FROM ApexClass WHERE Name IN :classNames]) {
-            byName.put(ac.Name, ac.LastModifiedDate);
-        }
-        return byName;
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // Fresh definition building (describe + symbol table)
+    // Fresh definition building (describe + symbol table) — called only from
+    // ApexAgentToolSchemaRegenQueueable to (re)populate Schema__c.
     // ─────────────────────────────────────────────────────────────────
 
-    private static Map<String, Map<String, Object>> buildDefinitions(Set<String> classNames) {
+    public static Map<String, Map<String, Object>> buildDefinitions(Set<String> classNames) {
         Map<String, Invocable.Action.DescribeResult> describeByClass = describeAll(classNames);
         Set<String> classesNeedingSymbolTable = collectClassesNeedingSymbolTable(describeByClass);
         Map<String, ApexAgentSymbolTableTypes.ApexClassRecord> symbolTables =
@@ -329,17 +304,19 @@ public with sharing class ApexAgentToolSchemaBuilder {
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // execution_message injection (unchanged behavior from before the refactor)
+    // execution_message injection
     // ─────────────────────────────────────────────────────────────────
 
+    /**
+     * baseDef is freshly deserialized per call (see parseStoredSchema) and never
+     * shared across turns or tools, so it's safe to mutate in place here.
+     */
     private static Map<String, Object> applyExecutionMessage(Map<String, Object> baseDef, Boolean showExecutionMessage) {
         if (!showExecutionMessage) {
             return baseDef;
         }
 
-        // Deep-clone via serialize/deserialize so mutating this copy never corrupts the cached base def.
-        Map<String, Object> def = (Map<String, Object>) JSON.deserializeUntyped(JSON.serialize(baseDef));
-        Map<String, Object> function = (Map<String, Object>) def.get('function');
+        Map<String, Object> function = (Map<String, Object>) baseDef.get('function');
         Map<String, Object> parameters = (Map<String, Object>) function.get('parameters');
         Map<String, Object> properties = (Map<String, Object>) parameters.get('properties');
 
@@ -357,7 +334,7 @@ public with sharing class ApexAgentToolSchemaBuilder {
         required.add('execution_message');
         parameters.put('required', required);
 
-        return def;
+        return baseDef;
     }
 
     // ─────────────────────────────────────────────────────────────────
