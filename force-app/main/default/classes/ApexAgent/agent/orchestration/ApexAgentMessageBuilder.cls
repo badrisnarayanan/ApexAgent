@@ -115,11 +115,11 @@ public with sharing class ApexAgentMessageBuilder {
         if (!toolDepthMsgIds.isEmpty()) {
             List<ApexAgent_Tool_Log__c> toolLogs = [
                 SELECT Id, Message_Log__c, Tool_Name__c, Tool_Call_Id__c,
-                       Input__c, Output__c, Agent_Thought_Signature__c
+                       Input__c, Output__c, Error_Message__c, Agent_Thought_Signature__c
                 FROM ApexAgent_Tool_Log__c
                 WHERE Message_Log__c IN :toolDepthMsgIds
                 WITH USER_MODE
-                ORDER BY CreatedDate ASC
+                ORDER BY Started_At__c ASC, Id ASC
             ];
             for (ApexAgent_Tool_Log__c tl : toolLogs) {
                 List<ApexAgent_Tool_Log__c> bucket = toolLogsByMsgId.get(tl.Message_Log__c);
@@ -180,7 +180,9 @@ public with sharing class ApexAgentMessageBuilder {
                     ApexAgentApiTypes.ChatMessage toolResult = new ApexAgentApiTypes.ChatMessage();
                     toolResult.role         = 'tool';
                     toolResult.tool_call_id = tl.Tool_Call_Id__c;
-                    toolResult.content      = String.isNotBlank(tl.Output__c) ? tl.Output__c : '';
+                    // A failed call has no output; replay its error so the model still sees why it failed.
+                    toolResult.content      = String.isNotBlank(tl.Output__c) ? tl.Output__c
+                        : (String.isNotBlank(tl.Error_Message__c) ? tl.Error_Message__c : '');
                     messages.add(toolResult);
                 }
             }
