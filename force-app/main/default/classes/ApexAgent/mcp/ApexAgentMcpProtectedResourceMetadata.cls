@@ -22,7 +22,7 @@ global with sharing class ApexAgentMcpProtectedResourceMetadata {
 
     @HttpGet
     global static void getMetadata() {
-        String serverName = extractServerName();
+        String serverName = ApexAgentMcpPathUtils.extractServerName(RestContext.request.requestURI, PATH_MARKER);
         if (String.isBlank(serverName)) {
             RestContext.response.statusCode = 404;
             return;
@@ -41,22 +41,5 @@ global with sharing class ApexAgentMcpProtectedResourceMetadata {
         };
         RestContext.response.addHeader('Content-Type', 'application/json');
         RestContext.response.responseBody = Blob.valueOf(JSON.serialize(metadata));
-    }
-
-    /**
-     * String-only, no SOQL - this class is guest-accessible and must never
-     * validate the server name against ApexAgent_MCP__c (see
-     * ApexAgentMcpResource's class doc for why).
-     */
-    private static String extractServerName() {
-        String uri = RestContext.request.requestURI;
-        Integer markerIndex = uri.indexOf(PATH_MARKER);
-        if (markerIndex == -1) {
-            return null;
-        }
-        String remainder = uri.substring(markerIndex + PATH_MARKER.length());
-        Integer slashIndex = remainder.indexOf('/');
-        String name = slashIndex == -1 ? remainder : remainder.substring(0, slashIndex);
-        return String.isBlank(name) ? null : name;
     }
 }
