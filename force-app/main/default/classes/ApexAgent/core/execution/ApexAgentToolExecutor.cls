@@ -69,14 +69,14 @@ public with sharing class ApexAgentToolExecutor {
                 ? executeViaDmlBridge(tool, inputs)
                 : executeInline(tool.Apex_Class_Name__c, inputs);
 
-            result.status = 'success';
+            result.status = ApexAgentExecTypes.STATUS_SUCCESS;
 
         } catch (ApexAgentDmlBridgeResource.BridgeException e) {
-            result.status = 'error';
+            result.status = ApexAgentExecTypes.STATUS_ERROR;
             result.errorMessage = e.getMessage();
             result.errorStackTrace = e.originalStackTrace;
         } catch (Exception e) {
-            result.status = 'error';
+            result.status = ApexAgentExecTypes.STATUS_ERROR;
             result.errorMessage = e.getMessage();
             result.errorStackTrace = e.getStackTraceString();
         }

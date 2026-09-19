@@ -84,7 +84,7 @@ public with sharing class ApexAgentMcpToolService {
         Datetime startedAt = Datetime.now();
         ApexAgentExecTypes.ToolResult toolResult = ApexAgentToolExecutor.execute(toolsByName, toolCall, true);
         Datetime endedAt = Datetime.now();
-        Boolean isError = toolResult.status == 'error';
+        Boolean isError = toolResult.isError();
 
         logToolCall(mcpServerId, toolResult, startedAt, endedAt);
 
@@ -141,7 +141,7 @@ public with sharing class ApexAgentMcpToolService {
         entry.toolName = toolResult.name;
         entry.inputJson = toolResult.inputArguments;
         entry.outputJson = toolResult.output;
-        entry.status = toolResult.status == 'error' ? 'Error' : 'Success';
+        entry.status = ApexAgentLogger.toolLogStatus(toolResult);
         entry.errorMessage = toolResult.errorMessage;
         entry.stackTrace = toolResult.errorStackTrace;
         entry.startedAt = startedAt;

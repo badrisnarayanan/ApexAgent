@@ -36,7 +36,9 @@ private class ApexAgentToolExecutorTest {
         ApexAgentExecTypes.ToolResult result = ApexAgentToolExecutor.execute(toolsByName, tc);
         Test.stopTest();
 
-        Assert.areEqual('success', result.status, 'Inline tool should succeed. errorMessage=' + result.errorMessage);
+        Assert.areEqual(ApexAgentExecTypes.STATUS_SUCCESS, result.status, 'Inline tool should succeed. errorMessage=' + result.errorMessage);
+        Assert.isFalse(result.isError(), 'isError should be false for a successful result');
+        Assert.areEqual('Success', ApexAgentLogger.toolLogStatus(result), 'A successful result should be logged as Success');
         Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(result.output);
         Assert.areEqual('User', parsed.get('objectApiName'), 'Should resolve the object type from the ID');
     }
@@ -50,7 +52,9 @@ private class ApexAgentToolExecutorTest {
         ApexAgentExecTypes.ToolResult result = ApexAgentToolExecutor.execute(toolsByName, tc);
         Test.stopTest();
 
-        Assert.areEqual('error', result.status, 'Unregistered tool should error');
+        Assert.areEqual(ApexAgentExecTypes.STATUS_ERROR, result.status, 'Unregistered tool should error');
+        Assert.isTrue(result.isError(), 'isError should be true for an error result');
+        Assert.areEqual('Error', ApexAgentLogger.toolLogStatus(result), 'An error result should be logged as Error');
         Assert.isTrue(result.errorMessage.contains('notRegistered'), 'Error should name the missing tool');
     }
 

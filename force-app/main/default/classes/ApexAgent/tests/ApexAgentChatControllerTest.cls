@@ -512,4 +512,79 @@ private class ApexAgentChatControllerTest {
         Assert.isFalse(errLog.Error__c.contains('attempt(s)'),
             'A 400 must not be retried — message should not mention retry attempts');
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // sendMessage — a failing tool call
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** First LLM call asks for a tool call; every later call answers. Records each request body. */
+    private class ToolCallThenStopMock implements HttpCalloutMock {
+        public List<String> requestBodies = new List<String>();
+
+        public HttpResponse respond(HttpRequest req) {
+            requestBodies.add(req.getBody());
+            HttpResponse res = new HttpResponse();
+            res.setStatusCode(200);
+            res.setHeader('Content-Type', 'application/json');
+            res.setBody(requestBodies.size() == 1
+                ? ApexAgentLLMCalloutMock.toolCallResponse('call-err-1', 'GetRecordDetails', '{"recordId":"not-an-id"}')
+                : ApexAgentLLMCalloutMock.stopResponse('The tool failed.'));
+            return res;
+        }
+    }
+
+    @IsTest
+    static void testFailedToolCallReachesLlmAndIsLoggedAsError() {
+        ApexAgent_LLM__c llm = buildLlm();
+        ApexAgent_Agent__c agent = buildAgent(llm.Id);
+        ApexAgent_Thread_Log__c thread = buildThread('thread-tool-error');
+
+        ApexAgent_Topic__c topic = new ApexAgent_Topic__c(Name = 'Records', Topic_API_Name__c = 'records');
+        insert topic;
+        insert new ApexAgent_Topic_Map__c(Agent__c = agent.Id, Topic__c = topic.Id, Active__c = true, Order__c = 1);
+        ApexAgent_Tool__c tool = new ApexAgent_Tool__c(
+            Apex_Class_Name__c = 'GetRecordDetails',
+            Modifies_Salesforce_Data__c = false,
+            Schema__c = JSON.serialize(new Map<String, Object>{
+                'type' => 'function',
+                'function' => new Map<String, Object>{
+                    'name' => 'GetRecordDetails',
+                    'description' => 'Fetches a record by Id.',
+                    'parameters' => new Map<String, Object>{
+                        'type' => 'object',
+                        'properties' => new Map<String, Object>{
+                            'recordId' => new Map<String, Object>{ 'type' => 'string' }
+                        }
+                    }
+                }
+            })
+        );
+        insert tool;
+        insert new ApexAgent_Topic_Tool_Map__c(Topic__c = topic.Id, Tool__c = tool.Id, Active__c = true);
+
+        String messageUUID = 'msg-tool-error-' + UUID.randomUUID().toString();
+        ToolCallThenStopMock mock = new ToolCallThenStopMock();
+        Test.setMock(HttpCalloutMock.class, mock);
+
+        Test.startTest();
+        ApexAgentOrchestrator.AgentResponse response = ApexAgentChatController.sendMessage(
+            'TestAgent', 'Fetch that record', thread.Agent_Thread_UUID__c, messageUUID, null
+        );
+        Test.stopTest();
+
+        Assert.isNull(response.errorMessage, 'A failed tool call should not fail the turn');
+        Assert.areEqual('The tool failed.', response.llmResponse, 'The LLM should get a second call and answer');
+        Assert.areEqual(2, mock.requestBodies.size(), 'A tool call should be followed by exactly one more LLM call');
+        Assert.isTrue(mock.requestBodies[1].contains('recordId is not a valid Salesforce ID'),
+            'The LLM must be told why the tool failed');
+
+        ApexAgent_Tool_Log__c toolLog = [
+            SELECT Status__c, Error_Message__c
+            FROM ApexAgent_Tool_Log__c
+            WHERE Message_Log__r.Agent_Message_UUID__c = :messageUUID
+        ];
+        Assert.areEqual('Error', toolLog.Status__c, 'The failed tool call should be logged with Error status');
+        Assert.isTrue(toolLog.Error_Message__c.contains('recordId is not a valid Salesforce ID'),
+            'The tool error message should be logged');
+    }
 }

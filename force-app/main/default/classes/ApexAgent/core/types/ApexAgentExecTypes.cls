@@ -4,6 +4,10 @@
  */
 public with sharing class ApexAgentExecTypes {
 
+    /** Values of ToolResult.status. */
+    public static final String STATUS_SUCCESS = 'success';
+    public static final String STATUS_ERROR   = 'error';
+
     /** Result of a single tool execution, including metadata and outcome. */
     public class ToolResult {
         public String toolId;
@@ -14,5 +18,9 @@ public with sharing class ApexAgentExecTypes {
         public String status;
         public String errorMessage;
         public String errorStackTrace;
+
+        public Boolean isError() {
+            return STATUS_ERROR.equals(status);
+        }
     }
 }

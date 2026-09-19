@@ -201,7 +201,7 @@ public with sharing class ApexAgentOrchestrator {
                         ApexAgentApiTypes.ChatMessage toolMsg = new ApexAgentApiTypes.ChatMessage();
                         toolMsg.role         = 'tool';
                         toolMsg.tool_call_id = tc.id;
-                        toolMsg.content      = ApexAgentOrchestratorUtils.STATUS_ERROR.equals(result.status)
+                        toolMsg.content      = result.isError()
                             ? result.errorMessage
                             : result.output;
                         messages.add(toolMsg);

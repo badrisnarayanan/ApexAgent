@@ -6,6 +6,15 @@ public with sharing class ApexAgentLogger {
 
     private static final Integer MAX_FIELD_LENGTH = 131072;
 
+    /** Values of ApexAgent_Tool_Log__c.Status__c. */
+    public static final String TOOL_STATUS_SUCCESS = 'Success';
+    public static final String TOOL_STATUS_ERROR   = 'Error';
+
+    /** Maps a tool execution outcome to the Status__c value stored on its Tool Log. */
+    public static String toolLogStatus(ApexAgentExecTypes.ToolResult result) {
+        return result.isError() ? TOOL_STATUS_ERROR : TOOL_STATUS_SUCCESS;
+    }
+
     // ─────────────────────────────────────────────────────────────────
     // Payload — flat struct carrying all data from the orchestrator
     // ─────────────────────────────────────────────────────────────────

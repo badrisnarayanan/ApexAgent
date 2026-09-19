@@ -200,6 +200,27 @@ private class ApexAgentMcpResourceTest {
             'Rejecting an unmapped tool before execution should not write a Tool_Log__c'
         );
 
+        // Mapped tool that runs and fails - an isError result the client can read, logged as Error.
+        String failingCall = JSON.serialize(new Map<String, Object>{
+            'jsonrpc' => '2.0', 'id' => 6, 'method' => 'tools/call',
+            'params' => new Map<String, Object>{
+                'name' => 'GetObjectApiName',
+                'arguments' => new Map<String, Object>{ 'recordId' => 'not-an-id' }
+            }
+        });
+        buildRequest('testserver', failingCall);
+        ApexAgentMcpResource.handleRequest();
+        Map<String, Object> failedResult = (Map<String, Object>) parseResponse().get('result');
+        Assert.areEqual(true, failedResult.get('isError'), 'A tool that fails while running should be an isError result');
+        Map<String, Object> failedContent = (Map<String, Object>) ((List<Object>) failedResult.get('content'))[0];
+        Assert.isTrue(String.valueOf(failedContent.get('text')).contains('not a valid Salesforce ID'),
+            'The client should be given the tool\'s error message');
+        ApexAgent_Tool_Log__c failedLog = [
+            SELECT Status__c, Error_Message__c FROM ApexAgent_Tool_Log__c WHERE MCP__c = :server.Id
+        ];
+        Assert.areEqual('Error', failedLog.Status__c, 'A failed tool call should be logged with Error status');
+        Assert.isTrue(failedLog.Error_Message__c.contains('not a valid Salesforce ID'), 'The error message should be logged');
+
         // Malformed JSON body.
         buildRequest('testserver', '{not valid json');
         ApexAgentMcpResource.handleRequest();

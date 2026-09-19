@@ -6,8 +6,6 @@ public with sharing class ApexAgentOrchestratorUtils {
 
     public static final String REASONING_SUMMARY   = 'reasoning.summary';
     public static final String REASONING_ENCRYPTED = 'reasoning.encrypted';
-    public static final String STATUS_ERROR        = 'Error';
-    public static final String STATUS_SUCCESS      = 'Success';
 
     /** Extracts the human-readable thought content from an LLM response message. */
     public static String extractThoughtContent(ApexAgentApiTypes.ResponseMessage msg) {
@@ -87,7 +85,7 @@ public with sharing class ApexAgentOrchestratorUtils {
         entry.toolName          = tc.function != null ? tc.function.name      : null;
         entry.inputJson         = tc.function != null ? tc.function.arguments : null;
         entry.outputJson        = result.output;
-        entry.status            = STATUS_ERROR.equals(result.status) ? STATUS_ERROR : STATUS_SUCCESS;
+        entry.status            = ApexAgentLogger.toolLogStatus(result);
         entry.errorMessage      = result.errorMessage;
         entry.stackTrace        = result.errorStackTrace;
         entry.thoughtSignature  = signature;
