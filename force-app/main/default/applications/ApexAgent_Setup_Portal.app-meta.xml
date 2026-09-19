@@ -12,6 +12,7 @@
     <navType>Console</navType>
     <tabs>ApexAgent_LLM__c</tabs>
     <tabs>ApexAgent_Agent__c</tabs>
+    <tabs>ApexAgent_MCP__c</tabs>
     <tabs>ApexAgent_Topic__c</tabs>
     <tabs>ApexAgent_Instruction__c</tabs>
     <tabs>ApexAgent_Tool__c</tabs>
@@ -34,6 +35,9 @@
         </mappings>
         <mappings>
             <tab>ApexAgent_LLM__c</tab>
+        </mappings>
+        <mappings>
+            <tab>ApexAgent_MCP__c</tab>
         </mappings>
         <mappings>
             <tab>ApexAgent_Message_Log__c</tab>

@@ -69,6 +69,38 @@ public with sharing class ApexAgentLogger {
         }
     }
 
+    /**
+     * Inserts a single Tool_Log__c for an MCP-originated tools/call. There is
+     * no Message_Log__c for these - MCP__c is set instead, per the invariant
+     * that exactly one of the two is ever populated on a Tool_Log__c record.
+     */
+    public static void logMcpToolCall(Id mcpServerId, ToolLogEntry entry) {
+        Long durMs = entry.startedAt != null && entry.endedAt != null
+            ? entry.endedAt.getTime() - entry.startedAt.getTime()
+            : null;
+
+        Database.SaveResult result = Database.insert(new ApexAgent_Tool_Log__c( // NOPMD — log objects require system-level DML; users lack write access
+            MCP__c           = mcpServerId,
+            Tool_Name__c     = entry.toolName,
+            Tool_Call_Id__c  = entry.toolCallId,
+            Started_At__c    = entry.startedAt,
+            Ended_At__c      = entry.endedAt,
+            Duration_ms__c   = durMs,
+            Input__c         = truncate(entry.inputJson),
+            Output__c        = truncate(entry.outputJson),
+            Status__c        = entry.status,
+            Error_Message__c = truncate(entry.errorMessage),
+            Stack_Trace__c   = truncate(entry.stackTrace)
+        ), false);
+
+        if (!result.isSuccess()) {
+            System.debug(LoggingLevel.ERROR,
+                'ApexAgentLogger: MCP tool log insert failed for ' + entry.toolName
+                + ': ' + formatErrors(result.getErrors())
+            );
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────────
     // Private: thread upsert
     // ─────────────────────────────────────────────────────────────────

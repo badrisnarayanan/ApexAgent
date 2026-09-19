@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>MCP_API_name_no_space_special_chars</fullName>
+    <active>true</active>
+    <description>API Name may only contain letters, numbers, hyphens, and underscores (no spaces or special characters) — it becomes part of the MCP endpoint URL.</description>
+    <errorConditionFormula>NOT(REGEX(MCP_API_Name__c, &quot;^[A-Za-z0-9_-]+$&quot;))</errorConditionFormula>
+    <errorMessage>API Name may only contain letters, numbers, hyphens, and underscores (no spaces or special characters) — it becomes part of the MCP endpoint URL.</errorMessage>
+</ValidationRule>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExternalClientApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <contactEmail>s.badrinarayanan791@gmail.com</contactEmail>
+    <distributionState>Local</distributionState>
+    <isProtected>false</isProtected>
+    <label>ApexAgent MCP</label>
+    <orgScopedExternalApp>00DgL00000Nxz5Z:ApexAgent_MCP</orgScopedExternalApp>
+</ExternalClientApplication>

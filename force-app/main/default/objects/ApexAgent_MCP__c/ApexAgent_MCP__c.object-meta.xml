@@ -128,15 +128,15 @@
     </actionOverrides>
     <actionOverrides>
         <actionName>View</actionName>
-        <content>ApexAgent_Tool_Log_Record_Page</content>
-        <formFactor>Small</formFactor>
+        <content>ApexAgent_MCP_Record_Page</content>
+        <formFactor>Large</formFactor>
         <skipRecordTypeSelect>false</skipRecordTypeSelect>
         <type>Flexipage</type>
     </actionOverrides>
     <actionOverrides>
         <actionName>View</actionName>
-        <content>ApexAgent_Tool_Log_Record_Page</content>
-        <formFactor>Large</formFactor>
+        <content>ApexAgent_MCP_Record_Page</content>
+        <formFactor>Small</formFactor>
         <skipRecordTypeSelect>false</skipRecordTypeSelect>
         <type>Flexipage</type>
     </actionOverrides>
@@ -145,26 +145,26 @@
         <type>Default</type>
     </actionOverrides>
     <allowInChatterGroups>false</allowInChatterGroups>
-    <compactLayoutAssignment>Tool_Log_Compact</compactLayoutAssignment>
+    <compactLayoutAssignment>SYSTEM</compactLayoutAssignment>
     <deploymentStatus>Deployed</deploymentStatus>
-    <description>Records a single tool execution, whether triggered by the LLM during an agent conversation message or invoked directly via an MCP tools/call request. Captures input, output, timing, status, and any errors for debugging and auditing. Message_Log__c is populated for agent-originated calls and null for MCP-originated ones; MCP__c is the inverse — exactly one of the two is set per record, never both.</description>
+    <description>Represents a single MCP (Model Context Protocol) server endpoint exposed by this org. Each active record is independently routable at /services/apexrest/ApexAgent/mcp/&lt;API Name&gt;, serving whichever tools are mapped to it via MCP Tool Map.</description>
     <enableActivities>false</enableActivities>
     <enableBulkApi>true</enableBulkApi>
     <enableFeeds>false</enableFeeds>
-    <enableHistory>false</enableHistory>
+    <enableHistory>true</enableHistory>
     <enableLicensing>false</enableLicensing>
     <enableReports>true</enableReports>
-    <enableSearch>false</enableSearch>
+    <enableSearch>true</enableSearch>
     <enableSharing>true</enableSharing>
     <enableStreamingApi>true</enableStreamingApi>
     <externalSharingModel>Private</externalSharingModel>
-    <label>Tool Log</label>
+    <label>MCP Server</label>
     <nameField>
-        <displayFormat>TOOL-{000000}</displayFormat>
-        <label>Name</label>
-        <type>AutoNumber</type>
+        <label>Label</label>
+        <trackHistory>true</trackHistory>
+        <type>Text</type>
     </nameField>
-    <pluralLabel>Tool Logs</pluralLabel>
+    <pluralLabel>MCP Servers</pluralLabel>
     <searchLayouts></searchLayouts>
     <sharingModel>Private</sharingModel>
     <visibility>Public</visibility>

@@ -21,7 +21,8 @@ public with sharing class ApexAgentToolExecutor {
     private static final String ACTION_TYPE = 'apex';
 
     /**
-     * Executes the tool identified in the given tool call.
+     * Executes the tool identified in the given tool call, routing DML-modifying
+     * tools through the DML bridge.
      *
      * @param toolsByName Map of Apex_Class_Name__c → ApexAgent_Tool__c record
      * @param toolCall Typed wrapper for the OpenAI tool call object
@@ -30,6 +31,22 @@ public with sharing class ApexAgentToolExecutor {
     public static ApexAgentExecTypes.ToolResult execute(
         Map<String, ApexAgent_Tool__c> toolsByName,
         ApexAgentApiTypes.ToolCall toolCall
+    ) {
+        return execute(toolsByName, toolCall, false);
+    }
+
+    /**
+     * @param forceInline When true, always executes via executeInline regardless
+     * of Modifies_Salesforce_Data__c, skipping the DML bridge entirely. The bridge
+     * exists so the agentic loop can still make its next LLM callout after a DML
+     * tool runs in the same transaction - callers with no further callout after
+     * this call (e.g. a single synchronous REST response) don't need that
+     * isolation and can pass true.
+     */
+    public static ApexAgentExecTypes.ToolResult execute(
+        Map<String, ApexAgent_Tool__c> toolsByName,
+        ApexAgentApiTypes.ToolCall toolCall,
+        Boolean forceInline
     ) {
         ApexAgentExecTypes.ToolResult result = new ApexAgentExecTypes.ToolResult();
         result.toolId = toolCall.id;
@@ -48,7 +65,7 @@ public with sharing class ApexAgentToolExecutor {
                 toolCall.function.arguments
             );
 
-            result.output = tool.Modifies_Salesforce_Data__c
+            result.output = (tool.Modifies_Salesforce_Data__c && !forceInline)
                 ? executeViaDmlBridge(tool, inputs)
                 : executeInline(tool.Apex_Class_Name__c, inputs);
 

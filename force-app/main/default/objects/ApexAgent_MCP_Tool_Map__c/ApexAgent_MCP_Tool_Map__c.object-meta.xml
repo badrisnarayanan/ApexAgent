@@ -128,15 +128,15 @@
     </actionOverrides>
     <actionOverrides>
         <actionName>View</actionName>
-        <content>ApexAgent_Tool_Log_Record_Page</content>
-        <formFactor>Small</formFactor>
+        <content>ApexAgent_MCP_Tool_Map_Record_Page</content>
+        <formFactor>Large</formFactor>
         <skipRecordTypeSelect>false</skipRecordTypeSelect>
         <type>Flexipage</type>
     </actionOverrides>
     <actionOverrides>
         <actionName>View</actionName>
-        <content>ApexAgent_Tool_Log_Record_Page</content>
-        <formFactor>Large</formFactor>
+        <content>ApexAgent_MCP_Tool_Map_Record_Page</content>
+        <formFactor>Small</formFactor>
         <skipRecordTypeSelect>false</skipRecordTypeSelect>
         <type>Flexipage</type>
     </actionOverrides>
@@ -145,27 +145,28 @@
         <type>Default</type>
     </actionOverrides>
     <allowInChatterGroups>false</allowInChatterGroups>
-    <compactLayoutAssignment>Tool_Log_Compact</compactLayoutAssignment>
+    <compactLayoutAssignment>SYSTEM</compactLayoutAssignment>
     <deploymentStatus>Deployed</deploymentStatus>
-    <description>Records a single tool execution, whether triggered by the LLM during an agent conversation message or invoked directly via an MCP tools/call request. Captures input, output, timing, status, and any errors for debugging and auditing. Message_Log__c is populated for agent-originated calls and null for MCP-originated ones; MCP__c is the inverse — exactly one of the two is set per record, never both.</description>
+    <description>Junction object controlling which tools are exposed on which MCP server. A tool can be mapped to any number of MCP servers, or to none, entirely independently of its Topic assignments used for agents — the same tool can be authored once and exposed through both channels without duplication.</description>
     <enableActivities>false</enableActivities>
     <enableBulkApi>true</enableBulkApi>
     <enableFeeds>false</enableFeeds>
-    <enableHistory>false</enableHistory>
+    <enableHistory>true</enableHistory>
     <enableLicensing>false</enableLicensing>
     <enableReports>true</enableReports>
-    <enableSearch>false</enableSearch>
+    <enableSearch>true</enableSearch>
     <enableSharing>true</enableSharing>
     <enableStreamingApi>true</enableStreamingApi>
-    <externalSharingModel>Private</externalSharingModel>
-    <label>Tool Log</label>
+    <externalSharingModel>ControlledByParent</externalSharingModel>
+    <label>MCP Tool Map</label>
     <nameField>
-        <displayFormat>TOOL-{000000}</displayFormat>
+        <displayFormat>MCPTL-{000000}</displayFormat>
         <label>Name</label>
+        <trackHistory>true</trackHistory>
         <type>AutoNumber</type>
     </nameField>
-    <pluralLabel>Tool Logs</pluralLabel>
+    <pluralLabel>MCP Tool Maps</pluralLabel>
     <searchLayouts></searchLayouts>
-    <sharingModel>Private</sharingModel>
+    <sharingModel>ControlledByParent</sharingModel>
     <visibility>Public</visibility>
 </CustomObject>

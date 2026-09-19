@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>MCP__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>Which MCP server this call was made through. Null for Agentforce-originated tool calls. Lookup (not Master-Detail) so log history survives even if the MCP server config record is later deleted.</description>
+    <label>MCP</label>
+    <referenceTo>ApexAgent_MCP__c</referenceTo>
+    <relationshipName>Tool_Logs</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

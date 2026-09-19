@@ -75,6 +75,29 @@ private class ApexAgentToolExecutorTest {
     }
 
     @IsTest
+    static void testExecuteForceInlineSkipsDmlBridgeEvenForDmlTool() {
+        // A DML-modifying tool would normally route through the DML bridge
+        // (an HTTP callout), which would throw here since no callout mock is
+        // registered - success without a mock is itself proof forceInline
+        // took the inline path instead.
+        ApexAgent_Tool__c tool = buildTool('GetObjectApiName', true);
+        Map<String, ApexAgent_Tool__c> toolsByName = new Map<String, ApexAgent_Tool__c>{
+            'GetObjectApiName' => tool
+        };
+        String args = JSON.serialize(new Map<String, Object>{ 'recordId' => UserInfo.getUserId() });
+        ApexAgentApiTypes.ToolCall tc = buildToolCall('call-5', 'GetObjectApiName', args);
+
+        Test.startTest();
+        ApexAgentExecTypes.ToolResult result = ApexAgentToolExecutor.execute(toolsByName, tc, true);
+        Test.stopTest();
+
+        Assert.areEqual('success', result.status,
+            'forceInline should bypass the DML bridge and succeed with no callout mock. errorMessage=' + result.errorMessage);
+        Map<String, Object> parsed = (Map<String, Object>) JSON.deserializeUntyped(result.output);
+        Assert.areEqual('User', parsed.get('objectApiName'), 'Should still resolve the object type from the ID');
+    }
+
+    @IsTest
     static void testExecuteViaDmlBridgeErrorSurfacesBridgeException() {
         ApexAgent_Tool__c tool = buildTool('NoSuchApexClass', true);
         Map<String, ApexAgent_Tool__c> toolsByName = new Map<String, ApexAgent_Tool__c>{
