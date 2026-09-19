@@ -170,14 +170,17 @@ public with sharing class ApexAgentToolExecutor {
         if (outputParameters == null || outputParameters.isEmpty()) {
             return '{}';
         }
-        // Every tool's Output class exposes exactly one field, resultJson, already holding
-        // the tool's fully-serialized result — return it directly rather than re-wrapping
-        // it in another JSON object, which would double-escape it.
-        if (outputParameters.containsKey('resultJson')) {
-            Object resultJson = outputParameters.get('resultJson');
-            return resultJson == null ? '{}' : String.valueOf(resultJson);
+        // The Output's parameter map is the result. Nulls are dropped so fields that
+        // don't apply (e.g. message on success) don't reach the LLM. The serializer's
+        // suppress-nulls flag only reaches nulls inside Apex objects, not null entries
+        // of the map itself, so those are filtered out here.
+        Map<String, Object> populated = new Map<String, Object>();
+        for (String name : outputParameters.keySet()) {
+            if (outputParameters.get(name) != null) {
+                populated.put(name, outputParameters.get(name));
+            }
         }
-        return JSON.serialize(outputParameters);
+        return JSON.serialize(populated, true);
     }
 
     private static String buildErrorMessage(List<Invocable.Action.Error> errors) {

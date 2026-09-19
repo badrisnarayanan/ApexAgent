@@ -15,8 +15,19 @@ public with sharing class SearchObjects {
     }
 
     public class Output {
-        @InvocableVariable(label='Result' description='JSON array of matching objects, each with QualifiedApiName, Label, and a relevance score.')
-        public String resultJson;
+        @InvocableVariable(label='Results' description='Matching objects ranked by relevance, best match first.')
+        public List<ObjectMatch> results;
+    }
+
+    public class ObjectMatch {
+        @InvocableVariable(label='Qualified API Name' description='API name of the object.')
+        public String qualifiedApiName;
+
+        @InvocableVariable(label='Label' description='Label of the object.')
+        public String label;
+
+        @InvocableVariable(label='Score' description='Relevance score; higher is a closer match.')
+        public Double score;
     }
 
     @InvocableMethod(label='Search Objects' description='Searches for Salesforce objects that closely match a given term.\nUsage:\n- Use when the user provides an unfamiliar or ambiguous object name.\n- If multiple searches return no results, assume the object does not exist or is inaccessible to the user.')
@@ -33,10 +44,8 @@ public with sharing class SearchObjects {
 
         Set<String> patterns = generatePatterns(searchTerm);
         Map<String, EntityDefinition> resultMap = queryEntities(patterns);
-        List<Map<String, Object>> scored = scoreAndRank(resultMap, searchTerm);
-
         Output o = new Output();
-        o.resultJson = JSON.serialize(scored);
+        o.results = scoreAndRank(resultMap, searchTerm);
         return o;
     }
 
@@ -350,7 +359,7 @@ public with sharing class SearchObjects {
         return resultMap;
     }
 
-    private static List<Map<String, Object>> scoreAndRank(Map<String, EntityDefinition> resultMap, String searchTerm) {
+    private static List<ObjectMatch> scoreAndRank(Map<String, EntityDefinition> resultMap, String searchTerm) {
         String lowerSearch = searchTerm.toLowerCase();
         List<String> searchWords = splitCompound(searchTerm);
         String searchNoSeparators = lowerSearch.replaceAll('[\\s_]', '');
@@ -436,14 +445,14 @@ public with sharing class SearchObjects {
 
         scored.sort();
 
-        List<Map<String, Object>> results = new List<Map<String, Object>>();
+        List<ObjectMatch> results = new List<ObjectMatch>();
         for (Integer i = 0; i < Math.min(MAX_RESULTS, scored.size()); i++) {
             ScoredEntity se = scored[i];
-            results.add(new Map<String, Object>{
-                'QualifiedApiName' => se.entity.QualifiedApiName,
-                'Label' => se.entity.Label,
-                'score' => se.score
-            });
+            ObjectMatch match = new ObjectMatch();
+            match.qualifiedApiName = se.entity.QualifiedApiName;
+            match.label            = se.entity.Label;
+            match.score            = se.score;
+            results.add(match);
         }
         return results;
     }

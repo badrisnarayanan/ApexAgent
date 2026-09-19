@@ -110,7 +110,7 @@ private class QueryRecordsTest {
         Assert.isTrue(result.containsKey('query'), 'Result should contain query key');
         Assert.isTrue(result.containsKey('recordCount'), 'Result should contain recordCount key');
         Assert.isTrue(result.containsKey('records'), 'Result should contain records key');
-        Assert.isFalse(result.containsKey('exception'), 'Successful result should not have exception key');
+        Assert.isFalse(result.containsKey('error'), 'Successful result should not have error key');
 
         Integer count = (Integer) result.get('recordCount');
         Assert.isTrue(count >= 1, 'recordCount should be at least 1');
@@ -123,16 +123,16 @@ private class QueryRecordsTest {
         Assert.isTrue(returnedQuery.containsIgnoreCase('LIMIT'), 'Returned query should include LIMIT clause');
     }
 
-    // ─── Invalid SOQL returns exception map ──────────────────────────────────────
+    // ─── Invalid SOQL returns an error message ──────────────────────────────────────
 
     @IsTest
     static void testInvalidSoql() {
         Map<String, Object> result = run('SELECT @@INVALID@@ FROM Account');
 
-        Assert.isTrue(result.containsKey('exception'), 'Bad SOQL should return exception key');
+        Assert.isTrue(result.containsKey('error'), 'Bad SOQL should return error key');
         Assert.isFalse(result.containsKey('records'), 'Bad SOQL should not return records key');
         Assert.isTrue(result.containsKey('query'), 'Result should still include the query key');
-        Assert.isTrue(String.isNotBlank((String) result.get('exception')),
+        Assert.isTrue(String.isNotBlank((String) result.get('error')),
             'exception message should not be blank');
     }
 
@@ -142,6 +142,6 @@ private class QueryRecordsTest {
         QueryRecords.Input inp = new QueryRecords.Input();
         inp.soqlQuery = soqlQuery;
         List<QueryRecords.Output> out = QueryRecords.run(new List<QueryRecords.Input>{ inp });
-        return (Map<String, Object>) JSON.deserializeUntyped(out[0].resultJson);
+        return (Map<String, Object>) JSON.deserializeUntyped(JSON.serialize(out[0], true));
     }
 }

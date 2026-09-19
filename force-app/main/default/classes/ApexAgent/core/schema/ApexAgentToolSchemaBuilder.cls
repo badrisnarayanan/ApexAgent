@@ -19,9 +19,6 @@
  *    so a parameter that is itself a wrapper class (e.g. a list of record objects)
  *    is resolved via ApexAgentSymbolTableService, which is queried once in bulk for
  *    every tool class that needs it — never per parameter or per tool.
- *  - The Output class's fields are folded into the function's description text
- *    (there is no standard "output schema" slot in OpenAI's tool-calling spec) so
- *    the model still learns the result shape before calling the tool.
  */
 public with sharing class ApexAgentToolSchemaBuilder {
 
@@ -143,11 +140,6 @@ public with sharing class ApexAgentToolSchemaBuilder {
                     topLevelNames.add(topLevelClassOf(ip.getApexClass()));
                 }
             }
-            for (Invocable.Action.OutputParameter op : d.getOutputs()) {
-                if (String.isNotBlank(op.getApexClass())) {
-                    topLevelNames.add(topLevelClassOf(op.getApexClass()));
-                }
-            }
         }
         return topLevelNames;
     }
@@ -179,7 +171,7 @@ public with sharing class ApexAgentToolSchemaBuilder {
             'type' => 'function',
             'function' => new Map<String, Object>{
                 'name'        => className,
-                'description' => buildDescriptionWithOutputSummary(describe),
+                'description' => describe.getDescription(),
                 'parameters'  => parameters
             }
         };
@@ -279,28 +271,6 @@ public with sharing class ApexAgentToolSchemaBuilder {
             fieldSchema.put('description', description);
         }
         return fieldSchema;
-    }
-
-    // ─────────────────────────────────────────────────────────────────
-    // Output summary folded into the description (decision: no separate output schema key)
-    // ─────────────────────────────────────────────────────────────────
-
-    private static String buildDescriptionWithOutputSummary(Invocable.Action.DescribeResult describe) {
-        String baseDescription = describe.getDescription();
-        List<String> outputLines = new List<String>();
-        for (Invocable.Action.OutputParameter op : describe.getOutputs()) {
-            String typeLabel = String.isNotBlank(op.getApexClass()) ? 'object' : mapDescribeTypeToJsonType(op.getType());
-            String line = op.getName() + ' (' + typeLabel + ')';
-            if (String.isNotBlank(op.getDescription())) {
-                line += ' — ' + op.getDescription();
-            }
-            outputLines.add(line);
-        }
-
-        if (outputLines.isEmpty()) {
-            return baseDescription;
-        }
-        return baseDescription + '\n\nReturns: ' + String.join(outputLines, '; ');
     }
 
     // ─────────────────────────────────────────────────────────────────

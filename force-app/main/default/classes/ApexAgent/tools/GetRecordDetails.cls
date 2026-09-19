@@ -14,15 +14,24 @@ public with sharing class GetRecordDetails {
     }
 
     public class Output {
-        @InvocableVariable(label='Result' description='JSON object with the record\'s accessible field values.')
-        public String resultJson;
+        @InvocableVariable(label='Record' description='The record with its accessible field values. Omitted when the record was not found or its object is not accessible.')
+        public SObject record;
+
+        @InvocableVariable(label='Found' description='False when no record exists for the given Id.')
+        public Boolean found;
+
+        @InvocableVariable(label='Is Accessible' description='False when the record\'s object is not accessible by the running user.')
+        public Boolean isAccessible;
+
+        @InvocableVariable(label='Message' description='Explanation when the record was not found or is not accessible.')
+        public String message;
     }
 
     private class ResolvedRequest {
         Input source;
         Id recordId;
         String objectApiName;
-        Map<String, Object> earlyResult; // set when resolution itself already determined the outcome
+        Output earlyResult; // set when resolution itself already determined the outcome
     }
 
     @InvocableMethod(label='Get Record Details' description='Returns all accessible fields and its values for a single record given its Salesforce ID. Skips long text areas and rich text fields, and enriches lookup fields with their related record\'s name.\n\nWhen to use:\n\nYou have an exact record ID and need to inspect its data.\nUser asks "what\'s on this record?" or "show me the details for [ID]".\nYou need to verify field values before performing an update or upsert.\n\nWhen not to use:\n\nYou need to find records by criteria → use QueryRecords or SearchRecords.\nYou don\'t have the record ID → use SearchRecords first.\nYou need to query multiple records → use QueryRecords.\nYou need data from long text area rich text fiels -> use QueryRecords.')
@@ -57,10 +66,9 @@ public with sharing class GetRecordDetails {
         r.objectApiName = ApexAgentUtils.getObjectApiNameFromId(r.recordId);
         Schema.DescribeSObjectResult describe = ApexAgentUtils.getDescribe(r.objectApiName);
         if (!describe.isAccessible()) {
-            r.earlyResult = new Map<String, Object>{
-                'isAccessible' => false,
-                'message'      => 'Object ' + r.objectApiName + ' is not accessible by the running user'
-            };
+            r.earlyResult = new Output();
+            r.earlyResult.isAccessible = false;
+            r.earlyResult.message      = 'Object ' + r.objectApiName + ' is not accessible by the running user';
         }
         return r;
     }
@@ -101,23 +109,19 @@ public with sharing class GetRecordDetails {
     // ─── Phase 3: assemble one Output per Input, in original order ──────────────
 
     private static Output buildOutput(ResolvedRequest r, Map<Id, SObject> recordsById) {
-        Output o = new Output();
-
         if (r.earlyResult != null) {
-            o.resultJson = JSON.serialize(r.earlyResult);
-            return o;
+            return r.earlyResult;
         }
 
+        Output o = new Output();
         SObject record = recordsById.get(r.recordId);
         if (record == null) {
-            o.resultJson = JSON.serialize(new Map<String, Object>{
-                'found'   => false,
-                'message' => 'No record found for Id: ' + r.recordId
-            });
+            o.found   = false;
+            o.message = 'No record found for Id: ' + r.recordId;
             return o;
         }
 
-        o.resultJson = JSON.serialize(record);
+        o.record = record;
         return o;
     }
 

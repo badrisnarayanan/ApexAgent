@@ -43,7 +43,7 @@ private class SearchRecordsTest {
         inp.searchTerm = searchTerm;
         inp.objectApiName = objectApiName;
         List<SearchRecords.Output> out = SearchRecords.run(new List<SearchRecords.Input>{ inp });
-        List<Object> raw = (List<Object>) JSON.deserializeUntyped(out[0].resultJson);
+        List<Object> raw = (List<Object>) JSON.deserializeUntyped(JSON.serialize(out[0].results));
         List<Map<String, Object>> results = new List<Map<String, Object>>();
         for (Object o : raw) {
             results.add((Map<String, Object>) o);
@@ -94,7 +94,7 @@ private class SearchRecordsTest {
         Test.stopTest();
 
         Assert.isFalse(results.isEmpty(), 'Expected results');
-        Assert.areEqual('Acme Inc', results[0].get('Name'), 'Exact match must rank first');
+        Assert.areEqual('Acme Inc', results[0].get('name'), 'Exact match must rank first');
 
         Double score0 = (Double) results[0].get('score');
         Double score1 = (Double) results[1].get('score');
@@ -161,7 +161,7 @@ private class SearchRecordsTest {
         // Full name — John Smith #1
         Test.setFixedSearchResults(new List<Id>{ johnSmith.Id, janeDoe.Id });
         List<Map<String, Object>> byFull = search('John Smith', 'Contact');
-        Assert.areEqual('John Smith', byFull[0].get('Name'), 'Full name must rank first');
+        Assert.areEqual('John Smith', byFull[0].get('name'), 'Full name must rank first');
 
         // Transposed: "Smith John" still returns John Smith
         Test.setFixedSearchResults(new List<Id>{ johnSmith.Id });
@@ -197,14 +197,14 @@ private class SearchRecordsTest {
         List<Map<String, Object>> byClean = search('Acme', 'Account');
         Test.stopTest();
         Set<String> returnedNames = new Set<String>();
-        for (Map<String, Object> r : byClean) { returnedNames.add((String) r.get('Name')); }
+        for (Map<String, Object> r : byClean) { returnedNames.add((String) r.get('name')); }
         Assert.isTrue(returnedNames.contains('Acme Inc'),  'Acme Inc must be in results');
         Assert.isTrue(returnedNames.contains('Acme Corp'), 'Acme Corp must be in results');
 
         // Exact with suffix: "Acme Inc" is #1 with high score
         Test.setFixedSearchResults(new List<Id>{ acmeInc.Id, acmeCorp.Id });
         List<Map<String, Object>> byFullCompany = search('Acme Inc', 'Account');
-        Assert.areEqual('Acme Inc', byFullCompany[0].get('Name'), 'Acme Inc must rank first');
+        Assert.areEqual('Acme Inc', byFullCompany[0].get('name'), 'Acme Inc must rank first');
         Assert.isTrue(((Double) byFullCompany[0].get('score')) >= 100, 'Exact company must score >= 100');
 
         // Multi-word found by brand word
@@ -302,7 +302,7 @@ private class SearchRecordsTest {
         Test.setFixedSearchResults(new List<Id>{ rajContact.Id });
         List<Map<String, Object>> rajResults = search('Raj Kumar', 'Contact');
         Assert.isFalse(rajResults.isEmpty(), 'Raj Kumar must return results');
-        Assert.areEqual('Raj Kumar', rajResults[0].get('Name'), 'Raj Kumar must be top result');
+        Assert.areEqual('Raj Kumar', rajResults[0].get('name'), 'Raj Kumar must be top result');
         Assert.isTrue(((Double) rajResults[0].get('score')) >= 100, 'Exact person name must score >= 100');
 
         // ── Partial company word: "solutions" → Global Solutions LLC ──────────
@@ -346,11 +346,11 @@ private class SearchRecordsTest {
 
         Assert.isFalse(results.isEmpty(), 'Expected at least one result');
         Map<String, Object> first = results[0];
-        Assert.isTrue(first.containsKey('Id'),    'Result must contain Id');
-        Assert.isTrue(first.containsKey('Name'),  'Result must contain Name');
+        Assert.isTrue(first.containsKey('id'),    'Result must contain id');
+        Assert.isTrue(first.containsKey('name'),  'Result must contain name');
         Assert.isTrue(first.containsKey('score'), 'Result must contain score');
 
-        String recordId = String.valueOf(first.get('Id'));
+        String recordId = String.valueOf(first.get('id'));
         Assert.isTrue(recordId.length() == 15 || recordId.length() == 18, 'Id must be 15 or 18 chars');
         Assert.isTrue(recordId.startsWith('001'), 'Account Id must start with 001');
 

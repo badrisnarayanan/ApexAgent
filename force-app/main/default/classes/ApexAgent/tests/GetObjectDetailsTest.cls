@@ -27,48 +27,58 @@ private class GetObjectDetailsTest {
 
     @IsTest
     static void testObjectMetadata() {
-        Map<String, Object> result = run('Account');
+        GetObjectDetails.Output result = run('Account');
 
-        Assert.areEqual('Account', result.get('objectAPIName'), 'objectAPIName should be Account');
-        Assert.isNotNull(result.get('label'), 'label should be present');
-        Assert.areEqual(false, result.get('isCustom'), 'Account is a standard object');
-        Assert.areEqual(true, result.get('isAccessible'), 'Account should be accessible');
-        Assert.areEqual(true, result.get('isQueryable'), 'Account should be queryable');
-        Assert.areEqual(true, result.get('isSearchable'), 'Account should be searchable');
-        Assert.areEqual(true, result.get('isCreateable'), 'Account should be createable');
-        Assert.areEqual(true, result.get('isUpdateable'), 'Account should be updateable');
-        Assert.isNotNull(result.get('isDeleteable'), 'isDeleteable should be present');
-        Assert.isNotNull(result.get('isUndeleteable'), 'isUndeleteable should be present');
+        Assert.areEqual('Account', result.objectApiName, 'objectApiName should be Account');
+        Assert.isNotNull(result.label, 'label should be present');
+        Assert.areEqual(false, result.isCustom, 'Account is a standard object');
+        Assert.areEqual(true, result.isAccessible, 'Account should be accessible');
+        Assert.areEqual(true, result.isQueryable, 'Account should be queryable');
+        Assert.areEqual(true, result.isSearchable, 'Account should be searchable');
+        Assert.areEqual(true, result.isCreateable, 'Account should be createable');
+        Assert.areEqual(true, result.isUpdateable, 'Account should be updateable');
+        Assert.isNotNull(result.isDeleteable, 'isDeleteable should be present');
+        Assert.isNotNull(result.isUndeleteable, 'isUndeleteable should be present');
+        Assert.isNull(result.message, 'message should only be set when the object is not accessible');
     }
 
     // ─── Fields structure ────────────────────────────────────────────────────────
 
     @IsTest
     static void testFieldsStructure() {
-        Map<String, Object> result = run('Account');
+        GetObjectDetails.Output result = run('Account');
 
-        Assert.isTrue(result.containsKey('fields'), 'Result should contain fields');
-        Assert.isTrue(result.containsKey('fieldsFormat'), 'Result should contain fieldsFormat');
-        Assert.isNotNull(result.get('fieldsFormat'), 'fieldsFormat should not be null');
-
-        Map<String, Object> fields = (Map<String, Object>) result.get('fields');
-        Assert.isTrue(!fields.isEmpty(), 'Fields map should not be empty');
-
-        // STRING type must exist (Account.Name)
-        Assert.isTrue(fields.containsKey('STRING'), 'STRING type should be present');
-        for (Object rawEntry : (List<Object>) fields.get('STRING')) {
-            List<Object> entry = (List<Object>) rawEntry;
-            Assert.isTrue(entry.size() >= 2, 'STRING field entry should have at least [Name, Label]');
+        Assert.isTrue(!result.fields.isEmpty(), 'Fields should not be empty');
+        Map<String, List<String>> entriesBySoapType = new Map<String, List<String>>();
+        List<String> soapTypesInOrder = new List<String>();
+        for (GetObjectDetails.FieldGroup fieldGroup : result.fields) {
+            soapTypesInOrder.add(fieldGroup.soapType);
+            Assert.isFalse(entriesBySoapType.containsKey(fieldGroup.soapType), 'Each SOAP type should appear in one group only');
+            entriesBySoapType.put(fieldGroup.soapType, fieldGroup.fields);
         }
 
+        List<String> sortedSoapTypes = soapTypesInOrder.clone();
+        sortedSoapTypes.sort();
+        Assert.areEqual(sortedSoapTypes, soapTypesInOrder, 'Groups should be ordered by SOAP type so the output is stable');
+
+        // STRING type must exist (Account.Name)
+        Assert.isTrue(entriesBySoapType.containsKey('STRING'), 'STRING type should be present');
+        Boolean foundName = false;
+        for (String entry : entriesBySoapType.get('STRING')) {
+            List<String> parts = entry.split('\\|');
+            Assert.isTrue(parts.size() >= 2, 'STRING field entry should have at least ApiName|Label');
+            foundName = foundName || parts[0] == 'Name';
+        }
+        Assert.isTrue(foundName, 'Account.Name should be listed under STRING');
+
         // ID type must exist (OwnerId, etc.) and at least one should carry a lookup reference
-        Assert.isTrue(fields.containsKey('ID'), 'ID type should be present for reference fields');
+        Assert.isTrue(entriesBySoapType.containsKey('ID'), 'ID type should be present for reference fields');
         Boolean foundLookup = false;
-        for (Object rawEntry : (List<Object>) fields.get('ID')) {
-            List<Object> entry = (List<Object>) rawEntry;
-            Assert.isTrue(entry.size() >= 2, 'ID field entry should have at least [Name, Label]');
-            if (entry.size() == 3) {
-                Assert.isNotNull(entry[2], 'Lookup reference object name should not be null');
+        for (String entry : entriesBySoapType.get('ID')) {
+            List<String> parts = entry.split('\\|');
+            Assert.isTrue(parts.size() >= 2, 'ID field entry should have at least ApiName|Label');
+            if (parts.size() == 3) {
+                Assert.isTrue(String.isNotBlank(parts[2]), 'Lookup reference object name should not be blank');
                 foundLookup = true;
             }
         }
@@ -79,55 +89,52 @@ private class GetObjectDetailsTest {
 
     @IsTest
     static void testRequiredAndNameField() {
-        Map<String, Object> result = run('Account');
+        GetObjectDetails.Output result = run('Account');
 
-        Assert.isTrue(result.containsKey('requiredFields'), 'Result should contain requiredFields');
-        List<Object> required = (List<Object>) result.get('requiredFields');
-        Assert.isNotNull(required, 'requiredFields should not be null');
-        Assert.isTrue(required.contains('Name'), 'Account.Name should appear in requiredFields');
-
-        Assert.isTrue(result.containsKey('nameField'), 'Result should contain nameField');
-        Assert.areEqual('Name', result.get('nameField'), 'nameField for Account should be Name');
+        Assert.isNotNull(result.requiredFields, 'requiredFields should not be null');
+        Assert.isTrue(result.requiredFields.contains('Name'), 'Account.Name should appear in requiredFields');
+        Assert.areEqual('Name', result.nameField, 'nameField for Account should be Name');
     }
 
     // ─── Record types and child relationships ────────────────────────────────────
 
     @IsTest
     static void testRecordTypesAndChildren() {
-        Map<String, Object> result = run('Account');
+        GetObjectDetails.Output result = run('Account');
 
-        Assert.isTrue(result.containsKey('recordTypes'), 'Result should contain recordTypes');
-        Assert.isTrue(result.containsKey('recordTypesFormat'), 'Result should contain recordTypesFormat');
-        List<Object> recordTypes = (List<Object>) result.get('recordTypes');
-        Assert.isNotNull(recordTypes, 'recordTypes should not be null');
-        Assert.isTrue(!recordTypes.isEmpty(), 'Account should have at least the Master record type');
-        for (Object rawRt : recordTypes) {
-            List<Object> rt = (List<Object>) rawRt;
-            Assert.areEqual(2, rt.size(), 'Each record type entry should be [Name, RecordTypeId]');
-            Assert.isNotNull(rt[0], 'Record type name should not be null');
-            Assert.isNotNull(rt[1], 'Record type Id should not be null');
+        Assert.isTrue(!result.recordTypes.isEmpty(), 'Account should have at least the Master record type');
+        for (String rt : result.recordTypes) {
+            List<String> parts = rt.split('\\|');
+            Assert.areEqual(2, parts.size(), 'Each record type entry should be Name|RecordTypeId');
+            Assert.isTrue(String.isNotBlank(parts[0]), 'Record type name should not be blank');
+            Assert.isTrue(String.isNotBlank(parts[1]), 'Record type Id should not be blank');
         }
 
-        Assert.isTrue(result.containsKey('childRelationships'), 'Result should contain childRelationships');
-        Assert.isTrue(result.containsKey('childRelationshipsFormat'), 'Result should contain childRelationshipsFormat');
-        List<Object> childRels = (List<Object>) result.get('childRelationships');
-        Assert.isNotNull(childRels, 'childRelationships should not be null');
-        Assert.isTrue(!childRels.isEmpty(), 'Account should have child relationships');
-        for (Object rawCr : childRels) {
-            List<Object> cr = (List<Object>) rawCr;
-            Assert.areEqual(3, cr.size(), 'Each child relationship entry should be [RelationshipName, ChildObject, Field]');
-            Assert.isNotNull(cr[0], 'RelationshipName should not be null');
-            Assert.isNotNull(cr[1], 'ChildObjectApiName should not be null');
-            Assert.isNotNull(cr[2], 'FieldApiName should not be null');
+        Assert.isTrue(!result.childRelationships.isEmpty(), 'Account should have child relationships');
+        for (String cr : result.childRelationships) {
+            List<String> parts = cr.split('\\|');
+            Assert.areEqual(3, parts.size(), 'Each child relationship entry should be RelationshipName|ChildObject|Field');
+            Assert.isTrue(String.isNotBlank(parts[0]), 'RelationshipName should not be blank');
+            Assert.isTrue(String.isNotBlank(parts[1]), 'ChildObjectApiName should not be blank');
+            Assert.isTrue(String.isNotBlank(parts[2]), 'FieldApiName should not be blank');
         }
+    }
+
+    // ─── Entry encoding ──────────────────────────────────────────────────────────
+
+    @IsTest
+    static void testEntryEncoding() {
+        Assert.areEqual('Name|Account Name', GetObjectDetails.toEntry(new List<String>{ 'Name', 'Account Name' }));
+        Assert.areEqual('A|B/C|D', GetObjectDetails.toEntry(new List<String>{ 'A', 'B|C', 'D' }),
+            'A delimiter inside a part must be replaced so it cannot split the entry');
+        Assert.areEqual('A|', GetObjectDetails.toEntry(new List<String>{ 'A', null }), 'A null part should become empty');
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-    private static Map<String, Object> run(String objectApiName) {
+    private static GetObjectDetails.Output run(String objectApiName) {
         GetObjectDetails.Input inp = new GetObjectDetails.Input();
         inp.objectApiName = objectApiName;
-        List<GetObjectDetails.Output> out = GetObjectDetails.run(new List<GetObjectDetails.Input>{ inp });
-        return (Map<String, Object>) JSON.deserializeUntyped(out[0].resultJson);
+        return GetObjectDetails.run(new List<GetObjectDetails.Input>{ inp })[0];
     }
 }

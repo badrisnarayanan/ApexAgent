@@ -4,17 +4,72 @@
 @SuppressWarnings('PMD.EagerlyLoadedDescribeSObjectResult')
 public with sharing class GetObjectDetails {
 
+    private static final String ENTRY_DELIMITER = '|';
+
     public class Input {
         @InvocableVariable(required=true label='Object API Name' description='API name of the object to describe (e.g. "Account").')
         public String objectApiName;
     }
 
     public class Output {
-        @InvocableVariable(label='Result' description='JSON object with field, record type, and child relationship details.')
-        public String resultJson;
+        @InvocableVariable(label='Object API Name' description='API name of the object.')
+        public String objectApiName;
+
+        @InvocableVariable(label='Label' description='Label of the object.')
+        public String label;
+
+        @InvocableVariable(label='Is Accessible' description='False when the object is not accessible by the running user; all other details are then omitted.')
+        public Boolean isAccessible;
+
+        @InvocableVariable(label='Message' description='Explanation when the object is not accessible.')
+        public String message;
+
+        @InvocableVariable(label='Is Custom' description='True for a custom object.')
+        public Boolean isCustom;
+
+        @InvocableVariable(label='Is Createable' description='True if records can be created.')
+        public Boolean isCreateable;
+
+        @InvocableVariable(label='Is Deleteable' description='True if records can be deleted.')
+        public Boolean isDeleteable;
+
+        @InvocableVariable(label='Is Queryable' description='True if the object can be queried with SOQL.')
+        public Boolean isQueryable;
+
+        @InvocableVariable(label='Is Searchable' description='True if the object can be searched with SOSL.')
+        public Boolean isSearchable;
+
+        @InvocableVariable(label='Is Undeleteable' description='True if deleted records can be restored.')
+        public Boolean isUndeleteable;
+
+        @InvocableVariable(label='Is Updateable' description='True if records can be updated.')
+        public Boolean isUpdateable;
+
+        @InvocableVariable(label='Name Field' description='API name of the field that holds the record name.')
+        public String nameField;
+
+        @InvocableVariable(label='Required Fields' description='API names of the fields that must be supplied when creating a record.')
+        public List<String> requiredFields;
+
+        @InvocableVariable(label='Fields' description='Accessible fields grouped by SOAP type (e.g. STRING, ID, DOUBLE, BOOLEAN). Each entry is "ApiName|Label"; a field with exactly one lookup target is "ApiName|Label|LookupObjectApiName".')
+        public List<FieldGroup> fields;
+
+        @InvocableVariable(label='Record Types' description='Each entry is "Name|RecordTypeId".')
+        public List<String> recordTypes;
+
+        @InvocableVariable(label='Child Relationships' description='Each entry is "RelationshipName|ChildObjectApiName|FieldApiName".')
+        public List<String> childRelationships;
     }
 
-    @InvocableMethod(label='Get Object Details' description='Returns full metadata for a Salesforce object: API name, label, CRUD flags, fields (grouped by SOAP type), required fields, name field, record types, and child relationships.\n\nWhen to use:\n\nExploring an object\'s structure before querying or building automation.\nYou wanna know "what fields are on X?", "what are the record types?", or "is this object editable?".\nYou need to understand relationships, lookup targets, or child objects.\n\nCritical usage rules:\n\nIf you do not know the object API name - do not assume - use SearchObjects first if you dont know the exact API Name.\nAlways call this tool first to discover field API names before using GetFieldDetails. You cannot know field API names without it.\nDo not call this multiple times for the same object in a single chat. The output is deterministic and will not change. Cache the results mentally.')
+    public class FieldGroup {
+        @InvocableVariable(label='SOAP Type' description='SOAP type shared by every field in this group.')
+        public String soapType;
+
+        @InvocableVariable(label='Fields' description='Entries in the format described on the Fields output.')
+        public List<String> fields;
+    }
+
+    @InvocableMethod(label='Get Object Details' description='Returns full metadata for a Salesforce object: API name, label, CRUD flags, fields (grouped by SOAP type), required fields, name field, record types, and child relationships.\n\nWhen to use:\n\nExploring an object\'s structure before querying or building automation.\nYou wanna know "what fields are on X?", "what are the record types?", or "is this object editable?".\nYou need to understand relationships, lookup targets, or child objects.\n\nCritical usage rules:\n\nIf you do not know the object API name - do not assume - use SearchObjects first if you dont know the exact API Name.\nAlways call this tool first to discover field API names before using GetFieldDetails. You cannot know field API names without it.\nDo not call this multiple times for the same object in a single chat. The output is deterministic and will not change. Cache the results mentally.\n\nResult format: fields are grouped by SOAP type; each field entry is "ApiName|Label", or "ApiName|Label|LookupObjectApiName" when the field has exactly one lookup target. Each recordTypes entry is "Name|RecordTypeId" and each childRelationships entry is "RelationshipName|ChildObjectApiName|FieldApiName".')
     public static List<Output> run(List<Input> inputs) {
         List<Output> results = new List<Output>();
         for (Input inp : inputs) {
@@ -28,40 +83,35 @@ public with sharing class GetObjectDetails {
         Schema.DescribeSObjectResult describe = ApexAgentUtils.getDescribe(objectApiName);
 
         Output o = new Output();
+        o.objectApiName = describe.getName();
+        o.label         = describe.getLabel();
+
         if (!describe.isAccessible()) {
-            o.resultJson = JSON.serialize(new Map<String, Object>{
-                'objectAPIName' => describe.getName(),
-                'label'         => describe.getLabel(),
-                'isAccessible'  => false,
-                'message'       => 'Object is not accessible by the running user'
-            });
+            o.isAccessible = false;
+            o.message      = 'Object is not accessible by the running user';
             return o;
         }
 
-        Map<String, Object> result = new Map<String, Object>();
-        result.put('objectAPIName',  describe.getName());
-        result.put('label',          describe.getLabel());
-        result.put('isCustom',       describe.isCustom());
-        result.put('isAccessible',   describe.isAccessible());
-        result.put('isCreateable',   describe.isCreateable());
-        result.put('isDeleteable',   describe.isDeletable());
-        result.put('isQueryable',    describe.isQueryable());
-        result.put('isSearchable',   describe.isSearchable());
-        result.put('isUndeleteable', describe.isUndeletable());
-        result.put('isUpdateable',   describe.isUpdateable());
+        o.isAccessible   = describe.isAccessible();
+        o.isCustom       = describe.isCustom();
+        o.isCreateable   = describe.isCreateable();
+        o.isDeleteable   = describe.isDeletable();
+        o.isQueryable    = describe.isQueryable();
+        o.isSearchable   = describe.isSearchable();
+        o.isUndeleteable = describe.isUndeletable();
+        o.isUpdateable   = describe.isUpdateable();
 
-        buildFieldData(describe, result);
-        buildRecordTypes(describe, result);
-        buildChildRelationships(describe, result);
+        buildFieldData(describe, o);
+        buildRecordTypes(describe, o);
+        buildChildRelationships(describe, o);
 
-        o.resultJson = JSON.serialize(result);
         return o;
     }
 
     // ─── Fields, required fields, and name field (single pass) ──────────────────
 
-    private static void buildFieldData(Schema.DescribeSObjectResult describe, Map<String, Object> result) {
-        Map<String, List<List<String>>> fieldsByType = new Map<String, List<List<String>>>();
+    private static void buildFieldData(Schema.DescribeSObjectResult describe, Output o) {
+        Map<String, FieldGroup> groupsBySoapType = new Map<String, FieldGroup>();
         List<String> required = new List<String>();
         String nameField = null;
 
@@ -81,8 +131,11 @@ public with sharing class GetObjectDetails {
             }
 
             String soapType = fd.getSoapType().name();
-            if (!fieldsByType.containsKey(soapType)) {
-                fieldsByType.put(soapType, new List<List<String>>());
+            if (!groupsBySoapType.containsKey(soapType)) {
+                FieldGroup soapGroup = new FieldGroup();
+                soapGroup.soapType = soapType;
+                soapGroup.fields   = new List<String>();
+                groupsBySoapType.put(soapType, soapGroup);
             }
 
             List<String> entry = new List<String>{ fd.getName(), fd.getLabel() };
@@ -91,46 +144,60 @@ public with sharing class GetObjectDetails {
                 entry.add(referenceTo[0].getDescribe().getName());
             }
 
-            fieldsByType.get(soapType).add(entry);
+            groupsBySoapType.get(soapType).fields.add(toEntry(entry));
         }
 
-        result.put('fields', fieldsByType);
-        result.put(
-            'fieldsFormat',
-            'Fields are grouped by SOAP type (e.g. STRING, ID, DOUBLE, BOOLEAN). '
-            + 'Each field entry is [ApiName, Label]. '
-            + 'Fields with exactly one lookup target include a third element: [ApiName, Label, LookupObjectApiName].'
-        );
-        result.put('requiredFields', required);
-        result.put('nameField', nameField);
+        List<String> soapTypes = new List<String>(groupsBySoapType.keySet());
+        soapTypes.sort();
+        o.fields = new List<FieldGroup>();
+        for (String soapType : soapTypes) {
+            o.fields.add(groupsBySoapType.get(soapType));
+        }
+
+        o.requiredFields = required;
+        o.nameField      = nameField;
     }
 
     // ─── Record types ────────────────────────────────────────────────────────────
 
-    private static void buildRecordTypes(Schema.DescribeSObjectResult describe, Map<String, Object> result) {
-        List<List<String>> recordTypes = new List<List<String>>();
+    private static void buildRecordTypes(Schema.DescribeSObjectResult describe, Output o) {
+        o.recordTypes = new List<String>();
         for (Schema.RecordTypeInfo rtInfo : describe.getRecordTypeInfos()) {
-            recordTypes.add(new List<String>{ rtInfo.getName(), rtInfo.getRecordTypeId() });
+            o.recordTypes.add(toEntry(new List<String>{ rtInfo.getName(), rtInfo.getRecordTypeId() }));
         }
-        result.put('recordTypes', recordTypes);
-        result.put('recordTypesFormat', 'Each record type entry is [Name, RecordTypeId].');
     }
 
     // ─── Child relationships ──────────────────────────────────────────────────────
 
-    private static void buildChildRelationships(Schema.DescribeSObjectResult describe, Map<String, Object> result) {
-        List<List<String>> childRels = new List<List<String>>();
+    private static void buildChildRelationships(Schema.DescribeSObjectResult describe, Output o) {
+        o.childRelationships = new List<String>();
         for (Schema.ChildRelationship cr : describe.getChildRelationships()) {
             if (cr.getRelationshipName() == null) {
                 continue;
             }
-            childRels.add(new List<String>{
+            o.childRelationships.add(toEntry(new List<String>{
                 cr.getRelationshipName(),
                 cr.getChildSObject().getDescribe().getName(),
                 cr.getField().getDescribe().getName()
-            });
+            }));
         }
-        result.put('childRelationships', childRels);
-        result.put('childRelationshipsFormat', 'Each child relationship entry is [RelationshipName, ChildObjectApiName, FieldApiName].');
+    }
+
+    // ─── Compact entry encoding ──────────────────────────────────────────────────
+
+    /**
+     * Joins the parts of one entry with the delimiter. Entries are sent as compact
+     * strings rather than objects so their keys aren't repeated on every entry, which
+     * would make this tool's output about 60% larger for an object like Account. A
+     * delimiter inside a part (only plausible in a label) would corrupt the entry, so
+     * it is replaced with "/".
+     */
+    @TestVisible
+    private static String toEntry(List<String> parts) {
+        List<String> safe = new List<String>();
+        for (String part : parts) {
+            safe.add(part == null ? '' : part.replace(ENTRY_DELIMITER, '/'));
+        }
+        return String.join(safe, ENTRY_DELIMITER);
     }
 }

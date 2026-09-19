@@ -31,9 +31,9 @@ private class UpsertRecordsTest {
         return inp;
     }
 
-    private static Object run(UpsertRecords.Input inp) {
+    private static UpsertRecords.Output run(UpsertRecords.Input inp) {
         List<UpsertRecords.Output> out = UpsertRecords.run(new List<UpsertRecords.Input>{ inp });
-        return JSON.deserializeUntyped(out[0].resultJson);
+        return out[0];
     }
 
     // ─── Input validation ────────────────────────────────────────────────────────
@@ -337,18 +337,19 @@ private class UpsertRecordsTest {
             })
         };
 
-        List<Object> insertResult = (List<Object>) run(buildInput('Account', true, null, insertRecords));
+        UpsertRecords.Output insertOutput = run(buildInput('Account', true, null, insertRecords));
 
-        Assert.areEqual(2, insertResult.size(), 'Result should have 2 entries');
+        Assert.areEqual(true, insertOutput.success, 'Overall result should be successful');
+        Assert.areEqual(2, insertOutput.results.size(), 'Result should have 2 entries');
 
-        Map<String, Object> r0 = (Map<String, Object>) insertResult[0];
-        Map<String, Object> r1 = (Map<String, Object>) insertResult[1];
-        Assert.areEqual(true, r0.get('success'), 'First record should succeed');
-        Assert.areEqual(true, r1.get('success'), 'Second record should succeed');
-        Assert.areEqual(true, r0.get('created'), 'First record should be created');
-        Assert.areEqual(true, r1.get('created'), 'Second record should be created');
-        String id0 = (String) r0.get('id');
-        String id1 = (String) r1.get('id');
+        UpsertRecords.RecordResult r0 = insertOutput.results[0];
+        UpsertRecords.RecordResult r1 = insertOutput.results[1];
+        Assert.areEqual(true, r0.success, 'First record should succeed');
+        Assert.areEqual(true, r1.success, 'Second record should succeed');
+        Assert.areEqual(true, r0.created, 'First record should be created');
+        Assert.areEqual(true, r1.created, 'Second record should be created');
+        String id0 = String.valueOf(r0.id);
+        String id1 = String.valueOf(r1.id);
         Assert.isNotNull(id0, 'First result should have an id');
         Assert.isNotNull(id1, 'Second result should have an id');
 
@@ -364,12 +365,10 @@ private class UpsertRecordsTest {
             })
         };
 
-        List<Object> updateResult = (List<Object>) run(buildInput('Account', true, null, updateRecords));
+        List<UpsertRecords.RecordResult> updateResult = run(buildInput('Account', true, null, updateRecords)).results;
 
-        Assert.areEqual(false, ((Map<String, Object>) updateResult[0]).get('created'),
-            'Record 0 should be updated, not created');
-        Assert.areEqual(false, ((Map<String, Object>) updateResult[1]).get('created'),
-            'Record 1 should be updated, not created');
+        Assert.areEqual(false, updateResult[0].created, 'Record 0 should be updated, not created');
+        Assert.areEqual(false, updateResult[1].created, 'Record 1 should be updated, not created');
 
         // Verify Name was actually updated in the database
         List<Account> accounts = [SELECT Id, Name FROM Account WHERE Id IN :new List<Id>{
@@ -394,24 +393,23 @@ private class UpsertRecordsTest {
             })
         };
 
-        List<Object> partialResult = (List<Object>) run(buildInput('Account', false, null, partialRecords));
+        UpsertRecords.Output partialOutput = run(buildInput('Account', false, null, partialRecords));
+        List<UpsertRecords.RecordResult> partialResult = partialOutput.results;
 
+        Assert.areEqual(false, partialOutput.success, 'Overall result should be unsuccessful when any record fails');
         Assert.areEqual(2, partialResult.size(), 'Should have 2 result entries');
 
         Integer successCt = 0;
         Integer failCount = 0;
         Boolean foundErrors = false;
-        for (Object entry : partialResult) {
-            Map<String, Object> det = (Map<String, Object>) entry;
-            if (det.get('success') == true) {
+        for (UpsertRecords.RecordResult det : partialResult) {
+            if (det.success == true) {
                 successCt++;
             } else {
                 failCount++;
-                List<Object> errs = (List<Object>) det.get('errors');
-                Assert.isFalse(errs.isEmpty(), 'Errors list should not be empty');
-                Map<String, Object> err0 = (Map<String, Object>) errs[0];
-                Assert.isNotNull(err0.get('message'),    'Error should have message');
-                Assert.isNotNull(err0.get('statusCode'), 'Error should have statusCode');
+                Assert.isFalse(det.errors.isEmpty(), 'Errors list should not be empty');
+                Assert.isNotNull(det.errors[0].message,    'Error should have message');
+                Assert.isNotNull(det.errors[0].statusCode, 'Error should have statusCode');
                 foundErrors = true;
             }
         }
@@ -450,7 +448,8 @@ private class UpsertRecordsTest {
 
         Assert.isTrue(results[0].isSuccess(), 'Action invocation should succeed');
         Map<String, Object> outputs = results[0].getOutputParameters();
-        List<Object> parsed = (List<Object>) JSON.deserializeUntyped((String) outputs.get('resultJson'));
+        Assert.areEqual(true, outputs.get('success'), 'Overall result should be successful');
+        List<Object> parsed = (List<Object>) JSON.deserializeUntyped(JSON.serialize(outputs.get('results')));
         Assert.areEqual(1, parsed.size(), 'Should have one result entry');
         Assert.areEqual(true, ((Map<String, Object>) parsed[0]).get('success'), 'Record should succeed');
     }

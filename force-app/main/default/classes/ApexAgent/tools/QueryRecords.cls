@@ -19,8 +19,17 @@ public with sharing class QueryRecords {
     }
 
     public class Output {
-        @InvocableVariable(label='Result' description='JSON object with the sanitized query, record count, and records (or a query exception message).')
-        public String resultJson;
+        @InvocableVariable(label='Query' description='The SOQL query that was actually executed, after sanitizing.')
+        public String query;
+
+        @InvocableVariable(label='Record Count' description='Number of records returned.')
+        public Integer recordCount;
+
+        @InvocableVariable(label='Records' description='The matching records (or aggregate results).')
+        public List<SObject> records;
+
+        @InvocableVariable(label='Error' description='Set instead of records when the query failed to run; explains why.')
+        public String error;
     }
 
     @InvocableMethod(label='Query Records' description='Executes a SOQL query and returns matching records. Automatically caps results at 50 records (lower limits are respected, higher limits are reduced to 50). Aggregate queries are also supported\n\nCritical usage rules:\n- Always construct a valid SOQL query first based on the user\'s request, then pass it to this tool for execution.\n- If the object name is unfamiliar, use SearchObjects first to confirm it exists and get its exact API name.\n- Always use GetObjectDetails first (if not already called) to discover available fields on the object. Use GetFieldDetails if you need deeper field metadata before building your query. Never guess field names.\n\nWhen not to use:\n- You need fuzzy name search within one object → use SearchRecords.\n- You need a single record by ID → use GetRecordDetails.')
@@ -37,18 +46,12 @@ public with sharing class QueryRecords {
         String sanitized = sanitize(soqlQuery);
 
         Output o = new Output();
+        o.query = sanitized;
         try {
-            List<SObject> records = Database.query(sanitized, System.AccessLevel.USER_MODE);
-            o.resultJson = JSON.serialize(new Map<String, Object>{
-                'query'       => sanitized,
-                'recordCount' => records.size(),
-                'records'     => records
-            });
+            o.records     = Database.query(sanitized, System.AccessLevel.USER_MODE);
+            o.recordCount = o.records.size();
         } catch (QueryException e) {
-            o.resultJson = JSON.serialize(new Map<String, Object>{
-                'query'     => sanitized,
-                'exception' => e.getMessage()
-            });
+            o.error = e.getMessage();
         }
         return o;
     }

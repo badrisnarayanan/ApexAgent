@@ -49,8 +49,8 @@ private class GetObjectApiNameTest {
             new List<GetObjectApiName.Input>{ buildInput(String.valueOf(llm.Id)) }
         );
 
-        Assert.areEqual('Account', resultMap(accResults[0]).get('objectApiName'), 'objectApiName should be Account');
-        Assert.areEqual('ApexAgent_LLM__c', resultMap(llmResults[0]).get('objectApiName'), 'objectApiName should be ApexAgent_LLM__c');
+        Assert.areEqual('Account', accResults[0].objectApiName, 'objectApiName should be Account');
+        Assert.areEqual('ApexAgent_LLM__c', llmResults[0].objectApiName, 'objectApiName should be ApexAgent_LLM__c');
     }
 
     // ─── Happy path — through the real Invocable.Action dispatch path ────────────
@@ -71,8 +71,7 @@ private class GetObjectApiNameTest {
 
         Assert.isTrue(results[0].isSuccess(), 'Action invocation should succeed');
         Map<String, Object> outputs = results[0].getOutputParameters();
-        Map<String, Object> res = (Map<String, Object>) JSON.deserializeUntyped((String) outputs.get('resultJson'));
-        Assert.areEqual('Account', res.get('objectApiName'), 'objectApiName should be Account');
+        Assert.areEqual('Account', outputs.get('objectApiName'), 'objectApiName should be Account');
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -81,9 +80,5 @@ private class GetObjectApiNameTest {
         GetObjectApiName.Input inp = new GetObjectApiName.Input();
         inp.recordId = recordId;
         return inp;
-    }
-
-    private static Map<String, Object> resultMap(GetObjectApiName.Output output) {
-        return (Map<String, Object>) JSON.deserializeUntyped(output.resultJson);
     }
 }

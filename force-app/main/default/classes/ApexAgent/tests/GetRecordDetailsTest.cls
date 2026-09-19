@@ -55,10 +55,8 @@ private class GetRecordDetailsTest {
         List<GetRecordDetails.Output> outputs = GetRecordDetails.run(inputs);
 
         Assert.areEqual(2, outputs.size(), 'Should return one output per input, in order');
-        Map<String, Object> accResult = (Map<String, Object>) JSON.deserializeUntyped(outputs[0].resultJson);
-        Map<String, Object> llmResult = (Map<String, Object>) JSON.deserializeUntyped(outputs[1].resultJson);
-        Assert.areEqual('Bulk Test Account', accResult.get('Name'), 'First output should be the Account');
-        Assert.areEqual('Bulk Test LLM', llmResult.get('Name'), 'Second output should be the LLM');
+        Assert.areEqual('Bulk Test Account', outputs[0].record.get('Name'), 'First output should be the Account');
+        Assert.areEqual('Bulk Test LLM', outputs[1].record.get('Name'), 'Second output should be the LLM');
     }
 
     // ─── Field filtering: long text areas excluded ────────────────────────────────
@@ -85,10 +83,13 @@ private class GetRecordDetailsTest {
         Id ghostId = acc.Id;
         delete acc;
 
-        Map<String, Object> res = run(String.valueOf(ghostId));
+        GetRecordDetails.Output out = GetRecordDetails.run(
+            new List<GetRecordDetails.Input>{ buildInput(String.valueOf(ghostId)) }
+        )[0];
 
-        Assert.areEqual(false, res.get('found'),   'found should be false');
-        Assert.isNotNull(res.get('message'),        'message should be present');
+        Assert.areEqual(false, out.found, 'found should be false');
+        Assert.isNotNull(out.message,     'message should be present');
+        Assert.isNull(out.record,         'record should be absent');
     }
 
     // ─── Lookup enrichment: custom lookup field ───────────────────────────────────
@@ -132,6 +133,6 @@ private class GetRecordDetailsTest {
 
     private static Map<String, Object> run(String recordId) {
         List<GetRecordDetails.Output> out = GetRecordDetails.run(new List<GetRecordDetails.Input>{ buildInput(recordId) });
-        return (Map<String, Object>) JSON.deserializeUntyped(out[0].resultJson);
+        return (Map<String, Object>) JSON.deserializeUntyped(JSON.serialize(out[0].record));
     }
 }

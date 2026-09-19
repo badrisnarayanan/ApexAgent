@@ -19,8 +19,19 @@ public with sharing class SearchRecords {
     }
 
     public class Output {
-        @InvocableVariable(label='Result' description='JSON array of matching records, each with Id, Name, and a relevance score.')
-        public String resultJson;
+        @InvocableVariable(label='Results' description='Matching records ranked by relevance, best match first.')
+        public List<RecordMatch> results;
+    }
+
+    public class RecordMatch {
+        @InvocableVariable(label='Id' description='Record Id.')
+        public Id id;
+
+        @InvocableVariable(label='Name' description='Record Name.')
+        public String name;
+
+        @InvocableVariable(label='Score' description='Relevance score; higher is a closer match.')
+        public Double score;
     }
 
     @InvocableMethod(label='Search Records' description='Executes a fuzzy SOSL search for records by Name within a specified object. Returns up to 25 scored results, each containing Id, Name, and a relevance score\n\nWhen to use:\nUser asks "find", "search for", or "look up" a record by name or text.\nYou know the exact object but lack the record ID.\nThe search term fo record is ambiguous\n\nWhen not to use:\nYou already have the record ID → use GetRecordDetails.\nYou need filtered results by non-name fields → use QueryRecords with SOQL.')
@@ -47,7 +58,7 @@ public with sharing class SearchRecords {
         List<SObject> rawResults = executeSosl(soslClause, objectApiName);
 
         Output o = new Output();
-        o.resultJson = JSON.serialize(scoreAndRank(rawResults, searchTerm));
+        o.results = scoreAndRank(rawResults, searchTerm);
         return o;
     }
 
@@ -246,7 +257,7 @@ public with sharing class SearchRecords {
 
     // ─── Scoring & ranking ───────────────────────────────────────────────────────
 
-    private static List<Map<String, Object>> scoreAndRank(List<SObject> records, String searchTerm) {
+    private static List<RecordMatch> scoreAndRank(List<SObject> records, String searchTerm) {
         String lowerSearch    = searchTerm.toLowerCase().trim();
         String cleanSearch    = stripCompanySuffix(lowerSearch);
         List<String> searchWords = splitCompound(searchTerm);
@@ -340,14 +351,14 @@ public with sharing class SearchRecords {
 
         scored.sort();
 
-        List<Map<String, Object>> results = new List<Map<String, Object>>();
+        List<RecordMatch> results = new List<RecordMatch>();
         for (Integer i = 0; i < Math.min(MAX_RESULTS, scored.size()); i++) {
             ScoredRecord sr = scored[i];
-            results.add(new Map<String, Object>{
-                'Id'    => sr.record.Id,
-                'Name'  => sr.name,
-                'score' => sr.score
-            });
+            RecordMatch match = new RecordMatch();
+            match.id    = sr.record.Id;
+            match.name  = sr.name;
+            match.score = sr.score;
+            results.add(match);
         }
         return results;
     }

@@ -118,4 +118,47 @@ private class ApexAgentToolExecutorTest {
         Assert.isTrue(result.errorMessage.contains('NoSuchApexClass'), 'Error should carry the original bridge-side message');
         Assert.isNotNull(result.errorStackTrace, 'Original bridge-side stack trace should be preserved');
     }
+
+    // ─── Typed Output → the JSON the LLM receives ────────────────────────────────
+
+    @IsTest
+    static void testExecuteInlineSerializesTypedOutputs() {
+        Account acc = new Account(Name = 'Executor Typed Output Account');
+        insert acc;
+
+        // Nested typed lists survive, and null Output fields are dropped
+        Map<String, Object> fieldDetails = executeInline('GetFieldDetails', new Map<String, Object>{
+            'objectApiName'    => 'Lead',
+            'fieldApiNameList' => new List<Object>{ 'LeadSource', 'NoSuchField__xyz' }
+        });
+        Assert.areEqual('Lead', fieldDetails.get('objectApiName'), 'Output fields should be at the top level');
+        Assert.isFalse(fieldDetails.containsKey('message'), 'A null Output field should be suppressed');
+        List<Object> fields = (List<Object>) fieldDetails.get('fields');
+        Map<String, Object> picklist = (Map<String, Object>) fields[0];
+        Assert.isTrue(((List<Object>) picklist.get('picklistValues')).size() > 0, 'Nested picklistValues should be serialized');
+        Assert.isFalse(picklist.containsKey('lookupReferences'), 'A null field inside a nested object should be suppressed');
+        Assert.areEqual(false, ((Map<String, Object>) fields[1]).get('found'), 'An unknown field should report found=false');
+
+        // Compact string entries stay strings
+        Map<String, Object> objectDetails = executeInline('GetObjectDetails', new Map<String, Object>{ 'objectApiName' => 'Account' });
+        Map<String, Object> firstGroup = (Map<String, Object>) ((List<Object>) objectDetails.get('fields'))[0];
+        Assert.isTrue(firstGroup.containsKey('soapType'), 'Each group should carry its SOAP type');
+        Assert.isTrue(((List<Object>) firstGroup.get('fields'))[0] instanceof String, 'Field entries should stay compact strings');
+
+        // SObject payloads are nested under their Output field
+        Map<String, Object> recordDetails = executeInline('GetRecordDetails', new Map<String, Object>{ 'recordId' => String.valueOf(acc.Id) });
+        Assert.areEqual('Executor Typed Output Account', ((Map<String, Object>) recordDetails.get('record')).get('Name'), 'The record should be under record');
+        Assert.isFalse(recordDetails.containsKey('found'), 'A null Output field should be suppressed');
+
+        Map<String, Object> queried = executeInline('QueryRecords', new Map<String, Object>{
+            'soqlQuery' => 'SELECT Id, Name FROM Account WHERE Id = \'' + acc.Id + '\''
+        });
+        Assert.areEqual(1, queried.get('recordCount'), 'recordCount should be at the top level');
+        Assert.areEqual(1, ((List<Object>) queried.get('records')).size(), 'records should hold the matching record');
+        Assert.isFalse(queried.containsKey('error'), 'A null Output field should be suppressed');
+    }
+
+    private static Map<String, Object> executeInline(String toolName, Map<String, Object> inputs) {
+        return (Map<String, Object>) JSON.deserializeUntyped(ApexAgentToolExecutor.executeInline(toolName, inputs));
+    }
 }

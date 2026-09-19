@@ -41,8 +41,51 @@ public with sharing class UpsertRecords {
     }
 
     public class Output {
-        @InvocableVariable(label='Result' description='JSON array of per-record DML results (id/success/errors), or a structured error object if the whole operation failed.')
-        public String resultJson;
+        @InvocableVariable(label='Success' description='True only if every record was saved; false if any record failed or the whole operation failed.')
+        public Boolean success;
+
+        @InvocableVariable(label='Results' description='Per-record outcome, in the same order as the input records. Omitted if the whole operation failed.')
+        public List<RecordResult> results;
+
+        @InvocableVariable(label='Error' description='Why the whole operation failed. Omitted when per-record results are returned.')
+        public String error;
+
+        @InvocableVariable(label='DML Errors' description='Details of the DML failures when the whole operation failed.')
+        public List<DmlError> dmlErrors;
+    }
+
+    public class RecordResult {
+        @InvocableVariable(label='Id' description='Id of the saved record. Omitted if the record failed.')
+        public Id id;
+
+        @InvocableVariable(label='Success' description='True if this record was saved.')
+        public Boolean success;
+
+        @InvocableVariable(label='Created' description='True if the record was inserted, false if an existing record was updated.')
+        public Boolean created;
+
+        @InvocableVariable(label='Errors' description='Why this record failed.')
+        public List<DmlError> errors;
+    }
+
+    public class DmlError {
+        @InvocableVariable(label='Status Code' description='Salesforce status code (e.g. REQUIRED_FIELD_MISSING).')
+        public String statusCode;
+
+        @InvocableVariable(label='Message' description='Error message.')
+        public String message;
+
+        @InvocableVariable(label='Fields' description='API names of the fields the error relates to.')
+        public List<String> fields;
+
+        @InvocableVariable(label='DML Index' description='Index of the failing record in the input list.')
+        public Integer dmlIndex;
+
+        @InvocableVariable(label='Record Id' description='Id of the failing record, if it has one.')
+        public Id recordId;
+
+        @InvocableVariable(label='Status Type' description='Type of the DML operation that failed.')
+        public String statusType;
     }
 
     @InvocableMethod(label='Upsert Records' description='Creates new records or updates existing ones in a single operation. Supports up to 200 records per call. Returns upsert results with success/error status per record.\n\nCritical usage rules:\n- Always confirm with the user before executing — this modifies data.\n- Always use GetObjectDetails first to discover field API names and required fields.\n- Always verify field types using GetFieldDetails if unsure about the Apex type.\n- Each record must include Id or an external ID field to update existing records. Without either, new records are always created.\n- Max 200 records per call — split larger batches.')
@@ -65,9 +108,7 @@ public with sharing class UpsertRecords {
             externalIdField = getExternalIdField(sObjectType, inp.externalIdFieldName, inp.objectApiName);
         }
 
-        Output o = new Output();
-        o.resultJson = JSON.serialize(performUpsert(records, externalIdField, inp.allOrNone));
-        return o;
+        return performUpsert(records, externalIdField, inp.allOrNone);
     }
 
     // ─── Input validation ────────────────────────────────────────────────────────
@@ -428,46 +469,67 @@ public with sharing class UpsertRecords {
 
     // ─── DML execution ───────────────────────────────────────────────────────────
 
-    private static Object performUpsert(
+    private static Output performUpsert(
         List<SObject> records,
         Schema.SObjectField externalIdField,
         Boolean allOrNone
     ) {
-        List<Database.UpsertResult> results;
+        List<Database.UpsertResult> upsertResults;
         try {
             if (externalIdField != null) {
-                results = Database.upsert(records, externalIdField, allOrNone, AccessLevel.USER_MODE);
+                upsertResults = Database.upsert(records, externalIdField, allOrNone, AccessLevel.USER_MODE);
             } else {
-                results = Database.upsert(records, allOrNone, AccessLevel.USER_MODE);
+                upsertResults = Database.upsert(records, allOrNone, AccessLevel.USER_MODE);
             }
         } catch (DmlException e) {
-            return buildDmlErrorResponse(e);
+            return buildDmlErrorOutput(e);
         } catch (Exception e) {
-            return new Map<String, Object>{
-                'success' => false,
-                'error'   => e.getMessage()
-            };
+            Output failed = new Output();
+            failed.success = false;
+            failed.error   = e.getMessage();
+            return failed;
         }
 
-        return JSON.deserializeUntyped(JSON.serialize(results));
+        Output o = new Output();
+        o.success = true;
+        o.results = new List<RecordResult>();
+        for (Database.UpsertResult ur : upsertResults) {
+            RecordResult rr = new RecordResult();
+            rr.id      = ur.getId();
+            rr.success = ur.isSuccess();
+            rr.created = ur.isCreated();
+            if (!ur.isSuccess()) {
+                o.success = false;
+                rr.errors = new List<DmlError>();
+                for (Database.Error err : ur.getErrors()) {
+                    DmlError de = new DmlError();
+                    de.statusCode = String.valueOf(err.getStatusCode());
+                    de.message    = err.getMessage();
+                    de.fields     = err.getFields();
+                    rr.errors.add(de);
+                }
+            }
+            o.results.add(rr);
+        }
+        return o;
     }
 
-    private static Map<String, Object> buildDmlErrorResponse(DmlException e) {
-        List<Map<String, Object>> dmlErrors = new List<Map<String, Object>>();
+    private static Output buildDmlErrorOutput(DmlException e) {
+        List<DmlError> dmlErrors = new List<DmlError>();
         for (Integer i = 0; i < e.getNumDml(); i++) {
-            dmlErrors.add(new Map<String, Object>{
-                'dmlIndex'   => i,
-                'recordId'   => e.getDmlId(i) != null ? String.valueOf(e.getDmlId(i)) : null,
-                'message'    => e.getDmlMessage(i),
-                'statusCode' => String.valueOf(e.getDmlStatusCode(i)),
-                'statusType' => e.getDmlType(i) != null ? String.valueOf(e.getDmlType(i)) : null,
-                'fieldNames' => e.getDmlFieldNames(i)
-            });
+            DmlError de = new DmlError();
+            de.dmlIndex   = i;
+            de.recordId   = e.getDmlId(i);
+            de.message    = e.getDmlMessage(i);
+            de.statusCode = String.valueOf(e.getDmlStatusCode(i));
+            de.statusType = e.getDmlType(i) != null ? String.valueOf(e.getDmlType(i)) : null;
+            de.fields     = e.getDmlFieldNames(i);
+            dmlErrors.add(de);
         }
-        return new Map<String, Object>{
-            'success'   => false,
-            'error'     => 'DML operation failed: ' + e.getMessage(),
-            'dmlErrors' => dmlErrors
-        };
+        Output o = new Output();
+        o.success   = false;
+        o.error     = 'DML operation failed: ' + e.getMessage();
+        o.dmlErrors = dmlErrors;
+        return o;
     }
 }

@@ -158,6 +158,6 @@ private class GetFieldDetailsTest {
         inp.objectApiName = objectApiName;
         inp.fieldApiNameList = fieldApiNameList;
         List<GetFieldDetails.Output> out = GetFieldDetails.run(new List<GetFieldDetails.Input>{ inp });
-        return (Map<String, Object>) JSON.deserializeUntyped(out[0].resultJson);
+        return (Map<String, Object>) JSON.deserializeUntyped(JSON.serialize(out[0], true));
     }
 }

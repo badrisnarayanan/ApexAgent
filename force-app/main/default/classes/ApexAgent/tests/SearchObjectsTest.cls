@@ -33,8 +33,8 @@ private class SearchObjectsTest {
         Double prevScore = 9999999;
         for (Object raw : results) {
             Map<String, Object> r = (Map<String, Object>) raw;
-            Assert.isTrue(r.containsKey('QualifiedApiName'), 'Each result must have QualifiedApiName');
-            Assert.isTrue(r.containsKey('Label'), 'Each result must have Label');
+            Assert.isTrue(r.containsKey('qualifiedApiName'), 'Each result must have qualifiedApiName');
+            Assert.isTrue(r.containsKey('label'), 'Each result must have label');
             Assert.isTrue(r.containsKey('score'), 'Each result must have score');
             Double score = (Double) r.get('score');
             Assert.isTrue(score > 0, 'Score must be positive');
@@ -111,10 +111,10 @@ private class SearchObjectsTest {
         SearchObjects.Input inp = new SearchObjects.Input();
         inp.searchTerm = searchTerm;
         List<SearchObjects.Output> results = SearchObjects.run(new List<SearchObjects.Input>{ inp });
-        return (List<Object>) JSON.deserializeUntyped(results[0].resultJson);
+        return (List<Object>) JSON.deserializeUntyped(JSON.serialize(results[0].results));
     }
 
     private static String qualifiedApiName(Object rawResult) {
-        return (String) ((Map<String, Object>) rawResult).get('QualifiedApiName');
+        return (String) ((Map<String, Object>) rawResult).get('qualifiedApiName');
     }
 }
