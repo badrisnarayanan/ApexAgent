@@ -117,4 +117,25 @@ private class SearchObjectsTest {
     private static String qualifiedApiName(Object rawResult) {
         return (String) ((Map<String, Object>) rawResult).get('qualifiedApiName');
     }
+
+    // ─── Word-overlap scoring and camelCase API names ────────────────────────────
+
+    @IsTest
+    static void testCamelCaseNamesAndUndilutedScores() {
+        List<Object> lineItem = search('OpportunityLineItem');
+        Assert.areEqual('OpportunityLineItem', qualifiedApiName(lineItem[0]), 'camelCase API name should be the top match');
+
+        // 100 exact + 60 starts-with + 30 contains + 40 word overlap + 20 similarity: the
+        // overlap must not be diluted by guessed sub-word fragments
+        Assert.isTrue((Double) ((Map<String, Object>) lineItem[0]).get('score') >= 249.9,
+            'Exact match should earn the full word-overlap points — got: ' + lineItem[0]);
+
+        List<Object> spaced = search('opportunity line item');
+        Assert.areEqual('OpportunityLineItem', qualifiedApiName(spaced[0]), 'Spaced words should find the camelCase object');
+
+        List<Object> account = search('Account');
+        Assert.areEqual('Account', qualifiedApiName(account[0]), 'Account exact match first');
+        Assert.isTrue((Double) ((Map<String, Object>) account[0]).get('score') >= 249.9,
+            'Single-word exact match should be undiluted — got: ' + account[0]);
+    }
 }

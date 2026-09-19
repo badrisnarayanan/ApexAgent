@@ -416,6 +416,39 @@ private class UpsertRecordsTest {
         Assert.isTrue(successCt >= 1, 'At least one record should succeed');
         Assert.isTrue(failCount  >= 1, 'At least one record should fail');
         Assert.isTrue(foundErrors,     'At least one result entry should have errors');
+
+        // The failing record sits in the middle of the batch so a wrong index can't
+        // coincide with the right one.
+        List<UpsertRecords.RecordInput> middleFails = new List<UpsertRecords.RecordInput>{
+            makeRecord(new List<UpsertRecords.FieldEntry>{ fieldEntry('Name', 'UpsertTest Idx A', 'String') }),
+            makeRecord(new List<UpsertRecords.FieldEntry>{ fieldEntry('Name', null, 'String') }),
+            makeRecord(new List<UpsertRecords.FieldEntry>{ fieldEntry('Name', 'UpsertTest Idx C', 'String') })
+        };
+
+        // allOrNone=false: the per-record error carries the record's index, and a failed
+        // record is not reported as created
+        UpsertRecords.Output partial = run(buildInput('Account', false, null, middleFails));
+        Assert.areEqual(3, partial.results.size(), 'One result per input record');
+        Assert.areEqual(true,  partial.results[0].created, 'Record 0 was inserted');
+        Assert.areEqual(true,  partial.results[2].created, 'Record 2 was inserted');
+        Assert.areNotEqual(true, partial.results[1].created, 'A failed record must not be reported as created');
+        Assert.isNull(partial.results[1].id, 'A failed record has no id');
+        Assert.areEqual(1, partial.results[1].errors[0].dmlIndex, 'Per-record error must carry the failing record index');
+        Assert.isNull(partial.results[0].errors, 'Successful records have no errors');
+
+        // allOrNone=true: the whole operation fails and dmlIndex is the failing record's
+        // position in the input, not the position within the error list
+        List<UpsertRecords.RecordInput> allOrNoneBatch = new List<UpsertRecords.RecordInput>{
+            makeRecord(new List<UpsertRecords.FieldEntry>{ fieldEntry('Name', 'UpsertTest Rollback A', 'String') }),
+            makeRecord(new List<UpsertRecords.FieldEntry>{ fieldEntry('Name', null, 'String') }),
+            makeRecord(new List<UpsertRecords.FieldEntry>{ fieldEntry('Name', 'UpsertTest Rollback C', 'String') })
+        };
+        UpsertRecords.Output all = run(buildInput('Account', true, null, allOrNoneBatch));
+        Assert.areEqual(false, all.success, 'allOrNone failure');
+        Assert.isNull(all.results, 'No per-record results when the whole operation failed');
+        Assert.areEqual(1, all.dmlErrors.size(), 'One failing record');
+        Assert.areEqual(1, all.dmlErrors[0].dmlIndex, 'dmlIndex must be the failing record\'s index in the input');
+        Assert.areEqual(0, [SELECT COUNT() FROM Account WHERE Name LIKE 'UpsertTest Rollback%'], 'allOrNone must roll everything back');
     }
 
     // ─── End-to-end via the real Invocable.Action dispatch path ──────────────────

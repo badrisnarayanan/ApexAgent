@@ -54,11 +54,19 @@ public with sharing class SearchRecords {
             );
         }
 
+        // The name field isn't always "Name" (Case uses CaseNumber, for example)
+        String nameField = ApexAgentUtils.getNameField(describe);
+        if (String.isBlank(nameField)) {
+            throw new IllegalArgumentException(
+                'Object "' + objectApiName + '" has no name field to search by. Use QueryRecords with SOQL instead'
+            );
+        }
+
         String soslClause = buildSoslClause(searchTerm);
-        List<SObject> rawResults = executeSosl(soslClause, objectApiName);
+        List<SObject> rawResults = executeSosl(soslClause, objectApiName, nameField);
 
         Output o = new Output();
-        o.results = scoreAndRank(rawResults, searchTerm);
+        o.results = scoreAndRank(rawResults, searchTerm, nameField);
         return o;
     }
 
@@ -90,9 +98,9 @@ public with sharing class SearchRecords {
 
     // ─── SOSL execution ──────────────────────────────────────────────────────────
 
-    private static List<SObject> executeSosl(String soslClause, String objectApiName) {
+    private static List<SObject> executeSosl(String soslClause, String objectApiName, String nameField) {
         String query = 'FIND {' + soslClause + '} IN NAME FIELDS RETURNING '
-            + objectApiName + '(Id, Name) LIMIT ' + SOSL_LIMIT;
+            + objectApiName + '(Id, ' + nameField + ') LIMIT ' + SOSL_LIMIT;
         List<List<SObject>> results = Search.query(query, AccessLevel.USER_MODE);
         return results.isEmpty() ? new List<SObject>() : results[0];
     }
@@ -159,16 +167,16 @@ public with sharing class SearchRecords {
         }
 
         // Compound word splitting
-        List<String> words = splitCompound(searchTerm);
+        List<String> words = ApexAgentTextMatch.splitCompound(searchTerm);
         for (String word : words) {
             String w = word.toLowerCase();
             if (w.length() >= 2) {
                 variants.add(w);
-                variants.addAll(pluralSingularVariants(w));
+                variants.addAll(ApexAgentTextMatch.pluralSingularVariants(w));
                 if (ABBREVIATIONS.containsKey(w)) {
                     String expanded = ABBREVIATIONS.get(w);
                     variants.add(expanded);
-                    variants.addAll(pluralSingularVariants(expanded));
+                    variants.addAll(ApexAgentTextMatch.pluralSingularVariants(expanded));
                 }
             }
         }
@@ -218,7 +226,7 @@ public with sharing class SearchRecords {
         String cleanCompany = stripCompanySuffix(lower);
         if (cleanCompany != lower && cleanCompany.length() >= 2) {
             variants.add(cleanCompany);
-            variants.addAll(pluralSingularVariants(cleanCompany));
+            variants.addAll(ApexAgentTextMatch.pluralSingularVariants(cleanCompany));
 
             // Individual words of the clean company name
             for (String w : cleanCompany.split('\\s+')) {
@@ -257,10 +265,12 @@ public with sharing class SearchRecords {
 
     // ─── Scoring & ranking ───────────────────────────────────────────────────────
 
-    private static List<RecordMatch> scoreAndRank(List<SObject> records, String searchTerm) {
+    private static List<RecordMatch> scoreAndRank(List<SObject> records, String searchTerm, String nameField) {
         String lowerSearch    = searchTerm.toLowerCase().trim();
         String cleanSearch    = stripCompanySuffix(lowerSearch);
-        List<String> searchWords = splitCompound(searchTerm);
+        if (String.isBlank(cleanSearch)) {
+            cleanSearch = lowerSearch; // the term is only company suffixes ("Group", "LLC")
+        }
 
         // Person name parts
         List<String> nameTokens = lowerSearch.split('\\s+');
@@ -270,12 +280,15 @@ public with sharing class SearchRecords {
         List<ScoredRecord> scored = new List<ScoredRecord>();
 
         for (SObject record : records) {
-            String name = (String) record.get('Name');
+            String name = (String) record.get(nameField);
             if (String.isBlank(name)) {
                 continue;
             }
             String lowerName  = name.toLowerCase();
             String cleanName  = stripCompanySuffix(lowerName);
+            if (String.isBlank(cleanName)) {
+                cleanName = lowerName; // the name is only company suffixes
+            }
 
             Double score = 0;
 
@@ -300,29 +313,10 @@ public with sharing class SearchRecords {
             }
 
             // Word overlap
-            List<String> nameWords = lowerName.split('\\s+');
-            Set<String> nameWordSet = new Set<String>(nameWords);
-            Integer matchedWords = 0;
-            for (String sw : searchWords) {
-                String swLower = sw.toLowerCase();
-                if (nameWordSet.contains(swLower)) {
-                    matchedWords++;
-                } else {
-                    Set<String> variants = pluralSingularVariants(swLower);
-                    for (String v : variants) {
-                        if (nameWordSet.contains(v)) {
-                            matchedWords++;
-                            break;
-                        }
-                    }
-                }
-            }
-            if (!searchWords.isEmpty()) {
-                score += 40 * ((Double) matchedWords / searchWords.size());
-            }
+            score += 40 * ApexAgentTextMatch.wordOverlap(searchTerm, ApexAgentTextMatch.wordSet(name));
 
             // Levenshtein similarity
-            Double sim = levenshteinSimilarity(lowerSearch, lowerName);
+            Double sim = ApexAgentTextMatch.levenshteinSimilarity(lowerSearch, lowerName);
             score += 20 * sim;
 
             // Person name bonuses
@@ -361,142 +355,6 @@ public with sharing class SearchRecords {
             results.add(match);
         }
         return results;
-    }
-
-    // ─── String splitting helpers ────────────────────────────────────────────────
-
-    private static List<String> splitCompound(String term) {
-        Set<String> wordSet = new Set<String>();
-        for (String part : term.split('[\\s_]+')) {
-            if (String.isNotBlank(part)) {
-                wordSet.add(part.toLowerCase());
-                wordSet.addAll(splitCamelCase(part));
-            }
-        }
-        String lower = term.toLowerCase().replaceAll('[\\s_]', '');
-        wordSet.addAll(splitDoubledConsonants(lower));
-        wordSet.addAll(splitVowelConsonant(lower));
-        wordSet.remove('');
-        return new List<String>(wordSet);
-    }
-
-    private static List<String> splitCamelCase(String term) {
-        List<String> words = new List<String>();
-        String current = '';
-        for (Integer i = 0; i < term.length(); i++) {
-            String ch = term.substring(i, i + 1);
-            if (i > 0 && ch == ch.toUpperCase() && ch != ch.toLowerCase()) {
-                if (String.isNotBlank(current)) {
-                    words.add(current.toLowerCase());
-                }
-                current = ch;
-            } else {
-                current += ch;
-            }
-        }
-        if (String.isNotBlank(current)) {
-            words.add(current.toLowerCase());
-        }
-        return words;
-    }
-
-    private static Set<String> splitDoubledConsonants(String term) {
-        Set<String> parts = new Set<String>();
-        String vowels = 'aeiou';
-        for (Integer i = 1; i < term.length(); i++) {
-            String prev = term.substring(i - 1, i);
-            String curr = term.substring(i, i + 1);
-            if (prev == curr && !vowels.contains(prev)) {
-                String left = term.substring(0, i);
-                String right = term.substring(i);
-                if (left.length() >= 2 && right.length() >= 2) {
-                    parts.add(left);
-                    parts.add(right);
-                }
-            }
-        }
-        return parts;
-    }
-
-    private static Set<String> splitVowelConsonant(String term) {
-        Set<String> parts = new Set<String>();
-        String vowels = 'aeiou';
-        if (term.length() < 8) {
-            return parts;
-        }
-        for (Integer i = 2; i < term.length() - 1; i++) {
-            Boolean prevIsVowel = vowels.contains(term.substring(i - 1, i));
-            Boolean currIsVowel = vowels.contains(term.substring(i, i + 1));
-            if (prevIsVowel && !currIsVowel) {
-                String left = term.substring(0, i);
-                String right = term.substring(i);
-                if (left.length() >= 4 && right.length() >= 4) {
-                    parts.add(left);
-                    parts.add(right);
-                }
-            }
-        }
-        return parts;
-    }
-
-    private static Set<String> pluralSingularVariants(String word) {
-        Set<String> variants = new Set<String>();
-        if (String.isBlank(word) || word.length() < 2) {
-            return variants;
-        }
-        // To plural
-        if (word.endsWith('y') && !word.endsWith('ay') && !word.endsWith('ey')
-            && !word.endsWith('oy') && !word.endsWith('uy')) {
-            variants.add(word.substring(0, word.length() - 1) + 'ies');
-        } else if (word.endsWith('s') || word.endsWith('x') || word.endsWith('z')
-            || word.endsWith('ch') || word.endsWith('sh')) {
-            variants.add(word + 'es');
-        } else if (!word.endsWith('s')) {
-            variants.add(word + 's');
-        }
-        // To singular
-        if (word.endsWith('ies') && word.length() > 4) {
-            variants.add(word.substring(0, word.length() - 3) + 'y');
-        }
-        if (word.endsWith('ses') || word.endsWith('xes') || word.endsWith('zes')
-            || word.endsWith('ches') || word.endsWith('shes')) {
-            variants.add(word.substring(0, word.length() - 2));
-        } else if (word.endsWith('es') && word.length() > 3) {
-            variants.add(word.substring(0, word.length() - 2));
-        }
-        if (word.endsWith('s') && !word.endsWith('ss') && word.length() > 2) {
-            variants.add(word.substring(0, word.length() - 1));
-        }
-        return variants;
-    }
-
-    // ─── Levenshtein ─────────────────────────────────────────────────────────────
-
-    private static Double levenshteinSimilarity(String s1, String s2) {
-        if (String.isBlank(s1) || String.isBlank(s2)) {
-            return 0;
-        }
-        Integer maxLen = Math.max(s1.length(), s2.length());
-        if (maxLen == 0) {
-            return 1;
-        }
-        return 1.0 - ((Double) levenshteinDistance(s1, s2) / maxLen);
-    }
-
-    private static Integer levenshteinDistance(String s1, String s2) {
-        Integer len1 = s1.length();
-        Integer len2 = s2.length();
-        List<Integer> prev = new List<Integer>();
-        for (Integer j = 0; j <= len2; j++) { prev.add(j); }
-        for (Integer i = 1; i <= len1; i++) {
-            List<Integer> curr = new List<Integer>{ i };
-            for (Integer j = 1; j <= len2; j++) {
-                Integer cost = (s1.substring(i - 1, i) == s2.substring(j - 1, j)) ? 0 : 1;
-                curr.add(Math.min(Math.min(curr[j - 1] + 1, prev[j] + 1), prev[j - 1] + cost));
-            }
-            prev = curr;
-        }
-        return prev[len2];
     }
 
     // ─── Inner class ─────────────────────────────────────────────────────────────

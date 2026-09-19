@@ -131,29 +131,29 @@ public with sharing class SearchObjects {
         }
 
         // Split compound words by multiple strategies
-        List<String> words = splitCompound(searchTerm);
+        List<String> words = ApexAgentTextMatch.splitCompound(searchTerm);
 
         // Add each individual word + singular/plural
         for (String word : words) {
             String w = word.toLowerCase();
             patterns.add(w);
-            patterns.addAll(pluralSingularVariants(w));
+            patterns.addAll(ApexAgentTextMatch.pluralSingularVariants(w));
 
             // Check abbreviations for each word
             if (ABBREVIATIONS.containsKey(w)) {
                 String expanded = ABBREVIATIONS.get(w);
                 patterns.add(expanded);
-                patterns.addAll(pluralSingularVariants(expanded));
+                patterns.addAll(ApexAgentTextMatch.pluralSingularVariants(expanded));
             }
         }
 
         // Singular/plural of full term
-        patterns.addAll(pluralSingularVariants(lower));
+        patterns.addAll(ApexAgentTextMatch.pluralSingularVariants(lower));
 
         // Join variants: remove spaces/underscores, swap spaces<->underscores
         String noSpaces = lower.replaceAll('[\\s_]', '');
         patterns.add(noSpaces);
-        patterns.addAll(pluralSingularVariants(noSpaces));
+        patterns.addAll(ApexAgentTextMatch.pluralSingularVariants(noSpaces));
 
         String withUnderscores = lower.replaceAll('\\s+', '_');
         patterns.add(withUnderscores);
@@ -168,7 +168,7 @@ public with sharing class SearchObjects {
                 joined += w.toLowerCase();
             }
             patterns.add(joined);
-            patterns.addAll(pluralSingularVariants(joined));
+            patterns.addAll(ApexAgentTextMatch.pluralSingularVariants(joined));
 
             // Also try underscore-joined
             patterns.add(String.join(words, '_').toLowerCase());
@@ -197,132 +197,6 @@ public with sharing class SearchObjects {
             }
         }
         return cleaned;
-    }
-
-    private static List<String> splitCompound(String term) {
-        Set<String> wordSet = new Set<String>();
-
-        // Split by spaces and underscores first
-        for (String part : term.split('[\\s_]+')) {
-            if (String.isNotBlank(part)) {
-                wordSet.add(part.toLowerCase());
-                // Further split by camelCase
-                wordSet.addAll(splitCamelCase(part));
-            }
-        }
-
-        // Split by doubled consonants (e.g., "mapping" -> "map", "ping")
-        String lower = term.toLowerCase().replaceAll('[\\s_]', '');
-        wordSet.addAll(splitDoubledConsonants(lower));
-
-        // Split by vowel-consonant boundary patterns
-        wordSet.addAll(splitVowelConsonant(lower));
-
-        // Remove blanks
-        wordSet.remove('');
-
-        return new List<String>(wordSet);
-    }
-
-    private static List<String> splitCamelCase(String term) {
-        List<String> words = new List<String>();
-        String current = '';
-
-        for (Integer i = 0; i < term.length(); i++) {
-            String ch = term.substring(i, i + 1);
-
-            if (i > 0 && ch == ch.toUpperCase() && ch != ch.toLowerCase()) {
-                // Uppercase letter found — check if it's start of a new word
-                if (String.isNotBlank(current)) {
-                    words.add(current.toLowerCase());
-                }
-                current = ch;
-            } else {
-                current += ch;
-            }
-        }
-        if (String.isNotBlank(current)) {
-            words.add(current.toLowerCase());
-        }
-        return words;
-    }
-
-    private static Set<String> splitDoubledConsonants(String term) {
-        Set<String> parts = new Set<String>();
-        String vowels = 'aeiou';
-
-        for (Integer i = 1; i < term.length(); i++) {
-            String prev = term.substring(i - 1, i);
-            String curr = term.substring(i, i + 1);
-            if (prev == curr && !vowels.contains(prev)) {
-                String left = term.substring(0, i);
-                String right = term.substring(i);
-                if (left.length() >= 2 && right.length() >= 2) {
-                    parts.add(left);
-                    parts.add(right);
-                }
-            }
-        }
-        return parts;
-    }
-
-    private static Set<String> splitVowelConsonant(String term) {
-        Set<String> parts = new Set<String>();
-        String vowels = 'aeiou';
-
-        // Only attempt vowel-consonant splitting on longer terms
-        if (term.length() < 8) {
-            return parts;
-        }
-
-        for (Integer i = 2; i < term.length() - 1; i++) {
-            String prev = term.substring(i - 1, i);
-            String curr = term.substring(i, i + 1);
-            Boolean prevIsVowel = vowels.contains(prev);
-            Boolean currIsVowel = vowels.contains(curr);
-
-            // Split at vowel->consonant boundary when both halves are substantial
-            if (prevIsVowel && !currIsVowel) {
-                String left = term.substring(0, i);
-                String right = term.substring(i);
-                if (left.length() >= 4 && right.length() >= 4) {
-                    parts.add(left);
-                    parts.add(right);
-                }
-            }
-        }
-        return parts;
-    }
-
-    private static Set<String> pluralSingularVariants(String word) {
-        Set<String> variants = new Set<String>();
-        if (String.isBlank(word) || word.length() < 2) {
-            return variants;
-        }
-
-        // To plural
-        if (word.endsWith('y') && !word.endsWith('ay') && !word.endsWith('ey') && !word.endsWith('oy') && !word.endsWith('uy')) {
-            variants.add(word.substring(0, word.length() - 1) + 'ies');
-        } else if (word.endsWith('s') || word.endsWith('x') || word.endsWith('z') || word.endsWith('ch') || word.endsWith('sh')) {
-            variants.add(word + 'es');
-        } else if (!word.endsWith('s')) {
-            variants.add(word + 's');
-        }
-
-        // To singular
-        if (word.endsWith('ies') && word.length() > 4) {
-            variants.add(word.substring(0, word.length() - 3) + 'y');
-        }
-        if (word.endsWith('ses') || word.endsWith('xes') || word.endsWith('zes') || word.endsWith('ches') || word.endsWith('shes')) {
-            variants.add(word.substring(0, word.length() - 2));
-        } else if (word.endsWith('es') && word.length() > 3) {
-            variants.add(word.substring(0, word.length() - 2));
-        }
-        if (word.endsWith('s') && !word.endsWith('ss') && word.length() > 2) {
-            variants.add(word.substring(0, word.length() - 1));
-        }
-
-        return variants;
     }
 
     @SuppressWarnings('PMD.ApexCRUDViolation')
@@ -361,7 +235,6 @@ public with sharing class SearchObjects {
 
     private static List<ObjectMatch> scoreAndRank(Map<String, EntityDefinition> resultMap, String searchTerm) {
         String lowerSearch = searchTerm.toLowerCase();
-        List<String> searchWords = splitCompound(searchTerm);
         String searchNoSeparators = lowerSearch.replaceAll('[\\s_]', '');
 
         List<ScoredEntity> scored = new List<ScoredEntity>();
@@ -390,39 +263,15 @@ public with sharing class SearchObjects {
                 score += 30;
             }
 
-            // Word overlap scoring — lightweight split for entity names (camelCase + underscores only)
-            Set<String> entityWordSet = new Set<String>();
-            for (String w : splitCamelCase(apiName.replaceAll('_', ''))) {
-                entityWordSet.add(w);
-            }
-            if (entity.Label != null) {
-                for (String w : label.split('\\s+')) {
-                    entityWordSet.add(w);
-                }
-            }
-            Integer matchedWords = 0;
-            for (String sw : searchWords) {
-                String swLower = sw.toLowerCase();
-                if (entityWordSet.contains(swLower)) {
-                    matchedWords++;
-                } else {
-                    // Check plural/singular variants
-                    Set<String> variants = pluralSingularVariants(swLower);
-                    for (String v : variants) {
-                        if (entityWordSet.contains(v)) {
-                            matchedWords++;
-                            break;
-                        }
-                    }
-                }
-            }
-            if (!searchWords.isEmpty()) {
-                score += 40 * ((Double) matchedWords / searchWords.size());
-            }
+            // Word overlap — the search term's words against the API name's and label's words
+            // (camelCase parts included; the __c-style suffix is not a word)
+            Set<String> entityWordSet = ApexAgentTextMatch.wordSet(entity.QualifiedApiName.replaceFirst('__[A-Za-z]+$', ''));
+            entityWordSet.addAll(ApexAgentTextMatch.wordSet(entity.Label));
+            score += 40 * ApexAgentTextMatch.wordOverlap(searchTerm, entityWordSet);
 
             // Levenshtein similarity on the cleaned names
-            Double apiSimilarity = levenshteinSimilarity(searchNoSeparators, apiNameClean);
-            Double labelSimilarity = levenshteinSimilarity(lowerSearch, label);
+            Double apiSimilarity = ApexAgentTextMatch.levenshteinSimilarity(searchNoSeparators, apiNameClean);
+            Double labelSimilarity = ApexAgentTextMatch.levenshteinSimilarity(lowerSearch, label);
             score += 20 * Math.max(apiSimilarity, labelSimilarity);
 
             // Abbreviation match bonus
@@ -455,43 +304,6 @@ public with sharing class SearchObjects {
             results.add(match);
         }
         return results;
-    }
-
-    private static Double levenshteinSimilarity(String s1, String s2) {
-        if (String.isBlank(s1) || String.isBlank(s2)) {
-            return 0;
-        }
-        Integer maxLen = Math.max(s1.length(), s2.length());
-        if (maxLen == 0) {
-            return 1;
-        }
-        Integer dist = levenshteinDistance(s1, s2);
-        return 1.0 - ((Double) dist / maxLen);
-    }
-
-    private static Integer levenshteinDistance(String s1, String s2) {
-        Integer len1 = s1.length();
-        Integer len2 = s2.length();
-
-        // Use single-row optimization
-        List<Integer> prev = new List<Integer>();
-        for (Integer j = 0; j <= len2; j++) {
-            prev.add(j);
-        }
-
-        for (Integer i = 1; i <= len1; i++) {
-            List<Integer> curr = new List<Integer>();
-            curr.add(i);
-            for (Integer j = 1; j <= len2; j++) {
-                Integer cost = (s1.substring(i - 1, i) == s2.substring(j - 1, j)) ? 0 : 1;
-                Integer insert_op = curr[j - 1] + 1;
-                Integer delete_op = prev[j] + 1;
-                Integer replace_op = prev[j - 1] + cost;
-                curr.add(Math.min(Math.min(insert_op, delete_op), replace_op));
-            }
-            prev = curr;
-        }
-        return prev[len2];
     }
 
     private class ScoredEntity implements Comparable {

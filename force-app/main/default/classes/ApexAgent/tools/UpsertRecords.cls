@@ -61,7 +61,7 @@ public with sharing class UpsertRecords {
         @InvocableVariable(label='Success' description='True if this record was saved.')
         public Boolean success;
 
-        @InvocableVariable(label='Created' description='True if the record was inserted, false if an existing record was updated.')
+        @InvocableVariable(label='Created' description='True if the record was inserted, false if an existing record was updated. Omitted if the record failed.')
         public Boolean created;
 
         @InvocableVariable(label='Errors' description='Why this record failed.')
@@ -493,16 +493,19 @@ public with sharing class UpsertRecords {
         Output o = new Output();
         o.success = true;
         o.results = new List<RecordResult>();
-        for (Database.UpsertResult ur : upsertResults) {
+        for (Integer i = 0; i < upsertResults.size(); i++) {
+            Database.UpsertResult ur = upsertResults[i];
             RecordResult rr = new RecordResult();
-            rr.id      = ur.getId();
             rr.success = ur.isSuccess();
-            rr.created = ur.isCreated();
-            if (!ur.isSuccess()) {
+            if (ur.isSuccess()) {
+                rr.id      = ur.getId();
+                rr.created = ur.isCreated();
+            } else {
                 o.success = false;
                 rr.errors = new List<DmlError>();
                 for (Database.Error err : ur.getErrors()) {
                     DmlError de = new DmlError();
+                    de.dmlIndex   = i;
                     de.statusCode = String.valueOf(err.getStatusCode());
                     de.message    = err.getMessage();
                     de.fields     = err.getFields();
@@ -518,7 +521,7 @@ public with sharing class UpsertRecords {
         List<DmlError> dmlErrors = new List<DmlError>();
         for (Integer i = 0; i < e.getNumDml(); i++) {
             DmlError de = new DmlError();
-            de.dmlIndex   = i;
+            de.dmlIndex   = e.getDmlIndex(i);
             de.recordId   = e.getDmlId(i);
             de.message    = e.getDmlMessage(i);
             de.statusCode = String.valueOf(e.getDmlStatusCode(i));

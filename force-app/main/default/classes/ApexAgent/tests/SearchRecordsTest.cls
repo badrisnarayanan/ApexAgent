@@ -75,6 +75,53 @@ private class SearchRecordsTest {
         assertThrows('Acme', 'FakeObject__c','unknown object');
     }
 
+    // ─── 1b. Objects whose name field isn't "Name" ────────────────────────────────
+
+    @isTest
+    static void testObjectWithNonNameField() {
+        Case c = new Case(Subject = 'Search me');
+        insert c;
+        c = [SELECT Id, CaseNumber FROM Case WHERE Id = :c.Id];
+        Test.setFixedSearchResults(new List<Id>{ c.Id });
+
+        Test.startTest();
+        List<Map<String, Object>> results = search(c.CaseNumber, 'Case');
+        Test.stopTest();
+
+        Assert.areEqual(1, results.size(), 'Case should be searchable by its CaseNumber name field');
+        Assert.areEqual(c.CaseNumber, results[0].get('name'), 'name should carry the CaseNumber');
+    }
+
+    // ─── 1c. Scores are not diluted; suffix-only terms don't inflate scores ───────
+
+    @isTest
+    static void testWordOverlapAndSuffixOnlyTerms() {
+        List<Account> accts = new List<Account>{
+            new Account(Name = 'Accenture'), new Account(Name = 'Accenture Consulting')
+        };
+        insert accts;
+        Test.setFixedSearchResults(new List<Id>{ accts[0].Id, accts[1].Id });
+        Test.startTest();
+        List<Map<String, Object>> exact = search('Accenture', 'Account');
+        Test.stopTest();
+        // 100 exact + 60 starts-with + 50 ends-with + 30 contains + 40 word overlap + 20 similarity
+        Assert.areEqual('Accenture', exact[0].get('name'), 'Exact match first');
+        Assert.areEqual(300.0, (Double) exact[0].get('score'), 'A perfect single-word match must earn the full word-overlap points');
+
+        // A term made only of company suffixes must not turn every record into an exact/starts-with hit
+        List<Account> suffixAccts = new List<Account>{
+            new Account(Name = 'LLC'), new Account(Name = 'Suffix Test Group'), new Account(Name = 'Zeta Holdings')
+        };
+        insert suffixAccts;
+        Test.setFixedSearchResults(new List<Id>{ suffixAccts[0].Id, suffixAccts[1].Id, suffixAccts[2].Id });
+        List<Map<String, Object>> suffix = search('Group', 'Account');
+        Assert.areEqual('Suffix Test Group', suffix[0].get('name'), 'The record containing the word ranks first');
+        for (Integer i = 1; i < suffix.size(); i++) {
+            Assert.isTrue((Double) suffix[i].get('score') < 30,
+                'Unrelated record must not get the flat suffix-only bonus — ' + suffix[i]);
+        }
+    }
+
     // ─── 2. Scoring: exact > starts-with > contains ───────────────────────────────
 
     @isTest
