@@ -1,25 +1,29 @@
 /**
- * Regenerates ApexAgent_Tool__c.Schema__c for a set of tool records by reflecting
- * on each tool's Apex Action (ApexAgentToolSchemaBuilder.buildDefinitions).
+ * Regenerates ApexAgent_Tool__c.Schema__c (chat definition) and MCP_Schema__c (MCP
+ * definition, with annotations) for a set of tool records by reflecting on each
+ * tool's Apex Action (ApexAgentToolSchemaBuilder.buildDefinitions).
  *
  * Runs only in async context because ApexAgentSymbolTableService resolves nested
  * Apex-defined parameter types via a same-org Tooling API self-callout, and no
  * callouts are allowed directly from a trigger. Enqueued from two places:
- *  - ApexAgentToolTriggerHandler, after insert or after Apex_Class_Name__c changes
+ *  - ApexAgentToolTriggerHandler, after insert or after Apex_Class_Name__c or
+ *    Modifies_Salesforce_Data__c changes
  *  - ApexAgentToolSchemaController.regenerateSchema(), from the record page's
  *    "Regenerate Schema" quick action
  *
  * A tool whose class fails to build (invalid/missing Apex class, no
- * @InvocableMethod, a Tooling API failure, or a definition too large for
- * Schema__c) is left untouched — Schema__c keeps whatever it last held rather
- * than being overwritten with a broken value — and every admin is emailed once
- * per run listing the affected Apex class names.
+ * @InvocableMethod, a Tooling API failure, or a definition too large for its
+ * field) is left untouched — both fields keep whatever they last held rather
+ * than being overwritten with a broken value, and never diverge from each
+ * other — and every admin is emailed once per run listing the affected Apex
+ * class names.
  */
 public with sharing class ApexAgentToolSchemaRegenQueueable implements Queueable, Database.AllowsCallouts {
 
     // Read from the field itself rather than hardcoded, so it can never drift
     // out of sync with Schema__c's actual declared length.
     private static final Integer MAX_SCHEMA_LENGTH = ApexAgent_Tool__c.Schema__c.getDescribe().getLength();
+    private static final Integer MAX_MCP_SCHEMA_LENGTH = ApexAgent_Tool__c.MCP_Schema__c.getDescribe().getLength();
 
     private final Set<Id> toolIds;
 
@@ -29,7 +33,7 @@ public with sharing class ApexAgentToolSchemaRegenQueueable implements Queueable
 
     public void execute(QueueableContext ctx) {
         List<ApexAgent_Tool__c> tools = [
-            SELECT Id, Apex_Class_Name__c
+            SELECT Id, Apex_Class_Name__c, Modifies_Salesforce_Data__c
             FROM ApexAgent_Tool__c
             WHERE Id IN :toolIds
         ];
@@ -37,26 +41,32 @@ public with sharing class ApexAgentToolSchemaRegenQueueable implements Queueable
             return;
         }
 
-        Map<String, Id> toolIdByClassName = new Map<String, Id>();
+        Map<String, ApexAgent_Tool__c> toolByClassName = new Map<String, ApexAgent_Tool__c>();
         for (ApexAgent_Tool__c tool : tools) {
             if (String.isNotBlank(tool.Apex_Class_Name__c)) {
-                toolIdByClassName.put(tool.Apex_Class_Name__c, tool.Id);
+                toolByClassName.put(tool.Apex_Class_Name__c, tool);
             }
         }
 
-        Map<String, Map<String, Object>> definitionsByClass = safelyBuildDefinitions(toolIdByClassName.keySet());
+        Map<String, ApexAgentToolSchemaBuilder.ToolDefinitions> definitionsByClass =
+            safelyBuildDefinitions(toolByClassName.keySet());
 
         List<ApexAgent_Tool__c> toolsToUpdate = new List<ApexAgent_Tool__c>();
         List<String> classNamesToUpdate = new List<String>();
         List<String> failedClassNames = new List<String>();
 
-        for (String className : toolIdByClassName.keySet()) {
-            String schemaJson = serializeIfWithinLimit(definitionsByClass.get(className));
-            if (schemaJson == null) {
+        for (String className : toolByClassName.keySet()) {
+            ApexAgent_Tool__c tool = toolByClassName.get(className);
+            ApexAgentToolSchemaBuilder.ToolDefinitions defs = definitionsByClass.get(className);
+            String schemaJson = defs == null ? null : serializeIfWithinLimit(defs.chat, MAX_SCHEMA_LENGTH);
+            String mcpSchemaJson = defs == null
+                ? null
+                : serializeIfWithinLimit(withAnnotations(defs.mcp, tool), MAX_MCP_SCHEMA_LENGTH);
+            if (schemaJson == null || mcpSchemaJson == null) {
                 failedClassNames.add(className);
                 continue;
             }
-            toolsToUpdate.add(new ApexAgent_Tool__c(Id = toolIdByClassName.get(className), Schema__c = schemaJson));
+            toolsToUpdate.add(new ApexAgent_Tool__c(Id = tool.Id, Schema__c = schemaJson, MCP_Schema__c = mcpSchemaJson));
             classNamesToUpdate.add(className);
         }
 
@@ -97,13 +107,32 @@ public with sharing class ApexAgentToolSchemaRegenQueueable implements Queueable
      * every class in this run is treated as failed instead, preserving the
      * "never overwrite a good schema with a broken one" guarantee.
      */
-    private Map<String, Map<String, Object>> safelyBuildDefinitions(Set<String> classNames) {
+    private Map<String, ApexAgentToolSchemaBuilder.ToolDefinitions> safelyBuildDefinitions(Set<String> classNames) {
         try {
             return ApexAgentToolSchemaBuilder.buildDefinitions(classNames);
         } catch (Exception e) {
             System.debug(LoggingLevel.WARN, 'Tool schema regeneration failed for the whole batch: ' + e.getMessage());
-            return new Map<String, Map<String, Object>>();
+            return new Map<String, ApexAgentToolSchemaBuilder.ToolDefinitions>();
         }
+    }
+
+    /**
+     * MCP tool annotations are hints: readOnlyHint mirrors the tool's
+     * Modifies_Salesforce_Data__c, and openWorldHint is always false because every
+     * tool operates only on this org's data. destructiveHint and idempotentHint
+     * are left at the spec's conservative defaults. The title is repeated here
+     * so annotation-aware clients display it.
+     */
+    private Map<String, Object> withAnnotations(Map<String, Object> mcpDefinition, ApexAgent_Tool__c tool) {
+        Map<String, Object> annotations = new Map<String, Object>{
+            'readOnlyHint' => tool.Modifies_Salesforce_Data__c != true,
+            'openWorldHint' => false
+        };
+        if (mcpDefinition.get('title') != null) {
+            annotations.put('title', mcpDefinition.get('title'));
+        }
+        mcpDefinition.put('annotations', annotations);
+        return mcpDefinition;
     }
 
     /**
@@ -115,12 +144,12 @@ public with sharing class ApexAgentToolSchemaRegenQueueable implements Queueable
      * a failure too — note the length check is against the pretty-printed size,
      * which is larger than the compact form for the same definition.
      */
-    private String serializeIfWithinLimit(Map<String, Object> definition) {
+    private String serializeIfWithinLimit(Map<String, Object> definition, Integer maxLength) {
         if (definition == null) {
             return null;
         }
         String schemaJson = JSON.serializePretty(definition);
-        return schemaJson.length() <= MAX_SCHEMA_LENGTH ? schemaJson : null;
+        return schemaJson.length() <= maxLength ? schemaJson : null;
     }
 
     private void notifyAdminsOfFailure(List<String> failedClassNames) {

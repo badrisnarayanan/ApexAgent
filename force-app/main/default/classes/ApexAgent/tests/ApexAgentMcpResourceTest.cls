@@ -1,7 +1,8 @@
 /**
  * Verifies ApexAgentMcpResource's authenticated-branch behavior: Origin
  * rejection, the no-fallback 404 guards, per-server tool scoping and
- * readOnlyHint annotations, tools/call execution and logging, and JSON-RPC
+ * stored MCP definitions (outputSchema, annotations) served by tools/list,
+ * tools/call execution with structuredContent and logging, and JSON-RPC
  * protocol errors.
  *
  * The Guest-branch 401 challenge is not covered here - it requires an actual
@@ -29,40 +30,44 @@ private class ApexAgentMcpResourceTest {
         );
         insert new List<ApexAgent_MCP__c>{ activeServer, inactiveServer };
 
-        String readOnlySchema = JSON.serialize(new Map<String, Object>{
-            'type' => 'function',
-            'function' => new Map<String, Object>{
-                'name' => 'GetObjectApiName',
-                'description' => 'Resolves the object type of a record ID.',
-                'parameters' => new Map<String, Object>{
-                    'type' => 'object',
-                    'properties' => new Map<String, Object>{
-                        'recordId' => new Map<String, Object>{ 'type' => 'string' }
-                    },
-                    'additionalProperties' => false
+        String readOnlyMcpSchema = JSON.serialize(new Map<String, Object>{
+            'name' => 'GetObjectApiName',
+            'title' => 'Get Object API Name',
+            'description' => 'Resolves the object type of a record ID.',
+            'inputSchema' => new Map<String, Object>{
+                'type' => 'object',
+                'properties' => new Map<String, Object>{
+                    'recordId' => new Map<String, Object>{ 'type' => 'string' }
+                },
+                'additionalProperties' => false
+            },
+            'outputSchema' => new Map<String, Object>{
+                'type' => 'object',
+                'properties' => new Map<String, Object>{
+                    'objectApiName' => new Map<String, Object>{ 'type' => 'string' }
                 }
-            }
+            },
+            'annotations' => new Map<String, Object>{ 'readOnlyHint' => true, 'openWorldHint' => false }
         });
-        String dmlSchema = JSON.serialize(new Map<String, Object>{
-            'type' => 'function',
-            'function' => new Map<String, Object>{
-                'name' => 'FakeDmlTool',
-                'description' => 'A stand-in DML-modifying tool, never actually invoked.',
-                'parameters' => new Map<String, Object>{ 'type' => 'object', 'properties' => new Map<String, Object>() }
-            }
+        String dmlMcpSchema = JSON.serialize(new Map<String, Object>{
+            'name' => 'FakeDmlTool',
+            'description' => 'A stand-in DML-modifying tool, never actually invoked.',
+            'inputSchema' => new Map<String, Object>{ 'type' => 'object', 'properties' => new Map<String, Object>() },
+            'outputSchema' => new Map<String, Object>{ 'type' => 'object', 'properties' => new Map<String, Object>() },
+            'annotations' => new Map<String, Object>{ 'readOnlyHint' => false, 'openWorldHint' => false }
         });
 
         ApexAgent_Tool__c readOnlyTool = new ApexAgent_Tool__c(
             Name = 'Get Object Api Name',
             Apex_Class_Name__c = 'GetObjectApiName',
             Modifies_Salesforce_Data__c = false,
-            Schema__c = readOnlySchema
+            MCP_Schema__c = readOnlyMcpSchema
         );
         ApexAgent_Tool__c dmlTool = new ApexAgent_Tool__c(
             Name = 'Fake Dml Tool',
             Apex_Class_Name__c = 'FakeDmlTool',
             Modifies_Salesforce_Data__c = true,
-            Schema__c = dmlSchema
+            MCP_Schema__c = dmlMcpSchema
         );
         // Real tool, deliberately never mapped to activeServer - proves
         // tools/call scoping rejects it even though it exists in the org.
@@ -70,13 +75,22 @@ private class ApexAgentMcpResourceTest {
             Name = 'Get Field Details',
             Apex_Class_Name__c = 'GetFieldDetails',
             Modifies_Salesforce_Data__c = false,
-            Schema__c = readOnlySchema.replace('GetObjectApiName', 'GetFieldDetails')
+            MCP_Schema__c = readOnlyMcpSchema.replace('GetObjectApiName', 'GetFieldDetails')
         );
-        insert new List<ApexAgent_Tool__c>{ readOnlyTool, dmlTool, unmappedTool };
+        // Mapped, but its stored definition is corrupt JSON - must be left out of
+        // tools/list rather than failing the listing.
+        ApexAgent_Tool__c corruptTool = new ApexAgent_Tool__c(
+            Name = 'Corrupt Tool',
+            Apex_Class_Name__c = 'CorruptTool',
+            Modifies_Salesforce_Data__c = false,
+            MCP_Schema__c = '{not json'
+        );
+        insert new List<ApexAgent_Tool__c>{ readOnlyTool, dmlTool, unmappedTool, corruptTool };
 
         insert new List<ApexAgent_MCP_Tool_Map__c>{
             new ApexAgent_MCP_Tool_Map__c(MCP__c = activeServer.Id, Tool__c = readOnlyTool.Id, Active__c = true),
-            new ApexAgent_MCP_Tool_Map__c(MCP__c = activeServer.Id, Tool__c = dmlTool.Id, Active__c = true)
+            new ApexAgent_MCP_Tool_Map__c(MCP__c = activeServer.Id, Tool__c = dmlTool.Id, Active__c = true),
+            new ApexAgent_MCP_Tool_Map__c(MCP__c = activeServer.Id, Tool__c = corruptTool.Id, Active__c = true)
         };
     }
 
@@ -138,16 +152,23 @@ private class ApexAgentMcpResourceTest {
         Map<String, Object> listResult = (Map<String, Object>) parseResponse().get('result');
         List<Object> tools = (List<Object>) listResult.get('tools');
 
-        Assert.areEqual(2, tools.size(), 'Only the two tools mapped to this server should be listed - not the unmapped one');
+        Assert.areEqual(2, tools.size(),
+            'Only the two valid tools mapped to this server should be listed - not the unmapped one or the corrupt one');
 
-        Map<String, Boolean> readOnlyByName = new Map<String, Boolean>();
-        for (Object t : tools) {
-            Map<String, Object> tool = (Map<String, Object>) t;
-            Map<String, Object> annotations = (Map<String, Object>) tool.get('annotations');
-            readOnlyByName.put((String) tool.get('name'), (Boolean) annotations.get('readOnlyHint'));
-        }
-        Assert.areEqual(true, readOnlyByName.get('GetObjectApiName'), 'Non-DML tool should carry readOnlyHint=true');
-        Assert.areEqual(false, readOnlyByName.get('FakeDmlTool'), 'DML tool should carry readOnlyHint=false');
+        Map<String, Object> dmlTool = (Map<String, Object>) tools[0];
+        Map<String, Object> readOnlyTool = (Map<String, Object>) tools[1];
+        Assert.areEqual('FakeDmlTool', dmlTool.get('name'), 'Tools should be sorted by name for a deterministic order');
+        Assert.areEqual('GetObjectApiName', readOnlyTool.get('name'), 'Tools should be sorted by name for a deterministic order');
+
+        Map<String, Object> readOnlyAnnotations = (Map<String, Object>) readOnlyTool.get('annotations');
+        Map<String, Object> dmlAnnotations = (Map<String, Object>) dmlTool.get('annotations');
+        Assert.areEqual(true, readOnlyAnnotations.get('readOnlyHint'), 'Non-DML tool should carry readOnlyHint=true');
+        Assert.areEqual(false, dmlAnnotations.get('readOnlyHint'), 'DML tool should carry readOnlyHint=false');
+        Assert.areEqual(false, readOnlyAnnotations.get('openWorldHint'), 'Tools operate only on this org, a closed world');
+        Assert.areEqual('Get Object API Name', readOnlyTool.get('title'), 'The stored definition should be served as-is');
+        Assert.isNotNull(readOnlyTool.get('inputSchema'), 'inputSchema should be served from the stored definition');
+        Map<String, Object> outputSchema = (Map<String, Object>) readOnlyTool.get('outputSchema');
+        Assert.areEqual('object', outputSchema.get('type'), 'outputSchema should be served from the stored definition');
     }
 
     @IsTest
@@ -170,6 +191,11 @@ private class ApexAgentMcpResourceTest {
 
         Map<String, Object> result = (Map<String, Object>) parseResponse().get('result');
         Assert.areEqual(false, result.get('isError'), 'A DML-free tool call should succeed inline with no callout mock needed');
+        Map<String, Object> structured = (Map<String, Object>) result.get('structuredContent');
+        Assert.areEqual('User', structured.get('objectApiName'), 'The tool output should be returned as structuredContent');
+        Map<String, Object> textBlock = (Map<String, Object>) ((List<Object>) result.get('content'))[0];
+        Assert.areEqual(structured, JSON.deserializeUntyped((String) textBlock.get('text')),
+            'The text block should carry the same JSON as structuredContent, for clients that ignore structuredContent');
 
         List<ApexAgent_Tool_Log__c> logs = [
             SELECT MCP__c, Message_Log__c, Status__c, Tool_Name__c
@@ -212,6 +238,7 @@ private class ApexAgentMcpResourceTest {
         ApexAgentMcpResource.handleRequest();
         Map<String, Object> failedResult = (Map<String, Object>) parseResponse().get('result');
         Assert.areEqual(true, failedResult.get('isError'), 'A tool that fails while running should be an isError result');
+        Assert.isFalse(failedResult.containsKey('structuredContent'), 'An error result must be text-only, with no structuredContent');
         Map<String, Object> failedContent = (Map<String, Object>) ((List<Object>) failedResult.get('content'))[0];
         Assert.isTrue(String.valueOf(failedContent.get('text')).contains('not a valid Salesforce ID'),
             'The client should be given the tool\'s error message');

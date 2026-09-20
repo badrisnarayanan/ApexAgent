@@ -10,34 +10,26 @@ public with sharing class ApexAgentMcpToolService {
     public class UnknownToolException extends Exception {}
 
     /**
-     * Lists every tool mapped to this MCP server with a valid precomputed
-     * schema, reusing the same OpenAI-shaped definitions the agent loop
-     * sends the LLM (ApexAgentToolSchemaBuilder) and remapping `parameters`
-     * to MCP's `inputSchema`. Each tool carries a readOnlyHint annotation
-     * (https://blog.modelcontextprotocol.io/posts/2026-03-16-tool-annotations/)
-     * derived from Modifies_Salesforce_Data__c, so a client can tell which
-     * tools are safe to call without confirmation.
+     * Lists every tool mapped to this MCP server with a valid precomputed MCP
+     * definition, serving each tool's stored MCP_Schema__c as-is — it already
+     * holds the MCP Tool shape (name, title, description, inputSchema,
+     * outputSchema, annotations), so nothing is remapped here. Tools are sorted
+     * by name so the order is deterministic across requests, as the spec asks
+     * for client caching and prompt-cache stability. A tool whose stored
+     * definition is corrupt JSON is skipped rather than failing the listing.
      */
     public static Map<String, Object> listTools(Id mcpServerId) {
         Map<String, ApexAgent_Tool__c> toolsByName = queryToolsByName(mcpServerId);
-        List<Map<String, Object>> openAiDefs = ApexAgentToolSchemaBuilder.buildToolDefinitionsFromSchema(
-            toolsByName, false
-        );
+        List<String> names = new List<String>(toolsByName.keySet());
+        names.sort();
 
         List<Object> tools = new List<Object>();
-        for (Map<String, Object> def : openAiDefs) {
-            Map<String, Object> fn = (Map<String, Object>) def.get('function');
-            ApexAgent_Tool__c tool = toolsByName.get((String) fn.get('name'));
-            Boolean isReadOnly = tool == null || tool.Modifies_Salesforce_Data__c != true;
-
-            tools.add(new Map<String, Object>{
-                'name' => fn.get('name'),
-                'description' => fn.get('description'),
-                'inputSchema' => fn.get('parameters'),
-                'annotations' => new Map<String, Object>{
-                    'readOnlyHint' => isReadOnly
-                }
-            });
+        for (String name : names) {
+            try {
+                tools.add(JSON.deserializeUntyped(toolsByName.get(name).MCP_Schema__c));
+            } catch (Exception e) {
+                System.debug(LoggingLevel.WARN, 'Skipping tool (invalid stored MCP schema): ' + name + ' — ' + e.getMessage());
+            }
         }
 
         return new Map<String, Object>{
@@ -64,6 +56,11 @@ public with sharing class ApexAgentMcpToolService {
      * request is a single synchronous REST response with no further callout
      * afterwards, so that isolation isn't needed here.
      *
+     * A successful result carries the tool's output both as `structuredContent`
+     * (which every outputSchema in MCP_Schema__c describes) and as the same JSON
+     * in a text block, as the spec recommends for backwards compatibility. An
+     * error result is text-only.
+     *
      * @param argumentsValue the already-validated `arguments` object, or null
      */
     public static Map<String, Object> callTool(Id mcpServerId, Object requestId, String toolName, Object argumentsValue) {
@@ -88,7 +85,7 @@ public with sharing class ApexAgentMcpToolService {
 
         logToolCall(mcpServerId, toolResult, startedAt, endedAt);
 
-        return new Map<String, Object>{
+        Map<String, Object> result = new Map<String, Object>{
             'resultType' => 'complete',
             'content' => new List<Object>{
                 new Map<String, Object>{
@@ -98,11 +95,15 @@ public with sharing class ApexAgentMcpToolService {
             },
             'isError' => isError
         };
+        if (!isError) {
+            result.put('structuredContent', JSON.deserializeUntyped(toolResult.output));
+        }
+        return result;
     }
 
     /**
      * Every tool actively mapped to this MCP server via ApexAgent_MCP_Tool_Map__c
-     * with a generated schema, keyed by Apex_Class_Name__c - the same key
+     * with a generated MCP schema, keyed by Apex_Class_Name__c - the same key
      * ApexAgentToolExecutor and ApexAgentToolSchemaBuilder both expect.
      * WITH USER_MODE enforces the real caller's sharing and FLS, consistent
      * with how ApexAgentTopicLoader queries tools for the Agentforce path.
@@ -110,17 +111,15 @@ public with sharing class ApexAgentMcpToolService {
     public static Map<String, ApexAgent_Tool__c> queryToolsByName(Id mcpServerId) {
         Map<String, ApexAgent_Tool__c> toolsByName = new Map<String, ApexAgent_Tool__c>();
         for (ApexAgent_MCP_Tool_Map__c mapping : [
-            SELECT Tool__r.Apex_Class_Name__c, Tool__r.Modifies_Salesforce_Data__c, Tool__r.Schema__c
+            SELECT Tool__r.Apex_Class_Name__c, Tool__r.Modifies_Salesforce_Data__c, Tool__r.MCP_Schema__c
             FROM ApexAgent_MCP_Tool_Map__c
             WHERE MCP__c = :mcpServerId AND Active__c = true
             WITH USER_MODE
         ]) {
-            // Schema__c is a Long Text Area - it cannot be filtered in the
+            // MCP_Schema__c is a Long Text Area - it cannot be filtered in the
             // query itself (platform restriction), so blank schemas are
-            // skipped here instead. ApexAgentToolSchemaBuilder also skips
-            // blank/invalid schemas independently, so this is belt-and-
-            // suspenders, not the only place it's handled.
-            if (String.isBlank(mapping.Tool__r.Schema__c)) {
+            // skipped here instead.
+            if (String.isBlank(mapping.Tool__r.MCP_Schema__c)) {
                 continue;
             }
             toolsByName.put(mapping.Tool__r.Apex_Class_Name__c, mapping.Tool__r);

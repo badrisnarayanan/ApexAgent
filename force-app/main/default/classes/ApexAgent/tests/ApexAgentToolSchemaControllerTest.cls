@@ -23,7 +23,7 @@ private class ApexAgentToolSchemaControllerTest {
 
     @IsTest
     static void testRegenerateSchemaEnqueuesAndRunsRegenerationForAValidTool() {
-        ApexAgent_Tool__c tool = new ApexAgent_Tool__c(Apex_Class_Name__c = 'GetFieldDetails');
+        ApexAgent_Tool__c tool = new ApexAgent_Tool__c(Apex_Class_Name__c = 'GetObjectApiName');
         insert tool;
 
         Test.startTest();
@@ -35,7 +35,8 @@ private class ApexAgentToolSchemaControllerTest {
         Assert.areEqual(jobsBefore + 1, jobsAfter,
             'Invoking the quick action must enqueue exactly one regeneration job');
 
-        ApexAgent_Tool__c reloaded = [SELECT Schema__c FROM ApexAgent_Tool__c WHERE Id = :tool.Id];
+        ApexAgent_Tool__c reloaded = [SELECT Schema__c, MCP_Schema__c FROM ApexAgent_Tool__c WHERE Id = :tool.Id];
         Assert.isNotNull(reloaded.Schema__c, 'The enqueued job must actually regenerate the tool\'s schema');
+        Assert.isNotNull(reloaded.MCP_Schema__c, 'The enqueued job must also regenerate the tool\'s MCP schema');
     }
 }

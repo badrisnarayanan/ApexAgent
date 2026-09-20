@@ -1,14 +1,17 @@
 /**
- * Builds OpenAI-style function-calling tool definitions by reflecting on each
- * tool's Apex Action (`@InvocableMethod`), and separately assembles the live
+ * Builds tool definitions by reflecting on each tool's Apex Action
+ * (`@InvocableMethod`) in two shapes — an OpenAI-style function-calling
+ * definition for the agent loop and an MCP `Tool` definition (with an
+ * outputSchema) for the MCP endpoint — and separately assembles the live
  * per-turn tool array the agent loop sends to the LLM.
  *
  * The reflection side (buildDefinitions) is the expensive part — one Tooling API
  * callout for nested Apex-defined parameter types — and only ever runs from
- * ApexAgentToolSchemaRegenQueueable, which persists its result onto each
- * ApexAgent_Tool__c.Schema__c. The agent loop never reflects live: it reads
- * Schema__c and only adds the per-turn execution_message parameter
- * (buildToolDefinitionsFromSchema).
+ * ApexAgentToolSchemaRegenQueueable, which persists the two shapes onto each
+ * ApexAgent_Tool__c's Schema__c (chat) and MCP_Schema__c (MCP). The agent loop
+ * never reflects live: it reads Schema__c and only adds the per-turn
+ * execution_message parameter (buildToolDefinitionsFromSchema). The MCP path
+ * serves MCP_Schema__c as stored.
  *
  * For each tool:
  *  - `Invocable.Action.createCustomAction('apex', className).getDescribe()` supplies
@@ -24,6 +27,14 @@ public with sharing class ApexAgentToolSchemaBuilder {
 
     private static final String ACTION_TYPE = 'apex';
     private static final Integer MAX_NESTING_DEPTH = 5;
+
+    /** Both persisted definition shapes for one tool, built from a single describe. */
+    public class ToolDefinitions {
+        /** OpenAI-style {type:'function', function:{name, description, parameters}} — stored in Schema__c. */
+        public Map<String, Object> chat;
+        /** MCP Tool {name, title, description, inputSchema, outputSchema} — stored in MCP_Schema__c (annotations added by the caller). */
+        public Map<String, Object> mcp;
+    }
 
     private static final Set<String> KNOWN_APEX_PRIMITIVES = new Set<String>{
         'String', 'Boolean', 'Integer', 'Decimal', 'Double', 'Long', 'Date', 'Datetime', 'Time', 'Id', 'Blob'
@@ -92,7 +103,7 @@ public with sharing class ApexAgentToolSchemaBuilder {
     // ApexAgentToolSchemaRegenQueueable to (re)populate Schema__c.
     // ─────────────────────────────────────────────────────────────────
 
-    public static Map<String, Map<String, Object>> buildDefinitions(Set<String> classNames) {
+    public static Map<String, ToolDefinitions> buildDefinitions(Set<String> classNames) {
         Map<String, Invocable.Action.DescribeResult> describeByClass = describeAll(classNames);
         Set<String> classesNeedingSymbolTable = collectClassesNeedingSymbolTable(describeByClass);
         Map<String, ApexAgentSymbolTableTypes.ApexClassRecord> symbolTables =
@@ -100,7 +111,7 @@ public with sharing class ApexAgentToolSchemaBuilder {
                 ? new Map<String, ApexAgentSymbolTableTypes.ApexClassRecord>()
                 : ApexAgentSymbolTableService.querySymbolTables(classesNeedingSymbolTable);
 
-        Map<String, Map<String, Object>> result = new Map<String, Map<String, Object>>();
+        Map<String, ToolDefinitions> result = new Map<String, ToolDefinitions>();
         for (String className : describeByClass.keySet()) {
             result.put(className, buildSingleDefinition(className, describeByClass.get(className), symbolTables));
         }
@@ -140,20 +151,25 @@ public with sharing class ApexAgentToolSchemaBuilder {
                     topLevelNames.add(topLevelClassOf(ip.getApexClass()));
                 }
             }
+            for (Invocable.Action.OutputParameter op : d.getOutputs()) {
+                if (String.isNotBlank(op.getApexClass())) {
+                    topLevelNames.add(topLevelClassOf(op.getApexClass()));
+                }
+            }
         }
         return topLevelNames;
     }
 
-    private static Map<String, Object> buildSingleDefinition(
+    private static ToolDefinitions buildSingleDefinition(
         String className,
         Invocable.Action.DescribeResult describe,
         Map<String, ApexAgentSymbolTableTypes.ApexClassRecord> symbolTables
     ) {
-        Map<String, Object> properties = new Map<String, Object>();
+        Map<String, Object> inputProperties = new Map<String, Object>();
         List<String> required = new List<String>();
 
         for (Invocable.Action.InputParameter ip : describe.getInputs()) {
-            properties.put(ip.getName(), buildParameterSchema(
+            inputProperties.put(ip.getName(), buildParameterSchema(
                 ip.getType(), ip.getApexClass(), ip.getMaxOccurs(), ip.getDescription(), symbolTables, 0
             ));
             if (ip.getRequired() == true) {
@@ -161,13 +177,26 @@ public with sharing class ApexAgentToolSchemaBuilder {
             }
         }
 
-        Map<String, Object> parameters = new Map<String, Object>{ 'type' => 'object', 'properties' => properties };
+        Map<String, Object> parameters = new Map<String, Object>{ 'type' => 'object', 'properties' => inputProperties };
         if (!required.isEmpty()) {
             parameters.put('required', required);
         }
         parameters.put('additionalProperties', false);
 
-        return new Map<String, Object>{
+        // No `required` or `additionalProperties:false` anywhere in an output
+        // schema: the executor drops null outputs, so any field may be absent, and
+        // clients validate structuredContent strictly against this schema.
+        Map<String, Object> outputProperties = new Map<String, Object>();
+        for (Invocable.Action.OutputParameter op : describe.getOutputs()) {
+            Map<String, Object> outputSchema = buildParameterSchema(
+                op.getType(), op.getApexClass(), op.getMaxOccurs(), op.getDescription(), symbolTables, 0
+            );
+            removeAdditionalProperties(outputSchema);
+            outputProperties.put(op.getName(), outputSchema);
+        }
+
+        ToolDefinitions defs = new ToolDefinitions();
+        defs.chat = new Map<String, Object>{
             'type' => 'function',
             'function' => new Map<String, Object>{
                 'name'        => className,
@@ -175,6 +204,29 @@ public with sharing class ApexAgentToolSchemaBuilder {
                 'parameters'  => parameters
             }
         };
+        // title and description are optional strings in MCP, so are omitted rather
+        // than written as null.
+        defs.mcp = new Map<String, Object>{ 'name' => className };
+        if (String.isNotBlank(describe.getLabel())) {
+            defs.mcp.put('title', describe.getLabel());
+        }
+        if (String.isNotBlank(describe.getDescription())) {
+            defs.mcp.put('description', describe.getDescription());
+        }
+        defs.mcp.put('inputSchema', parameters);
+        defs.mcp.put('outputSchema', new Map<String, Object>{ 'type' => 'object', 'properties' => outputProperties });
+        return defs;
+    }
+
+    /** Recursively drops `additionalProperties` from a schema built by buildObjectSchema, which sets it to false on every nested object. */
+    private static void removeAdditionalProperties(Object node) {
+        if (node instanceof Map<String, Object>) {
+            Map<String, Object> schema = (Map<String, Object>) node;
+            schema.remove('additionalProperties');
+            for (Object child : schema.values()) {
+                removeAdditionalProperties(child);
+            }
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -336,6 +388,9 @@ public with sharing class ApexAgentToolSchemaBuilder {
         switch on describeType.toUpperCase() {
             when 'BOOLEAN' {
                 return 'boolean';
+            }
+            when 'SOBJECT' {
+                return 'object';
             }
             when 'INTEGER', 'DOUBLE', 'DECIMAL', 'CURRENCY', 'PERCENT', 'LONG' {
                 return 'number';

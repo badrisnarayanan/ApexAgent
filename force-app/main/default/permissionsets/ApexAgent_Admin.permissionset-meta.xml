@@ -326,6 +326,11 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>ApexAgent_Tool__c.MCP_Schema__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>ApexAgent_Topic_Map__c.Active__c</field>
         <readable>true</readable>
     </fieldPermissions>

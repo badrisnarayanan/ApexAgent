@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>MCP_Schema__c</fullName>
+    <label>MCP Schema</label>
+    <type>LongTextArea</type>
+    <length>131072</length>
+    <visibleLines>10</visibleLines>
+    <description>MCP Tool definition (JSON: name, title, description, inputSchema, outputSchema, annotations), precomputed by ApexAgentToolSchemaRegenQueueable alongside Schema__c and served as-is by the MCP tools/list endpoint. Regenerated after insert, after Apex_Class_Name__c or Modifies_Salesforce_Data__c changes, and on demand via the Regenerate Schema quick action. Written together with Schema__c and left unchanged when generation fails, so a prior valid definition is never overwritten with a broken one. History-tracked like this object&apos;s other fields; note Long Text Area history records only that the value changed, not its full before/after text.</description>
+    <inlineHelpText>Precomputed MCP tool definition (with output schema and annotations) served to MCP clients. Read-only — use the Regenerate Schema quick action to refresh it.</inlineHelpText>
+    <trackHistory>true</trackHistory>
+    <trackTrending>false</trackTrending>
+</CustomField>

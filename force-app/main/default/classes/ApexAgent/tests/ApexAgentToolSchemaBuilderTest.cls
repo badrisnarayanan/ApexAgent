@@ -1,10 +1,11 @@
 /**
  * Verifies ApexAgentToolSchemaBuilder's two responsibilities:
  *  - buildDefinitions(): reflects on real deployed tool classes to produce the
- *    definition ApexAgentToolSchemaRegenQueueable persists to Schema__c —
- *    base parameter schema, nested-object schema resolution (via a mocked
- *    Tooling API callout), and graceful per-class degradation when one class
- *    in the batch is invalid.
+ *    chat and MCP definitions ApexAgentToolSchemaRegenQueueable persists to
+ *    Schema__c and MCP_Schema__c — base parameter schema, output schema (incl.
+ *    SObject outputs), nested-object schema resolution (via a mocked Tooling
+ *    API callout), and graceful per-class degradation when one class in the
+ *    batch is invalid.
  *  - buildToolDefinitionsFromSchema(): the live per-turn path, which only ever
  *    reads each tool's precomputed Schema__c — execution_message injection,
  *    and skipping (never failing the turn for) a tool with a blank or corrupt
@@ -15,28 +16,57 @@ private class ApexAgentToolSchemaBuilderTest {
 
     @IsTest
     static void testBuildDefinitionsReflectsRealToolClassesAndDropsInvalidOnes() {
+        // GetFieldDetails/GetRecordDetails output nested Apex classes, so their
+        // symbol tables are queried; an empty result leaves those classes unresolved.
+        ApexAgentSymbolTableTypes.ToolingQueryResult noSymbolTables = new ApexAgentSymbolTableTypes.ToolingQueryResult();
+        noSymbolTables.records = new List<ApexAgentSymbolTableTypes.ApexClassRecord>();
+        Test.setMock(HttpCalloutMock.class, new ApexAgentToolingQueryMock(200, JSON.serialize(noSymbolTables)));
+
         Test.startTest();
-        Map<String, Map<String, Object>> emptyResult = ApexAgentToolSchemaBuilder.buildDefinitions(new Set<String>());
-        Map<String, Map<String, Object>> defsByClass = ApexAgentToolSchemaBuilder.buildDefinitions(new Set<String>{
+        Map<String, ApexAgentToolSchemaBuilder.ToolDefinitions> emptyResult =
+            ApexAgentToolSchemaBuilder.buildDefinitions(new Set<String>());
+        Map<String, ApexAgentToolSchemaBuilder.ToolDefinitions> defsByClass = ApexAgentToolSchemaBuilder.buildDefinitions(new Set<String>{
             'GetFieldDetails',
+            'GetRecordDetails',
             // Real class with no @InvocableMethod — simulates a stale/typo'd Apex_Class_Name__c.
             'ApexAgentToolInput'
         });
         Test.stopTest();
 
         Assert.isTrue(emptyResult.isEmpty(), 'An empty class name set should produce no definitions');
-        Assert.areEqual(1, defsByClass.size(),
+        Assert.areEqual(2, defsByClass.size(),
             'One invalid tool class must be dropped, not fail schema-building for the whole batch');
 
-        Map<String, Object> def = defsByClass.get('GetFieldDetails');
-        Assert.isNotNull(def, 'The remaining valid tool must still build correctly');
-        Map<String, Object> function = (Map<String, Object>) def.get('function');
+        ApexAgentToolSchemaBuilder.ToolDefinitions defs = defsByClass.get('GetFieldDetails');
+        Assert.isNotNull(defs, 'The remaining valid tool must still build correctly');
+        Map<String, Object> function = (Map<String, Object>) defs.chat.get('function');
         Assert.areEqual('GetFieldDetails', function.get('name'), 'Function name should be the Apex class name');
         Map<String, Object> parameters = (Map<String, Object>) function.get('parameters');
         Map<String, Object> properties = (Map<String, Object>) parameters.get('properties');
         Assert.isTrue(properties.containsKey('objectApiName'), 'Should expose the tool\'s declared input parameters');
         Assert.isFalse(properties.containsKey('execution_message'),
             'execution_message is a per-turn addition, never part of the persisted base definition');
+
+        Map<String, Object> mcp = defs.mcp;
+        Assert.areEqual('GetFieldDetails', mcp.get('name'), 'The MCP definition should carry the same tool name');
+        Assert.areEqual('Get Field Details', mcp.get('title'), 'The MCP title should come from the action label');
+        Assert.areEqual(function.get('description'), mcp.get('description'), 'Both shapes share one description');
+        Assert.areEqual(parameters, mcp.get('inputSchema'), 'The MCP inputSchema is the same schema as the chat parameters');
+        Map<String, Object> outputSchema = (Map<String, Object>) mcp.get('outputSchema');
+        Assert.areEqual('object', outputSchema.get('type'), 'outputSchema must be an object schema');
+        Assert.isFalse(outputSchema.containsKey('required'),
+            'Output fields are never required — the executor drops null outputs');
+        Map<String, Object> outputProperties = (Map<String, Object>) outputSchema.get('properties');
+        Assert.areEqual('boolean', ((Map<String, Object>) outputProperties.get('isAccessible')).get('type'),
+            'A Boolean output should map to boolean');
+        Assert.isNotNull(((Map<String, Object>) outputProperties.get('message')).get('description'),
+            'Output descriptions should carry over from @InvocableVariable');
+        Assert.areEqual('array', ((Map<String, Object>) outputProperties.get('fields')).get('type'),
+            'A List output of an Apex class should map to an array even when the class can\'t be resolved');
+
+        Map<String, Object> recordOutput = (Map<String, Object>) ((Map<String, Object>)
+            ((Map<String, Object>) defsByClass.get('GetRecordDetails').mcp.get('outputSchema')).get('properties')).get('record');
+        Assert.areEqual('object', recordOutput.get('type'), 'An SObject output should map to a free-form object, not a string');
     }
 
     @IsTest
@@ -44,11 +74,11 @@ private class ApexAgentToolSchemaBuilderTest {
         Test.setMock(HttpCalloutMock.class, new ApexAgentToolingQueryMock(200, JSON.serialize(buildUpsertRecordsSymbolTableResponse())));
 
         Test.startTest();
-        Map<String, Map<String, Object>> defsByClass =
+        Map<String, ApexAgentToolSchemaBuilder.ToolDefinitions> defsByClass =
             ApexAgentToolSchemaBuilder.buildDefinitions(new Set<String>{ 'UpsertRecords' });
         Test.stopTest();
 
-        Map<String, Object> function = (Map<String, Object>) defsByClass.get('UpsertRecords').get('function');
+        Map<String, Object> function = (Map<String, Object>) defsByClass.get('UpsertRecords').chat.get('function');
         Map<String, Object> parameters = (Map<String, Object>) function.get('parameters');
         Map<String, Object> properties = (Map<String, Object>) parameters.get('properties');
 
@@ -68,6 +98,18 @@ private class ApexAgentToolSchemaBuilderTest {
         Map<String, Object> fieldEntryProperties = (Map<String, Object>) fieldEntrySchema.get('properties');
         Assert.isTrue(fieldEntryProperties.containsKey('fieldApiName'),
             'Should resolve two levels of nesting (RecordInput -> FieldEntry)');
+
+        Assert.isFalse(JSON.serialize(defsByClass.get('UpsertRecords').mcp.get('outputSchema')).contains('additionalProperties'),
+            'Nested output objects must not be strict, since a client validates structuredContent against them');
+        Assert.isTrue(JSON.serialize(defsByClass.get('UpsertRecords').mcp.get('inputSchema')).contains('additionalProperties'),
+            'The input schema keeps additionalProperties:false');
+
+        Map<String, Object> outputProperties = (Map<String, Object>)
+            ((Map<String, Object>) defsByClass.get('UpsertRecords').mcp.get('outputSchema')).get('properties');
+        Assert.isTrue(outputProperties.containsKey('success') && outputProperties.containsKey('results'),
+            'Output classes should be included in the symbol-table lookup and reflected into outputSchema');
+        Assert.areEqual('array', ((Map<String, Object>) outputProperties.get('results')).get('type'),
+            'A List output of a nested Apex class should map to an array');
     }
 
     @IsTest

@@ -30,21 +30,26 @@ private class ApexAgentToolTriggerHandlerTest {
     }
 
     @IsTest
-    static void testUpdateEnqueuesOnlyWhenApexClassNameChanges() {
+    static void testUpdateEnqueuesOnlyWhenRegenerationInputsChange() {
         ApexAgent_Tool__c tool = new ApexAgent_Tool__c(Apex_Class_Name__c = 'GetFieldDetails');
         insert tool;
 
         Test.startTest();
         Integer jobsAfterInsert = Limits.getQueueableJobs();
 
-        tool.Modifies_Salesforce_Data__c = true;
+        tool.Name = 'Renamed tool';
         update tool;
         Assert.areEqual(jobsAfterInsert, Limits.getQueueableJobs(),
             'Changing an unrelated field must not re-enqueue regeneration');
 
-        tool.Apex_Class_Name__c = 'GetObjectDetails';
+        tool.Modifies_Salesforce_Data__c = true;
         update tool;
         Assert.areEqual(jobsAfterInsert + 1, Limits.getQueueableJobs(),
+            'Changing Modifies_Salesforce_Data__c must enqueue regeneration, since it drives the MCP readOnlyHint');
+
+        tool.Apex_Class_Name__c = 'GetObjectDetails';
+        update tool;
+        Assert.areEqual(jobsAfterInsert + 2, Limits.getQueueableJobs(),
             'Changing Apex_Class_Name__c must enqueue regeneration');
         Test.stopTest();
     }
