@@ -4,6 +4,7 @@
     <columns>NAME</columns>
     <columns>Tool_Name__c</columns>
     <columns>Message_Log__c</columns>
+    <columns>Status__c</columns>
     <columns>CREATEDBY_USER</columns>
     <columns>Duration_ms__c</columns>
     <columns>Ended_At__c</columns>
