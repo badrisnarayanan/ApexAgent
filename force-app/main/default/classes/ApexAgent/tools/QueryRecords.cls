@@ -44,11 +44,16 @@ public with sharing class QueryRecords {
 
     @InvocableMethod(label='Query Records' description='Executes a SOQL query and returns matching records. Automatically caps results at 50 records (lower limits are respected, higher limits are reduced to 50). GROUP BY queries are capped at 200 groups instead. Aggregate queries without GROUP BY (COUNT, SUM, etc.) are supported and never limited. SELECT COUNT() returns the count in recordCount; SELECT COUNT(Id) returns it in the records\n\nCritical usage rules:\n- Always construct a valid SOQL query first based on the user\'s request, then pass it to this tool for execution.\n- If the object name is unfamiliar, use SearchObjects first to confirm it exists and get its exact API name.\n- Always use GetObjectDetails first (if not already called) to discover available fields on the object. Use GetFieldDetails if you need deeper field metadata before building your query. Never guess field names.\n\nWhen not to use:\n- You need fuzzy name search within one object → use SearchRecords.\n- You need a single record by ID → use GetRecordDetails.')
     public static List<Output> run(List<Input> inputs) {
-        List<Output> results = new List<Output>();
-        for (Input inp : inputs) {
-            results.add(processOne(inp));
+        try {
+            List<Output> results = new List<Output>();
+            for (Input inp : inputs) {
+                results.add(processOne(inp));
+            }
+            return results;
+        } catch (Exception e) {
+            ApexAgentToolErrorContext.record(e);
+            throw e;
         }
-        return results;
     }
 
     private static Output processOne(Input inp) {

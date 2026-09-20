@@ -36,18 +36,23 @@ public with sharing class GetRecordDetails {
 
     @InvocableMethod(label='Get Record Details' description='Returns all accessible fields and its values for a single record given its Salesforce ID. Skips long text areas and rich text fields, and enriches lookup fields with their related record\'s name.\n\nWhen to use:\n\nYou have an exact record ID and need to inspect its data.\nUser asks "what\'s on this record?" or "show me the details for [ID]".\nYou need to verify field values before performing an update or upsert.\n\nWhen not to use:\n\nYou need to find records by criteria → use QueryRecords or SearchRecords.\nYou don\'t have the record ID → use SearchRecords first.\nYou need to query multiple records → use QueryRecords.\nYou need data from long text area rich text fiels -> use QueryRecords.')
     public static List<Output> run(List<Input> inputs) {
-        List<ResolvedRequest> resolved = new List<ResolvedRequest>();
-        for (Input inp : inputs) {
-            resolved.add(resolveRequest(inp));
-        }
+        try {
+            List<ResolvedRequest> resolved = new List<ResolvedRequest>();
+            for (Input inp : inputs) {
+                resolved.add(resolveRequest(inp));
+            }
 
-        Map<Id, SObject> recordsById = fetchAllGroupedByObjectType(resolved);
+            Map<Id, SObject> recordsById = fetchAllGroupedByObjectType(resolved);
 
-        List<Output> results = new List<Output>();
-        for (ResolvedRequest r : resolved) {
-            results.add(buildOutput(r, recordsById));
+            List<Output> results = new List<Output>();
+            for (ResolvedRequest r : resolved) {
+                results.add(buildOutput(r, recordsById));
+            }
+            return results;
+        } catch (Exception e) {
+            ApexAgentToolErrorContext.record(e);
+            throw e;
         }
-        return results;
     }
 
     // ─── Phase 1: resolve object type + parse Id (no SOQL) ───────────────────────

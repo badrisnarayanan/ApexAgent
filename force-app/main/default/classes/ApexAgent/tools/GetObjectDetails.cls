@@ -71,11 +71,16 @@ public with sharing class GetObjectDetails {
 
     @InvocableMethod(label='Get Object Details' description='Returns full metadata for a Salesforce object: API name, label, CRUD flags, fields (grouped by SOAP type), required fields, name field, record types, and child relationships.\n\nWhen to use:\n\nExploring an object\'s structure before querying or building automation.\nYou wanna know "what fields are on X?", "what are the record types?", or "is this object editable?".\nYou need to understand relationships, lookup targets, or child objects.\n\nCritical usage rules:\n\nIf you do not know the object API name - do not assume - use SearchObjects first if you dont know the exact API Name.\nAlways call this tool first to discover field API names before using GetFieldDetails. You cannot know field API names without it.\nDo not call this multiple times for the same object in a single chat. The output is deterministic and will not change. Cache the results mentally.\n\nResult format: fields are grouped by SOAP type; each field entry is "ApiName|Label", or "ApiName|Label|LookupObjectApiName" when the field has exactly one lookup target. Each recordTypes entry is "Name|RecordTypeId" and each childRelationships entry is "RelationshipName|ChildObjectApiName|FieldApiName".')
     public static List<Output> run(List<Input> inputs) {
-        List<Output> results = new List<Output>();
-        for (Input inp : inputs) {
-            results.add(processOne(inp));
+        try {
+            List<Output> results = new List<Output>();
+            for (Input inp : inputs) {
+                results.add(processOne(inp));
+            }
+            return results;
+        } catch (Exception e) {
+            ApexAgentToolErrorContext.record(e);
+            throw e;
         }
-        return results;
     }
 
     private static Output processOne(Input inp) {

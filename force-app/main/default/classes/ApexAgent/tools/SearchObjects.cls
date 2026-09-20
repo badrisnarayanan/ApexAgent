@@ -32,11 +32,16 @@ public with sharing class SearchObjects {
 
     @InvocableMethod(label='Search Objects' description='Searches for Salesforce objects that closely match a given term.\nUsage:\n- Use when the user provides an unfamiliar or ambiguous object name.\n- If multiple searches return no results, assume the object does not exist or is inaccessible to the user.')
     public static List<Output> run(List<Input> inputs) {
-        List<Output> results = new List<Output>();
-        for (Input inp : inputs) {
-            results.add(processOne(inp));
+        try {
+            List<Output> results = new List<Output>();
+            for (Input inp : inputs) {
+                results.add(processOne(inp));
+            }
+            return results;
+        } catch (Exception e) {
+            ApexAgentToolErrorContext.record(e);
+            throw e;
         }
-        return results;
     }
 
     private static Output processOne(Input inp) {

@@ -78,7 +78,7 @@ public with sharing class ApexAgentToolExecutor {
         } catch (Exception e) {
             result.status = ApexAgentExecTypes.STATUS_ERROR;
             result.errorMessage = e.getMessage();
-            result.errorStackTrace = e.getStackTraceString();
+            result.errorStackTrace = stackTraceFor(e);
         }
 
         return result;
@@ -106,10 +106,14 @@ public with sharing class ApexAgentToolExecutor {
         Map<String, Object> typedInputs = buildTypedInvocationMap(describes[0].getInputs(), inputs);
         action.setInvocations(new List<Map<String, Object>>{ typedInputs });
 
+        ApexAgentToolErrorContext.reset();
         List<Invocable.Action.Result> results = action.invoke();
         Invocable.Action.Result actionResult = results[0];
         if (!actionResult.isSuccess()) {
-            throw new ToolInvocationException(buildErrorMessage(actionResult.getErrors()));
+            throw new ToolInvocationException(
+                buildErrorMessage(actionResult.getErrors()),
+                ApexAgentToolErrorContext.consume()
+            );
         }
 
         return extractOutput(actionResult.getOutputParameters());
@@ -250,5 +254,31 @@ public with sharing class ApexAgentToolExecutor {
         return res.getBody();
     }
 
-    public class ToolInvocationException extends Exception {}
+    /**
+     * Returns the stack trace to log for a failed tool call. When the tool itself threw, its
+     * own frames (where it failed) come first, followed by the executor frames that invoked it.
+     *
+     * @param e the exception caught around executeInline
+     * @return the combined stack trace
+     */
+    public static String stackTraceFor(Exception e) {
+        String trace = e.getStackTraceString();
+        if (e instanceof ToolInvocationException) {
+            String toolTrace = ((ToolInvocationException) e).toolStackTrace;
+            if (String.isNotBlank(toolTrace)) {
+                return toolTrace + '\n' + trace;
+            }
+        }
+        return trace;
+    }
+
+    public class ToolInvocationException extends Exception {
+        /** Stack trace recorded by the tool via ApexAgentToolErrorContext; null if it recorded none. */
+        public String toolStackTrace;
+
+        public ToolInvocationException(String message, String toolStackTrace) {
+            this.setMessage(message);
+            this.toolStackTrace = toolStackTrace;
+        }
+    }
 }

@@ -119,6 +119,34 @@ private class ApexAgentToolExecutorTest {
         Assert.isNotNull(result.errorStackTrace, 'Original bridge-side stack trace should be preserved');
     }
 
+    @IsTest
+    static void testToolThrownErrorKeepsToolStackFramesAheadOfExecutorFrames() {
+        Map<String, ApexAgent_Tool__c> toolsByName = new Map<String, ApexAgent_Tool__c>{
+            'GetObjectApiName' => buildTool('GetObjectApiName', false)
+        };
+        ApexAgentApiTypes.ToolCall tc = buildToolCall(
+            'call-5', 'GetObjectApiName', JSON.serialize(new Map<String, Object>{ 'recordId' => 'not-an-id' })
+        );
+
+        Test.startTest();
+        ApexAgentExecTypes.ToolResult result = ApexAgentToolExecutor.execute(toolsByName, tc);
+        Test.stopTest();
+
+        Assert.isTrue(result.isError(), 'A tool that throws should produce an error result');
+        Assert.isTrue(result.errorMessage.contains('not a valid Salesforce ID'), 'Should carry the tool\'s own message');
+        String trace = result.errorStackTrace;
+        Assert.isTrue(trace.contains('Class.GetObjectApiName.processOne'), 'Trace should include the frame in the tool that threw. Trace=' + trace);
+        Assert.isTrue(
+            trace.indexOf('Class.GetObjectApiName') < trace.indexOf('Class.ApexAgentToolExecutor.executeInline'),
+            'Tool frames should come before the executor frames. Trace=' + trace
+        );
+
+        // A later successful call must not inherit the earlier failure's trace
+        tc = buildToolCall('call-6', 'GetObjectApiName', JSON.serialize(new Map<String, Object>{ 'recordId' => UserInfo.getUserId() }));
+        Assert.isFalse(ApexAgentToolExecutor.execute(toolsByName, tc).isError(), 'Follow-up call should succeed');
+        Assert.isNull(ApexAgentToolErrorContext.consume(), 'A successful call should leave no recorded trace behind');
+    }
+
     // ─── Typed Output → the JSON the LLM receives ────────────────────────────────
 
     @IsTest

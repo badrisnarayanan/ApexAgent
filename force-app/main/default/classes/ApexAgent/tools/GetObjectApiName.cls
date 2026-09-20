@@ -15,11 +15,16 @@ public with sharing class GetObjectApiName {
 
     @InvocableMethod(label='Get Object API Name' description='Resolves the object API name from a Salesforce record ID. Use this when you have a record ID but don\'t know which object it belongs to.\n\nWhen to use:\n\nYou have an unknown record ID and need to determine its object type.\nA user pastes an ID without context and you need to route to the right tool.\n\nWhen not to use:\n\nYou already know the object → skip this.')
     public static List<Output> run(List<Input> inputs) {
-        List<Output> results = new List<Output>();
-        for (Input inp : inputs) {
-            results.add(processOne(inp));
+        try {
+            List<Output> results = new List<Output>();
+            for (Input inp : inputs) {
+                results.add(processOne(inp));
+            }
+            return results;
+        } catch (Exception e) {
+            ApexAgentToolErrorContext.record(e);
+            throw e;
         }
-        return results;
     }
 
     private static Output processOne(Input inp) {

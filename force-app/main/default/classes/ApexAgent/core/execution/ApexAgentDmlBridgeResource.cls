@@ -47,7 +47,7 @@ global with sharing class ApexAgentDmlBridgeResource {
             responseBody = JSON.serialize(new Map<String, Object>{
                 'error'      => e.getMessage(),
                 'type'       => e.getTypeName(),
-                'stackTrace' => e.getStackTraceString()
+                'stackTrace' => ApexAgentToolExecutor.stackTraceFor(e)
             });
         }
         RestContext.response.headers.put('Content-Type', 'application/json');

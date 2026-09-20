@@ -36,11 +36,16 @@ public with sharing class SearchRecords {
 
     @InvocableMethod(label='Search Records' description='Executes a fuzzy SOSL search for records by Name within a specified object. Returns up to 25 scored results, each containing Id, Name, and a relevance score\n\nWhen to use:\nUser asks "find", "search for", or "look up" a record by name or text.\nYou know the exact object but lack the record ID.\nThe search term fo record is ambiguous\n\nWhen not to use:\nYou already have the record ID → use GetRecordDetails.\nYou need filtered results by non-name fields → use QueryRecords with SOQL.')
     public static List<Output> run(List<Input> inputs) {
-        List<Output> results = new List<Output>();
-        for (Input inp : inputs) {
-            results.add(processOne(inp));
+        try {
+            List<Output> results = new List<Output>();
+            for (Input inp : inputs) {
+                results.add(processOne(inp));
+            }
+            return results;
+        } catch (Exception e) {
+            ApexAgentToolErrorContext.record(e);
+            throw e;
         }
-        return results;
     }
 
     private static Output processOne(Input inp) {

@@ -134,11 +134,16 @@ public with sharing class GetFieldDetails {
 
     @InvocableMethod(label='Get Field Details' description='Returns detailed metadata for specific fields on an object: data type, SOAP type, required flag, access levels (createable, updateable, filterable), picklist values, lookup targets, length/precision, and behavioral flags.\n\nWhen to use:\n\nYou need deep metadata on specific fields after discovering their API names.\nYou wanna know about about field types, picklist options, validation requirements, or lookup relationships, access levels\nYou are building a query or automation and need to verify field constraints.\n\nCritical usage rules:\n\nAlways call GetObjectDetails first to discover exact field API names. Do not guess or invent field names.\nIf you don\'t know the object API name, use SearchObjects first to find it.')
     public static List<Output> run(List<Input> inputs) {
-        List<Output> results = new List<Output>();
-        for (Input inp : inputs) {
-            results.add(processOne(inp));
+        try {
+            List<Output> results = new List<Output>();
+            for (Input inp : inputs) {
+                results.add(processOne(inp));
+            }
+            return results;
+        } catch (Exception e) {
+            ApexAgentToolErrorContext.record(e);
+            throw e;
         }
-        return results;
     }
 
     private static Output processOne(Input inp) {
