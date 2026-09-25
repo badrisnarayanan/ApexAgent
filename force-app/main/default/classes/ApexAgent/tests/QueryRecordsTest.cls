@@ -188,8 +188,8 @@ private class QueryRecordsTest {
         Assert.areEqual(q.length(), QueryRecords.maskStringLiterals(q).length(), 'Mask must preserve length');
 
         // End to end: the query actually runs and matches the record whose name holds the keywords
-        insert new Account(Name = 'Offset Printing for update');
-        Map<String, Object> result = run('SELECT Id FROM Account WHERE Name LIKE \'%Offset%\'');
+        insert ApexAgentTestDataFactory.newTopic('Offset Printing for update', 'offset_printing');
+        Map<String, Object> result = run('SELECT Id FROM ApexAgent_Topic__c WHERE Name LIKE \'%Offset%\'');
         Assert.isFalse(result.containsKey('error'), 'Should not error — got: ' + result.get('error'));
         Assert.areEqual(1, (Integer) result.get('recordCount'), 'Literal must reach SOQL untouched');
     }
@@ -208,10 +208,9 @@ private class QueryRecordsTest {
 
     @IsTest
     static void testSuccessfulQuery() {
-        Account acc = new Account(Name = 'QueryRecordsTest Account');
-        insert acc;
+        insert ApexAgentTestDataFactory.newTopic('QueryRecordsTest Topic', 'query_records_test');
 
-        Map<String, Object> result = run('SELECT Id, Name FROM Account WHERE Name = \'QueryRecordsTest Account\'');
+        Map<String, Object> result = run('SELECT Id, Name FROM ApexAgent_Topic__c WHERE Name = \'QueryRecordsTest Topic\'');
 
         Assert.isTrue(result.containsKey('query'), 'Result should contain query key');
         Assert.isTrue(result.containsKey('recordCount'), 'Result should contain recordCount key');
@@ -233,23 +232,26 @@ private class QueryRecordsTest {
 
     @IsTest
     static void testBareCountQuery() {
-        insert new List<Account>{ new Account(Name = 'CountTest A'), new Account(Name = 'CountTest B') };
+        insert new List<ApexAgent_Topic__c>{
+            ApexAgentTestDataFactory.newTopic('CountTest A', 'count_test_a'),
+            ApexAgentTestDataFactory.newTopic('CountTest B', 'count_test_b')
+        };
 
-        Map<String, Object> result = run('select count() from Account where Name like \'CountTest%\'');
+        Map<String, Object> result = run('select count() from ApexAgent_Topic__c where Name like \'CountTest%\'');
 
         Assert.isFalse(result.containsKey('error'), 'COUNT() must not error — got: ' + result.get('error'));
         Assert.areEqual(2, (Integer) result.get('recordCount'), 'recordCount should carry the count');
         Assert.isFalse(((String) result.get('query')).containsIgnoreCase('LIMIT'), 'COUNT() must not be limited');
 
         // COUNT(Id) reports through records, not recordCount: the row holds the count
-        Map<String, Object> countId = run('SELECT COUNT(Id) total FROM Account WHERE Name LIKE \'CountTest%\'');
+        Map<String, Object> countId = run('SELECT COUNT(Id) total FROM ApexAgent_Topic__c WHERE Name LIKE \'CountTest%\'');
         Assert.isFalse(countId.containsKey('error'), 'COUNT(Id) must not error — got: ' + countId.get('error'));
         Assert.areEqual(1, (Integer) countId.get('recordCount'), 'COUNT(Id) returns a single aggregate row');
         Assert.areEqual(2, (Integer) ((Map<String, Object>) ((List<Object>) countId.get('records'))[0]).get('total'),
             'The count is in the aggregate row');
 
         // GROUP BY runs with the 200 cap applied
-        Map<String, Object> grouped = run('SELECT Name, COUNT(Id) c FROM Account WHERE Name LIKE \'CountTest%\' GROUP BY Name');
+        Map<String, Object> grouped = run('SELECT Name, COUNT(Id) c FROM ApexAgent_Topic__c WHERE Name LIKE \'CountTest%\' GROUP BY Name');
         Assert.isFalse(grouped.containsKey('error'), 'GROUP BY must not error — got: ' + grouped.get('error'));
         Assert.areEqual(2, (Integer) grouped.get('recordCount'), 'One group per distinct name');
         Assert.isTrue(((String) grouped.get('query')).endsWith('LIMIT 200'), 'GROUP BY gets the 200 cap');

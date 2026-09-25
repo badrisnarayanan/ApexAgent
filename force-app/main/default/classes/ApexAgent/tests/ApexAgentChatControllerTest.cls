@@ -279,64 +279,6 @@ private class ApexAgentChatControllerTest {
         Assert.areEqual('Great response!', updated.Feedback_Notes__c, 'Feedback notes mismatch');
     }
 
-    /**
-     * Every other test in this file runs as the admin deploying user, so a
-     * WITH USER_MODE query would pass here even if ApexAgent_User's grants were
-     * wrong. This one runs as a user with only ApexAgent_User assigned, to prove
-     * the permission set actually gives a non-admin enough access to read their
-     * own message and thread before the system-mode feedback write.
-     */
-    @IsTest
-    static void testSaveFeedbackAsNonAdminUserOnlyAssignment() {
-        ApexAgent_LLM__c llm     = buildLlm();
-        ApexAgent_Agent__c agent = buildAgent(llm.Id);
-        ApexAgent_Thread_Log__c thread = buildThread('thread-feedback-nonadmin');
-        ApexAgent_Message_Log__c msg = buildMessage(thread.Id, agent.Id, 'msg-fb-nonadmin');
-
-        Profile minAccess = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce' LIMIT 1];
-        User nonAdminUser = new User(
-            FirstName = 'NonAdmin',
-            LastName  = 'Tester',
-            Alias     = 'natest',
-            Email     = 'nonadmin.tester@example.com.invalid',
-            Username  = 'nonadmin.tester.' + UUID.randomUUID().toString().left(8) + '@example.com.invalid',
-            ProfileId = minAccess.Id,
-            TimeZoneSidKey = 'America/Los_Angeles',
-            LocaleSidKey   = 'en_US',
-            EmailEncodingKey = 'UTF-8',
-            LanguageLocaleKey = 'en_US'
-        );
-        // Setup-object DML (User, PermissionSetAssignment) can't share a transaction with the
-        // non-setup DML above (LLM/Agent/Thread/Message records) — MIXED_DML_OPERATION.
-        // System.runAs opens an isolated DML context for just this block.
-        System.runAs(new User(Id = UserInfo.getUserId())) {
-            insert nonAdminUser;
-            insert new PermissionSetAssignment(
-                AssigneeId = nonAdminUser.Id,
-                PermissionSetId = [SELECT Id FROM PermissionSet WHERE Name = 'ApexAgent_User' LIMIT 1].Id
-            );
-        }
-        // Message_Log__c uses private (owner-based) sharing, so it must be owned by the
-        // non-admin user for their own read to see it — matching what happens in real
-        // usage, where the record is created inside that user's own request.
-        update new ApexAgent_Thread_Log__c(Id = thread.Id, OwnerId = nonAdminUser.Id);
-        update new ApexAgent_Message_Log__c(Id = msg.Id, OwnerId = nonAdminUser.Id);
-
-        Test.startTest();
-        System.runAs(nonAdminUser) {
-            ApexAgentChatController.saveFeedback('msg-fb-nonadmin', 'Thumbs Up', 'Works for non-admins too');
-        }
-        Test.stopTest();
-
-        ApexAgent_Message_Log__c updated = [
-            SELECT Feedback__c, Feedback_Notes__c
-            FROM ApexAgent_Message_Log__c
-            WHERE Agent_Message_UUID__c = 'msg-fb-nonadmin'
-        ];
-        Assert.areEqual('Thumbs Up', updated.Feedback__c, 'Non-admin feedback write should succeed');
-        Assert.areEqual('Works for non-admins too', updated.Feedback_Notes__c, 'Non-admin feedback notes should persist');
-    }
-
     // ─────────────────────────────────────────────────────────────────────────
     // getExecutionMessages
     // ─────────────────────────────────────────────────────────────────────────

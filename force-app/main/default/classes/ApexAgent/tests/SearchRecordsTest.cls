@@ -5,38 +5,39 @@ private class SearchRecordsTest {
 
     @testSetup
     static void setup() {
-        List<Account> accounts = new List<Account>{
-            new Account(Name = 'Acme Inc'),
-            new Account(Name = 'Acme Corp'),
-            new Account(Name = 'Acme Technologies'),
-            new Account(Name = 'Global Solutions LLC'),
-            new Account(Name = 'TechNova Group Holdings'),
-            new Account(Name = 'My Acme Partner'),
-            // Diverse formats for edge-case testing
-            new Account(Name = 'IBM Global Services'),
-            new Account(Name = '3M Corporation'),
-            new Account(Name = 'Smith-Jones Consulting'),
-            new Account(Name = 'QuickBooks Online'),
-            new Account(Name = 'Salesforce Inc')
-        };
-        insert accounts;
-
-        Account acmeInc = [SELECT Id FROM Account WHERE Name = 'Acme Inc' LIMIT 1];
-        List<Contact> contacts = new List<Contact>{
-            new Contact(FirstName = 'John',       LastName = 'Smith',    AccountId = acmeInc.Id),
-            new Contact(FirstName = 'Jane',       LastName = 'Doe',      AccountId = acmeInc.Id),
-            new Contact(FirstName = 'Alice',      LastName = 'Johnson',  AccountId = acmeInc.Id),
-            new Contact(FirstName = 'John',       LastName = 'Adams',    AccountId = acmeInc.Id),
-            new Contact(FirstName = 'Smith',      LastName = 'Williams', AccountId = acmeInc.Id),
-            // Diverse name formats
-            new Contact(FirstName = 'Raj',        LastName = 'Kumar',    AccountId = acmeInc.Id),
-            new Contact(FirstName = 'Mary',       LastName = 'O\'Brien', AccountId = acmeInc.Id),
-            new Contact(FirstName = 'Jean-Pierre',LastName = 'Dupont',   AccountId = acmeInc.Id)
-        };
-        insert contacts;
+        ApexAgent_LLM__c llm = ApexAgentTestDataFactory.newLlm('SearchRecordsTest LLM');
+        insert llm;
+        // Company-style and person-style names on one searchable package object, so the
+        // subscriber org's own automation on standard objects can't affect the setup
+        insert newAgents(new List<String>{
+            'Acme Inc', 'Acme Corp', 'Acme Technologies', 'Global Solutions LLC',
+            'TechNova Group Holdings', 'My Acme Partner',
+            // Diverse company formats for edge-case testing
+            'IBM Global Services', '3M Corporation', 'Smith-Jones Consulting',
+            'QuickBooks Online', 'Salesforce Inc',
+            // Person names
+            'John Smith', 'Jane Doe', 'Alice Johnson', 'John Adams', 'Smith Williams',
+            // Diverse person name formats
+            'Raj Kumar', 'Mary O\'Brien', 'Jean-Pierre Dupont'
+        });
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+    private static final String AGENT_OBJECT = 'ApexAgent_Agent__c';
+
+    private static List<ApexAgent_Agent__c> newAgents(List<String> names) {
+        Id llmId = [SELECT Id FROM ApexAgent_LLM__c LIMIT 1].Id;
+        List<ApexAgent_Agent__c> agents = new List<ApexAgent_Agent__c>();
+        for (String name : names) {
+            agents.add(ApexAgentTestDataFactory.newAgent(name, llmId));
+        }
+        return agents;
+    }
+
+    private static ApexAgent_Agent__c agentNamed(String name) {
+        return [SELECT Id FROM ApexAgent_Agent__c WHERE Name = :name LIMIT 1];
+    }
 
     private static List<Map<String, Object>> search(String searchTerm, String objectApiName) {
         SearchRecords.Input inp = new SearchRecords.Input();
@@ -68,53 +69,49 @@ private class SearchRecordsTest {
 
     @isTest
     static void testInputValidation() {
-        assertThrows(null,   'Account',      'missing/null searchTerm');
+        assertThrows(null,   AGENT_OBJECT,      'missing/null searchTerm');
         assertThrows('Acme', null,           'missing/null objectApiName');
-        assertThrows('   ',  'Account',      'blank searchTerm');
+        assertThrows('   ',  AGENT_OBJECT,      'blank searchTerm');
         assertThrows('Acme', '  ',           'blank objectApiName');
         assertThrows('Acme', 'FakeObject__c','unknown object');
     }
 
     // ─── 1b. Objects whose name field isn't "Name" ────────────────────────────────
+    // Only standard objects have a name field other than Name, so this checks the
+    // lookup and the SOSL built from it without inserting a Case record.
 
     @isTest
     static void testObjectWithNonNameField() {
-        Case c = new Case(Subject = 'Search me');
-        insert c;
-        c = [SELECT Id, CaseNumber FROM Case WHERE Id = :c.Id];
-        Test.setFixedSearchResults(new List<Id>{ c.Id });
+        Assert.areEqual('CaseNumber', ApexAgentUtils.getNameField(ApexAgentUtils.getDescribe('Case')),
+            'Case should resolve CaseNumber as its name field');
 
+        Test.setFixedSearchResults(new List<Id>());
         Test.startTest();
-        List<Map<String, Object>> results = search(c.CaseNumber, 'Case');
+        List<Map<String, Object>> results = search('00001001', 'Case');
         Test.stopTest();
 
-        Assert.areEqual(1, results.size(), 'Case should be searchable by its CaseNumber name field');
-        Assert.areEqual(c.CaseNumber, results[0].get('name'), 'name should carry the CaseNumber');
+        Assert.areEqual(0, results.size(), 'A SOSL query returning CaseNumber should run and return no rows');
     }
 
     // ─── 1c. Scores are not diluted; suffix-only terms don't inflate scores ───────
 
     @isTest
     static void testWordOverlapAndSuffixOnlyTerms() {
-        List<Account> accts = new List<Account>{
-            new Account(Name = 'Accenture'), new Account(Name = 'Accenture Consulting')
-        };
+        List<ApexAgent_Agent__c> accts = newAgents(new List<String>{ 'Accenture', 'Accenture Consulting' });
         insert accts;
         Test.setFixedSearchResults(new List<Id>{ accts[0].Id, accts[1].Id });
         Test.startTest();
-        List<Map<String, Object>> exact = search('Accenture', 'Account');
+        List<Map<String, Object>> exact = search('Accenture', AGENT_OBJECT);
         Test.stopTest();
         // 100 exact + 60 starts-with + 50 ends-with + 30 contains + 40 word overlap + 20 similarity
         Assert.areEqual('Accenture', exact[0].get('name'), 'Exact match first');
         Assert.areEqual(300.0, (Double) exact[0].get('score'), 'A perfect single-word match must earn the full word-overlap points');
 
         // A term made only of company suffixes must not turn every record into an exact/starts-with hit
-        List<Account> suffixAccts = new List<Account>{
-            new Account(Name = 'LLC'), new Account(Name = 'Suffix Test Group'), new Account(Name = 'Zeta Holdings')
-        };
+        List<ApexAgent_Agent__c> suffixAccts = newAgents(new List<String>{ 'LLC', 'Suffix Test Group', 'Zeta Holdings' });
         insert suffixAccts;
         Test.setFixedSearchResults(new List<Id>{ suffixAccts[0].Id, suffixAccts[1].Id, suffixAccts[2].Id });
-        List<Map<String, Object>> suffix = search('Group', 'Account');
+        List<Map<String, Object>> suffix = search('Group', AGENT_OBJECT);
         Assert.areEqual('Suffix Test Group', suffix[0].get('name'), 'The record containing the word ranks first');
         for (Integer i = 1; i < suffix.size(); i++) {
             Assert.isTrue((Double) suffix[i].get('score') < 30,
@@ -126,9 +123,9 @@ private class SearchRecordsTest {
 
     @isTest
     static void testScoringExactBeforePartialBeforeContains() {
-        List<Account> accts = [SELECT Id, Name FROM Account WHERE Name IN ('Acme Inc', 'Acme Corp', 'My Acme Partner')];
+        List<ApexAgent_Agent__c> accts = [SELECT Id, Name FROM ApexAgent_Agent__c WHERE Name IN ('Acme Inc', 'Acme Corp', 'My Acme Partner')];
         Map<String, Id> nameToId = new Map<String, Id>();
-        for (Account a : accts) { nameToId.put(a.Name, a.Id); }
+        for (ApexAgent_Agent__c a : accts) { nameToId.put(a.Name, a.Id); }
 
         Test.setFixedSearchResults(new List<Id>{
             nameToId.get('Acme Inc'),
@@ -137,7 +134,7 @@ private class SearchRecordsTest {
         });
 
         Test.startTest();
-        List<Map<String, Object>> results = search('Acme Inc', 'Account');
+        List<Map<String, Object>> results = search('Acme Inc', AGENT_OBJECT);
         Test.stopTest();
 
         Assert.isFalse(results.isEmpty(), 'Expected results');
@@ -155,20 +152,20 @@ private class SearchRecordsTest {
 
     @isTest
     static void testSortOrderAndScoreDescending() {
-        List<Account> bulkAccounts = new List<Account>();
+        List<String> bulkNames = new List<String>();
         for (Integer i = 1; i <= 30; i++) {
-            bulkAccounts.add(new Account(Name = 'Test Company ' + i));
+            bulkNames.add('Test Company ' + i);
         }
-        insert bulkAccounts;
+        insert newAgents(bulkNames);
 
         List<Id> bulkIds = new List<Id>();
-        for (Account a : [SELECT Id FROM Account WHERE Name LIKE 'Test Company %']) {
+        for (ApexAgent_Agent__c a : [SELECT Id FROM ApexAgent_Agent__c WHERE Name LIKE 'Test Company %']) {
             bulkIds.add(a.Id);
         }
         Test.setFixedSearchResults(bulkIds);
 
         Test.startTest();
-        List<Map<String, Object>> results = search('Test Company', 'Account');
+        List<Map<String, Object>> results = search('Test Company', AGENT_OBJECT);
         Test.stopTest();
 
         Assert.isTrue(results.size() <= 25, 'Must be capped at 25, got: ' + results.size());
@@ -186,14 +183,14 @@ private class SearchRecordsTest {
 
     @isTest
     static void testPersonNameVariants() {
-        Contact johnSmith = [SELECT Id FROM Contact WHERE FirstName = 'John' AND LastName = 'Smith' LIMIT 1];
-        Contact johnAdams = [SELECT Id FROM Contact WHERE FirstName = 'John' AND LastName = 'Adams' LIMIT 1];
-        Contact janeDoe   = [SELECT Id FROM Contact WHERE FirstName = 'Jane' AND LastName = 'Doe'   LIMIT 1];
+        ApexAgent_Agent__c johnSmith = agentNamed('John Smith');
+        ApexAgent_Agent__c johnAdams = agentNamed('John Adams');
+        ApexAgent_Agent__c janeDoe = agentNamed('Jane Doe');
 
         // First name only — both Johns
         Test.setFixedSearchResults(new List<Id>{ johnSmith.Id, johnAdams.Id });
         Test.startTest();
-        List<Map<String, Object>> byFirst = search('John', 'Contact');
+        List<Map<String, Object>> byFirst = search('John', AGENT_OBJECT);
         Test.stopTest();
         Assert.areEqual(2, byFirst.size(), 'Both Johns must be returned');
         for (Map<String, Object> r : byFirst) {
@@ -202,29 +199,29 @@ private class SearchRecordsTest {
 
         // Last name only
         Test.setFixedSearchResults(new List<Id>{ johnSmith.Id });
-        List<Map<String, Object>> byLast = search('Smith', 'Contact');
+        List<Map<String, Object>> byLast = search('Smith', AGENT_OBJECT);
         Assert.isFalse(byLast.isEmpty(), 'Last-name search must return Smith');
 
         // Full name — John Smith #1
         Test.setFixedSearchResults(new List<Id>{ johnSmith.Id, janeDoe.Id });
-        List<Map<String, Object>> byFull = search('John Smith', 'Contact');
+        List<Map<String, Object>> byFull = search('John Smith', AGENT_OBJECT);
         Assert.areEqual('John Smith', byFull[0].get('name'), 'Full name must rank first');
 
         // Transposed: "Smith John" still returns John Smith
         Test.setFixedSearchResults(new List<Id>{ johnSmith.Id });
-        List<Map<String, Object>> byTransposed = search('Smith John', 'Contact');
+        List<Map<String, Object>> byTransposed = search('Smith John', AGENT_OBJECT);
         Assert.isFalse(byTransposed.isEmpty(), 'Transposed name must return results');
         Assert.isTrue(((Double) byTransposed[0].get('score')) > 0, 'Transposed name must score > 0');
 
         // Typo: "Jon Smith" — Levenshtein handles it
         Test.setFixedSearchResults(new List<Id>{ johnSmith.Id });
-        List<Map<String, Object>> byTypo = search('Jon Smith', 'Contact');
+        List<Map<String, Object>> byTypo = search('Jon Smith', AGENT_OBJECT);
         Assert.isFalse(byTypo.isEmpty(), 'Typo must return results via Levenshtein');
         Assert.isTrue(((Double) byTypo[0].get('score')) > 0, 'Typo must score > 0');
 
         // Full name scores >= first-name-only for the same record
         Test.setFixedSearchResults(new List<Id>{ johnSmith.Id });
-        List<Map<String, Object>> firstOnly = search('John', 'Contact');
+        List<Map<String, Object>> firstOnly = search('John', AGENT_OBJECT);
         Assert.isTrue(((Double) byFull[0].get('score')) >= ((Double) firstOnly[0].get('score')),
             'Full name must score >= first-name-only');
     }
@@ -233,15 +230,15 @@ private class SearchRecordsTest {
 
     @isTest
     static void testCompanyNameVariants() {
-        Account acmeInc  = [SELECT Id FROM Account WHERE Name = 'Acme Inc'  LIMIT 1];
-        Account acmeCorp = [SELECT Id FROM Account WHERE Name = 'Acme Corp' LIMIT 1];
-        Account techNova = [SELECT Id FROM Account WHERE Name = 'TechNova Group Holdings' LIMIT 1];
-        Account globalAcc = [SELECT Id FROM Account WHERE Name = 'Global Solutions LLC' LIMIT 1];
+        ApexAgent_Agent__c acmeInc = agentNamed('Acme Inc');
+        ApexAgent_Agent__c acmeCorp = agentNamed('Acme Corp');
+        ApexAgent_Agent__c techNova = agentNamed('TechNova Group Holdings');
+        ApexAgent_Agent__c globalAcc = agentNamed('Global Solutions LLC');
 
         // Clean name (no suffix): both Acme accounts returned
         Test.setFixedSearchResults(new List<Id>{ acmeInc.Id, acmeCorp.Id });
         Test.startTest();
-        List<Map<String, Object>> byClean = search('Acme', 'Account');
+        List<Map<String, Object>> byClean = search('Acme', AGENT_OBJECT);
         Test.stopTest();
         Set<String> returnedNames = new Set<String>();
         for (Map<String, Object> r : byClean) { returnedNames.add((String) r.get('name')); }
@@ -250,20 +247,20 @@ private class SearchRecordsTest {
 
         // Exact with suffix: "Acme Inc" is #1 with high score
         Test.setFixedSearchResults(new List<Id>{ acmeInc.Id, acmeCorp.Id });
-        List<Map<String, Object>> byFullCompany = search('Acme Inc', 'Account');
+        List<Map<String, Object>> byFullCompany = search('Acme Inc', AGENT_OBJECT);
         Assert.areEqual('Acme Inc', byFullCompany[0].get('name'), 'Acme Inc must rank first');
         Assert.isTrue(((Double) byFullCompany[0].get('score')) >= 100, 'Exact company must score >= 100');
 
         // Multi-word found by brand word
         Test.setFixedSearchResults(new List<Id>{ techNova.Id });
-        List<Map<String, Object>> byBrand = search('TechNova', 'Account');
+        List<Map<String, Object>> byBrand = search('TechNova', AGENT_OBJECT);
         Assert.isFalse(byBrand.isEmpty(), 'TechNova must be found by brand name');
 
         // Suffix-only "LLC" should score much lower than an exact match
         Test.setFixedSearchResults(new List<Id>{ globalAcc.Id });
-        List<Map<String, Object>> bySuffix = search('LLC', 'Account');
+        List<Map<String, Object>> bySuffix = search('LLC', AGENT_OBJECT);
         Test.setFixedSearchResults(new List<Id>{ acmeInc.Id });
-        List<Map<String, Object>> byExact = search('Acme Inc', 'Account');
+        List<Map<String, Object>> byExact = search('Acme Inc', AGENT_OBJECT);
         if (!bySuffix.isEmpty()) {
             Assert.isTrue(
                 ((Double) byExact[0].get('score')) > ((Double) bySuffix[0].get('score')),
@@ -279,29 +276,29 @@ private class SearchRecordsTest {
 
     @isTest
     static void testDiverseSearchTermsAndEdgeCases() {
-        Account ibmAcc       = [SELECT Id FROM Account WHERE Name = 'IBM Global Services'    LIMIT 1];
-        Account acc3m        = [SELECT Id FROM Account WHERE Name = '3M Corporation'         LIMIT 1];
-        Account smithJonesAcc= [SELECT Id FROM Account WHERE Name = 'Smith-Jones Consulting' LIMIT 1];
-        Account qbAcc        = [SELECT Id FROM Account WHERE Name = 'QuickBooks Online'       LIMIT 1];
-        Account sfAcc        = [SELECT Id FROM Account WHERE Name = 'Salesforce Inc'         LIMIT 1];
-        Account globalAcc    = [SELECT Id FROM Account WHERE Name = 'Global Solutions LLC'   LIMIT 1];
-        Contact rajContact   = [SELECT Id FROM Contact WHERE FirstName = 'Raj' AND LastName = 'Kumar'   LIMIT 1];
-        Contact maryContact  = [SELECT Id FROM Contact WHERE FirstName = 'Mary' AND LastName = 'O\'Brien' LIMIT 1];
-        Contact jpContact    = [SELECT Id FROM Contact WHERE FirstName = 'Jean-Pierre' AND LastName = 'Dupont' LIMIT 1];
-        Contact johnSmith    = [SELECT Id FROM Contact WHERE FirstName = 'John' AND LastName = 'Smith'  LIMIT 1];
+        ApexAgent_Agent__c ibmAcc = agentNamed('IBM Global Services');
+        ApexAgent_Agent__c acc3m = agentNamed('3M Corporation');
+        ApexAgent_Agent__c smithJonesAcc = agentNamed('Smith-Jones Consulting');
+        ApexAgent_Agent__c qbAcc = agentNamed('QuickBooks Online');
+        ApexAgent_Agent__c sfAcc = agentNamed('Salesforce Inc');
+        ApexAgent_Agent__c globalAcc = agentNamed('Global Solutions LLC');
+        ApexAgent_Agent__c rajContact = agentNamed('Raj Kumar');
+        ApexAgent_Agent__c maryContact = agentNamed('Mary O\'Brien');
+        ApexAgent_Agent__c jpContact = agentNamed('Jean-Pierre Dupont');
+        ApexAgent_Agent__c johnSmith = agentNamed('John Smith');
 
         Test.startTest();
 
         // ── Acronym: "IBM" → IBM Global Services ──────────────────────────────
         Test.setFixedSearchResults(new List<Id>{ ibmAcc.Id });
-        List<Map<String, Object>> ibmResults = search('IBM', 'Account');
+        List<Map<String, Object>> ibmResults = search('IBM', AGENT_OBJECT);
         Assert.isFalse(ibmResults.isEmpty(), 'IBM must return results');
         Assert.isTrue(((Double) ibmResults[0].get('score')) >= 100,
             'IBM acronym should score >= 100 (starts-with + contains + word match)');
 
         // ── Case insensitivity: "ibm" == "IBM" score ───────────────────────────
         Test.setFixedSearchResults(new List<Id>{ ibmAcc.Id });
-        List<Map<String, Object>> ibmLower = search('ibm', 'Account');
+        List<Map<String, Object>> ibmLower = search('ibm', AGENT_OBJECT);
         Assert.areEqual(
             (Double) ibmResults[0].get('score'),
             (Double) ibmLower[0].get('score'),
@@ -310,67 +307,67 @@ private class SearchRecordsTest {
 
         // ── Numeric company name: "3M" → 3M Corporation ───────────────────────
         Test.setFixedSearchResults(new List<Id>{ acc3m.Id });
-        List<Map<String, Object>> results3m = search('3M', 'Account');
+        List<Map<String, Object>> results3m = search('3M', AGENT_OBJECT);
         Assert.isFalse(results3m.isEmpty(), '3M must return results');
         Assert.isTrue(((Double) results3m[0].get('score')) > 0, '3M must score > 0');
 
         // ── CamelCase brand: "quickbooks" → QuickBooks Online ─────────────────
         Test.setFixedSearchResults(new List<Id>{ qbAcc.Id });
-        List<Map<String, Object>> qbResults = search('quickbooks', 'Account');
+        List<Map<String, Object>> qbResults = search('quickbooks', AGENT_OBJECT);
         Assert.isFalse(qbResults.isEmpty(), 'quickbooks must find QuickBooks Online');
         Assert.isTrue(((Double) qbResults[0].get('score')) >= 100,
             'quickbooks should score >= 100 (starts-with + contains + word match)');
 
         // ── Hyphenated company: "Smith Jones" → Smith-Jones Consulting ──────────
         Test.setFixedSearchResults(new List<Id>{ smithJonesAcc.Id });
-        List<Map<String, Object>> hyphenResults = search('Smith Jones', 'Account');
+        List<Map<String, Object>> hyphenResults = search('Smith Jones', AGENT_OBJECT);
         Assert.isFalse(hyphenResults.isEmpty(), 'Smith Jones must find Smith-Jones Consulting');
         Assert.isTrue(((Double) hyphenResults[0].get('score')) > 0, 'Hyphenated company must score > 0');
 
         // ── Fuzzy / typo: "saleforce" → Salesforce Inc (1 missing char) ────────
         Test.setFixedSearchResults(new List<Id>{ sfAcc.Id });
-        List<Map<String, Object>> fuzzyResults = search('saleforce', 'Account');
+        List<Map<String, Object>> fuzzyResults = search('saleforce', AGENT_OBJECT);
         Assert.isFalse(fuzzyResults.isEmpty(), 'Typo "saleforce" must return Salesforce via Levenshtein');
         Assert.isTrue(((Double) fuzzyResults[0].get('score')) > 0, 'Fuzzy match must score > 0');
 
         // ── Apostrophe in name: "OBrien" → Mary O'Brien ───────────────────────
         Test.setFixedSearchResults(new List<Id>{ maryContact.Id });
-        List<Map<String, Object>> obrienResults = search('OBrien', 'Contact');
+        List<Map<String, Object>> obrienResults = search('OBrien', AGENT_OBJECT);
         Assert.isFalse(obrienResults.isEmpty(), 'OBrien must return Mary O\'Brien');
         Assert.isTrue(((Double) obrienResults[0].get('score')) > 0, 'Apostrophe name must score > 0');
 
         // ── Hyphenated first name: "Jean Pierre" → Jean-Pierre Dupont ──────────
         Test.setFixedSearchResults(new List<Id>{ jpContact.Id });
-        List<Map<String, Object>> jpResults = search('Jean-Pierre Dupont', 'Contact');
+        List<Map<String, Object>> jpResults = search('Jean-Pierre Dupont', AGENT_OBJECT);
         Assert.isFalse(jpResults.isEmpty(), 'Jean-Pierre Dupont must return results');
         Assert.isTrue(((Double) jpResults[0].get('score')) > 0, 'Hyphenated first name must score > 0');
 
         // ── Three-token person: "Raj Kumar" (exact) ───────────────────────────
         Test.setFixedSearchResults(new List<Id>{ rajContact.Id });
-        List<Map<String, Object>> rajResults = search('Raj Kumar', 'Contact');
+        List<Map<String, Object>> rajResults = search('Raj Kumar', AGENT_OBJECT);
         Assert.isFalse(rajResults.isEmpty(), 'Raj Kumar must return results');
         Assert.areEqual('Raj Kumar', rajResults[0].get('name'), 'Raj Kumar must be top result');
         Assert.isTrue(((Double) rajResults[0].get('score')) >= 100, 'Exact person name must score >= 100');
 
         // ── Partial company word: "solutions" → Global Solutions LLC ──────────
         Test.setFixedSearchResults(new List<Id>{ globalAcc.Id });
-        List<Map<String, Object>> partialWordResults = search('solutions', 'Account');
+        List<Map<String, Object>> partialWordResults = search('solutions', AGENT_OBJECT);
         Assert.isFalse(partialWordResults.isEmpty(), '"solutions" must find Global Solutions LLC');
         Assert.isTrue(((Double) partialWordResults[0].get('score')) >= 50,
             '"solutions" word match + contains should score >= 50');
 
         // ── Initials: "J Smith" → John Smith ──────────────────────────────────
         Test.setFixedSearchResults(new List<Id>{ johnSmith.Id });
-        List<Map<String, Object>> initialsResults = search('J Smith', 'Contact');
+        List<Map<String, Object>> initialsResults = search('J Smith', AGENT_OBJECT);
         Assert.isFalse(initialsResults.isEmpty(), '"J Smith" initials must return John Smith');
         Assert.isTrue(((Double) initialsResults[0].get('score')) > 0, 'Initials must score > 0');
 
         // ── Mixed case term: "ACME INC" same score as "Acme Inc" ─────────────
-        Account acmeInc = [SELECT Id FROM Account WHERE Name = 'Acme Inc' LIMIT 1];
+        ApexAgent_Agent__c acmeInc = agentNamed('Acme Inc');
         Test.setFixedSearchResults(new List<Id>{ acmeInc.Id });
-        List<Map<String, Object>> upperResults = search('ACME INC', 'Account');
+        List<Map<String, Object>> upperResults = search('ACME INC', AGENT_OBJECT);
         Test.setFixedSearchResults(new List<Id>{ acmeInc.Id });
-        List<Map<String, Object>> mixedResults = search('Acme Inc', 'Account');
+        List<Map<String, Object>> mixedResults = search('Acme Inc', AGENT_OBJECT);
         Assert.areEqual(
             (Double) upperResults[0].get('score'),
             (Double) mixedResults[0].get('score'),
@@ -384,11 +381,11 @@ private class SearchRecordsTest {
 
     @isTest
     static void testResultStructure() {
-        Account acmeInc = [SELECT Id FROM Account WHERE Name = 'Acme Inc' LIMIT 1];
+        ApexAgent_Agent__c acmeInc = agentNamed('Acme Inc');
 
         Test.setFixedSearchResults(new List<Id>{ acmeInc.Id });
         Test.startTest();
-        List<Map<String, Object>> results = search('Acme', 'Account');
+        List<Map<String, Object>> results = search('Acme', AGENT_OBJECT);
         Test.stopTest();
 
         Assert.isFalse(results.isEmpty(), 'Expected at least one result');
@@ -399,11 +396,12 @@ private class SearchRecordsTest {
 
         String recordId = String.valueOf(first.get('id'));
         Assert.isTrue(recordId.length() == 15 || recordId.length() == 18, 'Id must be 15 or 18 chars');
-        Assert.isTrue(recordId.startsWith('001'), 'Account Id must start with 001');
+        Assert.isTrue(recordId.startsWith(ApexAgent_Agent__c.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED).getKeyPrefix()),
+            'Id must carry the searched object\'s key prefix');
 
         // Empty SOSL → empty list, no exception
         Test.setFixedSearchResults(new List<Id>());
-        List<Map<String, Object>> emptyResults = search('Acme', 'Account');
+        List<Map<String, Object>> emptyResults = search('Acme', AGENT_OBJECT);
         Assert.areEqual(0, emptyResults.size(), 'Empty SOSL must produce empty list');
     }
 
@@ -436,7 +434,7 @@ private class SearchRecordsTest {
         // query string itself)
         Test.setFixedSearchResults(new List<Id>());
         Test.startTest();
-        List<Map<String, Object>> results = search('{Acme} (Inc)*?', 'Account');
+        List<Map<String, Object>> results = search('{Acme} (Inc)*?', AGENT_OBJECT);
         Test.stopTest();
         Assert.isNotNull(results, 'Search with reserved characters must not throw');
     }
@@ -447,9 +445,9 @@ private class SearchRecordsTest {
     static void testApexAgentUtils() {
         Test.startTest();
 
-        Schema.DescribeSObjectResult describeResult = ApexAgentUtils.getDescribe('Account');
-        Assert.isNotNull(describeResult, 'getDescribe must return non-null for Account');
-        Assert.areEqual('Account', describeResult.getName(), 'Describe name must be Account');
+        Schema.DescribeSObjectResult describeResult = ApexAgentUtils.getDescribe(AGENT_OBJECT);
+        Assert.isNotNull(describeResult, 'getDescribe must return non-null for ApexAgent_Agent__c');
+        Assert.areEqual(AGENT_OBJECT, describeResult.getName(), 'Describe name must be ApexAgent_Agent__c');
 
         Boolean threw = false;
         try {

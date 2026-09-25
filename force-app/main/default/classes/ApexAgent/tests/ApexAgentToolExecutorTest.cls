@@ -151,8 +151,8 @@ private class ApexAgentToolExecutorTest {
 
     @IsTest
     static void testExecuteInlineSerializesTypedOutputs() {
-        Account acc = new Account(Name = 'Executor Typed Output Account');
-        insert acc;
+        ApexAgent_Topic__c topic = ApexAgentTestDataFactory.newTopic('Executor Typed Output Topic', 'executor_typed_output');
+        insert topic;
 
         // Nested typed lists survive, and null Output fields are dropped
         Map<String, Object> fieldDetails = executeInline('GetFieldDetails', new Map<String, Object>{
@@ -174,12 +174,12 @@ private class ApexAgentToolExecutorTest {
         Assert.isTrue(((List<Object>) firstGroup.get('fields'))[0] instanceof String, 'Field entries should stay compact strings');
 
         // SObject payloads are nested under their Output field
-        Map<String, Object> recordDetails = executeInline('GetRecordDetails', new Map<String, Object>{ 'recordId' => String.valueOf(acc.Id) });
-        Assert.areEqual('Executor Typed Output Account', ((Map<String, Object>) recordDetails.get('record')).get('Name'), 'The record should be under record');
+        Map<String, Object> recordDetails = executeInline('GetRecordDetails', new Map<String, Object>{ 'recordId' => String.valueOf(topic.Id) });
+        Assert.areEqual('Executor Typed Output Topic', ((Map<String, Object>) recordDetails.get('record')).get('Name'), 'The record should be under record');
         Assert.isFalse(recordDetails.containsKey('found'), 'A null Output field should be suppressed');
 
         Map<String, Object> queried = executeInline('QueryRecords', new Map<String, Object>{
-            'soqlQuery' => 'SELECT Id, Name FROM Account WHERE Id = \'' + acc.Id + '\''
+            'soqlQuery' => 'SELECT Id, Name FROM ApexAgent_Topic__c WHERE Id = \'' + topic.Id + '\''
         });
         Assert.areEqual(1, queried.get('recordCount'), 'recordCount should be at the top level');
         Assert.areEqual(1, ((List<Object>) queried.get('records')).size(), 'records should hold the matching record');

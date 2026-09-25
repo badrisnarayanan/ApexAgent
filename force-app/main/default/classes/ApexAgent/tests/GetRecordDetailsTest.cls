@@ -20,42 +20,39 @@ private class GetRecordDetailsTest {
         }
     }
 
-    // ─── Happy path: standard object ─────────────────────────────────────────────
+    // ─── Happy path ──────────────────────────────────────────────────────────────
 
     @IsTest
     static void testHappyPath() {
-        Account acc = new Account(Name = 'Test Account GetRecordDetails');
-        insert acc;
+        ApexAgent_Topic__c topic = ApexAgentTestDataFactory.newTopic('Test Topic GetRecordDetails', 'get_record_details');
+        insert topic;
 
-        Map<String, Object> res = run(String.valueOf(acc.Id));
+        Map<String, Object> res = run(String.valueOf(topic.Id));
 
         // JSON.serialize produces flat fields + nested 'attributes' with type info
-        Assert.areEqual('Test Account GetRecordDetails', res.get('Name'), 'Name should match');
-        Assert.areEqual(String.valueOf(acc.Id), res.get('Id'), 'Id should match');
+        Assert.areEqual('Test Topic GetRecordDetails', res.get('Name'), 'Name should match');
+        Assert.areEqual(String.valueOf(topic.Id), res.get('Id'), 'Id should match');
         Map<String, Object> attrs = (Map<String, Object>) res.get('attributes');
-        Assert.areEqual('Account', attrs.get('type'), 'attributes.type should be Account');
+        Assert.areEqual('ApexAgent_Topic__c', attrs.get('type'), 'attributes.type should be ApexAgent_Topic__c');
     }
 
     // ─── Bulk-safe: multiple records across object types in one call ─────────────
 
     @IsTest
     static void testMultipleRecordsAcrossObjectTypes() {
-        Account acc = new Account(Name = 'Bulk Test Account');
-        insert acc;
-        ApexAgent_LLM__c llm = new ApexAgent_LLM__c(
-            Name = 'Bulk Test LLM', Model_API_Name__c = 'test-model',
-            Family__c = 'Anthropic', Named_Credential__c = 'TestCredential'
-        );
+        ApexAgent_Topic__c topic = ApexAgentTestDataFactory.newTopic('Bulk Test Topic', 'bulk_test_topic');
+        insert topic;
+        ApexAgent_LLM__c llm = ApexAgentTestDataFactory.newLlm('Bulk Test LLM');
         insert llm;
 
         List<GetRecordDetails.Input> inputs = new List<GetRecordDetails.Input>{
-            buildInput(String.valueOf(acc.Id)),
+            buildInput(String.valueOf(topic.Id)),
             buildInput(String.valueOf(llm.Id))
         };
         List<GetRecordDetails.Output> outputs = GetRecordDetails.run(inputs);
 
         Assert.areEqual(2, outputs.size(), 'Should return one output per input, in order');
-        Assert.areEqual('Bulk Test Account', outputs[0].record.get('Name'), 'First output should be the Account');
+        Assert.areEqual('Bulk Test Topic', outputs[0].record.get('Name'), 'First output should be the Topic');
         Assert.areEqual('Bulk Test LLM', outputs[1].record.get('Name'), 'Second output should be the LLM');
     }
 
@@ -63,13 +60,14 @@ private class GetRecordDetailsTest {
 
     @IsTest
     static void testFieldFiltering() {
-        // Account.Description is a TEXTAREA with length 32000 — must be excluded
-        Account acc = new Account(Name = 'Filter Test', Description = 'Some description text');
-        insert acc;
+        // ApexAgent_Topic__c.Description__c is a TEXTAREA with length 512 — must be excluded
+        ApexAgent_Topic__c topic = ApexAgentTestDataFactory.newTopic('Filter Test', 'filter_test');
+        topic.Description__c = 'Some description text';
+        insert topic;
 
-        Map<String, Object> res = run(String.valueOf(acc.Id));
+        Map<String, Object> res = run(String.valueOf(topic.Id));
 
-        Assert.isFalse(res.containsKey('Description'), 'Description (long textarea) should be excluded');
+        Assert.isFalse(res.containsKey('Description__c'), 'Description__c (long textarea) should be excluded');
         Assert.isTrue(res.containsKey('Name'),          'Name (short text) should be included');
     }
 
@@ -77,11 +75,11 @@ private class GetRecordDetailsTest {
 
     @IsTest
     static void testRecordNotFound() {
-        // Generate a syntactically valid but non-existent Account ID
-        Account acc = new Account(Name = 'Temp');
-        insert acc;
-        Id ghostId = acc.Id;
-        delete acc;
+        // Generate a syntactically valid but non-existent record ID
+        ApexAgent_Topic__c topic = ApexAgentTestDataFactory.newTopic('Temp', 'temp_topic');
+        insert topic;
+        Id ghostId = topic.Id;
+        delete topic;
 
         GetRecordDetails.Output out = GetRecordDetails.run(
             new List<GetRecordDetails.Input>{ buildInput(String.valueOf(ghostId)) }

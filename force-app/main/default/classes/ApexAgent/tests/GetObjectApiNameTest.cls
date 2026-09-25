@@ -31,25 +31,18 @@ private class GetObjectApiNameTest {
 
     @IsTest
     static void testHappyPathDirectCall() {
-        Account acc = new Account(Name = 'Test GetObjectApiName');
-        insert acc;
-
-        ApexAgent_LLM__c llm = new ApexAgent_LLM__c(
-            Name                = 'Test LLM',
-            Model_API_Name__c   = 'test-model',
-            Family__c           = 'Anthropic',
-            Named_Credential__c = 'TestCredential'
-        );
+        // The running user's Id covers a standard object without inserting one
+        ApexAgent_LLM__c llm = ApexAgentTestDataFactory.newLlm('Test LLM');
         insert llm;
 
-        List<GetObjectApiName.Output> accResults = GetObjectApiName.run(
-            new List<GetObjectApiName.Input>{ buildInput(String.valueOf(acc.Id)) }
+        List<GetObjectApiName.Output> userResults = GetObjectApiName.run(
+            new List<GetObjectApiName.Input>{ buildInput(UserInfo.getUserId()) }
         );
         List<GetObjectApiName.Output> llmResults = GetObjectApiName.run(
             new List<GetObjectApiName.Input>{ buildInput(String.valueOf(llm.Id)) }
         );
 
-        Assert.areEqual('Account', accResults[0].objectApiName, 'objectApiName should be Account');
+        Assert.areEqual('User', userResults[0].objectApiName, 'objectApiName should be User');
         Assert.areEqual('ApexAgent_LLM__c', llmResults[0].objectApiName, 'objectApiName should be ApexAgent_LLM__c');
     }
 
@@ -57,12 +50,9 @@ private class GetObjectApiNameTest {
 
     @IsTest
     static void testHappyPathViaInvocableAction() {
-        Account acc = new Account(Name = 'Test GetObjectApiName Invocable');
-        insert acc;
-
         Invocable.Action action = Invocable.Action.createCustomAction('apex', 'GetObjectApiName');
         action.setInvocations(new List<Map<String, Object>>{
-            new Map<String, Object>{ 'recordId' => String.valueOf(acc.Id) }
+            new Map<String, Object>{ 'recordId' => UserInfo.getUserId() }
         });
 
         Test.startTest();
@@ -71,7 +61,7 @@ private class GetObjectApiNameTest {
 
         Assert.isTrue(results[0].isSuccess(), 'Action invocation should succeed');
         Map<String, Object> outputs = results[0].getOutputParameters();
-        Assert.areEqual('Account', outputs.get('objectApiName'), 'objectApiName should be Account');
+        Assert.areEqual('User', outputs.get('objectApiName'), 'objectApiName should be User');
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────────

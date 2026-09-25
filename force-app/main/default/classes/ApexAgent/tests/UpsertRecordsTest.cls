@@ -1,6 +1,10 @@
 @IsTest
 private class UpsertRecordsTest {
 
+    // A package object rather than a standard one, so the subscriber org's own
+    // validation rules and automation on standard objects can't affect the DML here
+    private static final String TOPIC_OBJECT = 'ApexAgent_Topic__c';
+
     // ─── Helpers ─────────────────────────────────────────────────────────────────
 
     private static UpsertRecords.FieldEntry fieldEntry(String fieldApiName, String value, String apexType) {
@@ -15,6 +19,15 @@ private class UpsertRecordsTest {
         UpsertRecords.RecordInput ri = new UpsertRecords.RecordInput();
         ri.fields = fields;
         return ri;
+    }
+
+    // Topic_API_Name__c is required and unique, so every record that should save
+    // needs its own value; passing null makes the record fail on that required field
+    private static UpsertRecords.RecordInput topicRecord(String name, String topicApiName) {
+        return makeRecord(new List<UpsertRecords.FieldEntry>{
+            fieldEntry('Name', name, 'String'),
+            fieldEntry('Topic_API_Name__c', topicApiName, 'String')
+        });
     }
 
     private static UpsertRecords.Input buildInput(
@@ -52,7 +65,7 @@ private class UpsertRecordsTest {
 
         // missing allOrNone
         try {
-            run(buildInput('Account', null, null, new List<UpsertRecords.RecordInput>{
+            run(buildInput(TOPIC_OBJECT, null, null, new List<UpsertRecords.RecordInput>{
                 makeRecord(new List<UpsertRecords.FieldEntry>{ fieldEntry('Name', 'x', 'String') })
             }));
             Assert.fail('Expected exception for missing allOrNone');
@@ -62,13 +75,13 @@ private class UpsertRecordsTest {
 
         // missing/empty records
         try {
-            run(buildInput('Account', true, null, null));
+            run(buildInput(TOPIC_OBJECT, true, null, null));
             Assert.fail('Expected exception for missing records');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('records'), 'Should mention records');
         }
         try {
-            run(buildInput('Account', true, null, new List<UpsertRecords.RecordInput>()));
+            run(buildInput(TOPIC_OBJECT, true, null, new List<UpsertRecords.RecordInput>()));
             Assert.fail('Expected exception for empty records');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('empty'), 'Should mention empty');
@@ -82,7 +95,7 @@ private class UpsertRecordsTest {
             }));
         }
         try {
-            run(buildInput('Account', true, null, bigList));
+            run(buildInput(TOPIC_OBJECT, true, null, bigList));
             Assert.fail('Expected exception for records > 200');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('200'), 'Should mention 200 limit');
@@ -102,7 +115,7 @@ private class UpsertRecordsTest {
 
         // record with missing/empty fields array
         try {
-            run(buildInput('Account', true, null,
+            run(buildInput(TOPIC_OBJECT, true, null,
                 new List<UpsertRecords.RecordInput>{ makeRecord(null) }
             ));
             Assert.fail('Expected exception for missing fields');
@@ -110,7 +123,7 @@ private class UpsertRecordsTest {
             Assert.isTrue(e.getMessage().contains('fields'), 'Should mention fields');
         }
         try {
-            run(buildInput('Account', true, null,
+            run(buildInput(TOPIC_OBJECT, true, null,
                 new List<UpsertRecords.RecordInput>{ makeRecord(new List<UpsertRecords.FieldEntry>()) }
             ));
             Assert.fail('Expected exception for empty fields');
@@ -120,7 +133,7 @@ private class UpsertRecordsTest {
 
         // missing fieldApiName
         try {
-            run(buildInput('Account', true, null,
+            run(buildInput(TOPIC_OBJECT, true, null,
                 new List<UpsertRecords.RecordInput>{ makeRecord(new List<UpsertRecords.FieldEntry>{
                     fieldEntry(null, 'x', 'String')
                 }) }
@@ -132,7 +145,7 @@ private class UpsertRecordsTest {
 
         // missing apexType
         try {
-            run(buildInput('Account', true, null,
+            run(buildInput(TOPIC_OBJECT, true, null,
                 new List<UpsertRecords.RecordInput>{ makeRecord(new List<UpsertRecords.FieldEntry>{
                     fieldEntry('Name', 'x', null)
                 }) }
@@ -143,10 +156,8 @@ private class UpsertRecordsTest {
         }
 
         // invalid externalIdFieldName — non-existent field
-        Account acc = new Account(Name = 'ExtId Test');
-        insert acc;
         try {
-            run(buildInput('Account', true, 'NonExistentField__xyz',
+            run(buildInput(TOPIC_OBJECT, true, 'NonExistentField__xyz',
                 new List<UpsertRecords.RecordInput>{ makeRecord(new List<UpsertRecords.FieldEntry>{
                     fieldEntry('Name', 'Test', 'String')
                 }) }
@@ -161,7 +172,7 @@ private class UpsertRecordsTest {
 
         // invalid externalIdFieldName — non-external-ID standard field
         try {
-            run(buildInput('Account', true, 'Name',
+            run(buildInput(TOPIC_OBJECT, true, 'Name',
                 new List<UpsertRecords.RecordInput>{ makeRecord(new List<UpsertRecords.FieldEntry>{
                     fieldEntry('Name', 'Test', 'String')
                 }) }
@@ -191,10 +202,8 @@ private class UpsertRecordsTest {
         Assert.areEqual('hello', UpsertRecords.convertValue('hello', 'String', 'f', 0));
 
         // ID — from string
-        Account acc = new Account(Name = 'ID Test');
-        insert acc;
-        Object convertedId = UpsertRecords.convertValue(String.valueOf(acc.Id), 'ID', 'f', 0);
-        Assert.areEqual(acc.Id, (Id) convertedId, 'ID from string should match');
+        Object convertedId = UpsertRecords.convertValue(UserInfo.getUserId(), 'ID', 'f', 0);
+        Assert.areEqual(UserInfo.getUserId(), (Id) convertedId, 'ID from string should match');
         try {
             UpsertRecords.convertValue('not-a-real-id', 'ID', 'f', 0);
             Assert.fail('Expected exception for invalid ID');
@@ -327,17 +336,13 @@ private class UpsertRecordsTest {
 
     @IsTest
     static void testInsertAndUpdate() {
-        // ── Insert: two new Account records (no Id → creates) ──────────────────
+        // ── Insert: two new Topic records (no Id → creates) ────────────────────
         List<UpsertRecords.RecordInput> insertRecords = new List<UpsertRecords.RecordInput>{
-            makeRecord(new List<UpsertRecords.FieldEntry>{
-                fieldEntry('Name', 'UpsertTest Alpha', 'String')
-            }),
-            makeRecord(new List<UpsertRecords.FieldEntry>{
-                fieldEntry('Name', 'UpsertTest Beta',  'String')
-            })
+            topicRecord('UpsertTest Alpha', 'upsert_test_alpha'),
+            topicRecord('UpsertTest Beta',  'upsert_test_beta')
         };
 
-        UpsertRecords.Output insertOutput = run(buildInput('Account', true, null, insertRecords));
+        UpsertRecords.Output insertOutput = run(buildInput(TOPIC_OBJECT, true, null, insertRecords));
 
         Assert.areEqual(true, insertOutput.success, 'Overall result should be successful');
         Assert.areEqual(2, insertOutput.results.size(), 'Result should have 2 entries');
@@ -365,35 +370,33 @@ private class UpsertRecordsTest {
             })
         };
 
-        List<UpsertRecords.RecordResult> updateResult = run(buildInput('Account', true, null, updateRecords)).results;
+        List<UpsertRecords.RecordResult> updateResult = run(buildInput(TOPIC_OBJECT, true, null, updateRecords)).results;
 
         Assert.areEqual(false, updateResult[0].created, 'Record 0 should be updated, not created');
         Assert.areEqual(false, updateResult[1].created, 'Record 1 should be updated, not created');
 
         // Verify Name was actually updated in the database
-        List<Account> accounts = [SELECT Id, Name FROM Account WHERE Id IN :new List<Id>{
+        List<ApexAgent_Topic__c> topics = [SELECT Id, Name FROM ApexAgent_Topic__c WHERE Id IN :new List<Id>{
             Id.valueOf(id0), Id.valueOf(id1)
         } ORDER BY Name];
-        Assert.areEqual('UpsertTest Alpha v2', accounts[0].Name, 'Name should be updated for Alpha');
-        Assert.areEqual('UpsertTest Beta v2',  accounts[1].Name, 'Name should be updated for Beta');
+        Assert.areEqual('UpsertTest Alpha v2', topics[0].Name, 'Name should be updated for Alpha');
+        Assert.areEqual('UpsertTest Beta v2',  topics[1].Name, 'Name should be updated for Beta');
     }
 
     // ─── DML error handling ────────────────────────────────────────────────────────
 
     @IsTest
     static void testDmlError() {
-        // allOrNone=false: one valid record + one record clearing a required
-        // field (omitted value → null) — partial success should be returned.
+        // allOrNone=false: one valid record + one record leaving a required
+        // field null — partial success should be returned. The failure comes from
+        // Topic_API_Name__c rather than Name, since a blank custom-object Name is
+        // filled in by the platform instead of being rejected.
         List<UpsertRecords.RecordInput> partialRecords = new List<UpsertRecords.RecordInput>{
-            makeRecord(new List<UpsertRecords.FieldEntry>{
-                fieldEntry('Name', 'UpsertTest Partial OK', 'String')
-            }),
-            makeRecord(new List<UpsertRecords.FieldEntry>{
-                fieldEntry('Name', null, 'String') // Account.Name is required — will fail
-            })
+            topicRecord('UpsertTest Partial OK',   'upsert_test_partial_ok'),
+            topicRecord('UpsertTest Partial Fail', null)
         };
 
-        UpsertRecords.Output partialOutput = run(buildInput('Account', false, null, partialRecords));
+        UpsertRecords.Output partialOutput = run(buildInput(TOPIC_OBJECT, false, null, partialRecords));
         List<UpsertRecords.RecordResult> partialResult = partialOutput.results;
 
         Assert.areEqual(false, partialOutput.success, 'Overall result should be unsuccessful when any record fails');
@@ -420,14 +423,14 @@ private class UpsertRecordsTest {
         // The failing record sits in the middle of the batch so a wrong index can't
         // coincide with the right one.
         List<UpsertRecords.RecordInput> middleFails = new List<UpsertRecords.RecordInput>{
-            makeRecord(new List<UpsertRecords.FieldEntry>{ fieldEntry('Name', 'UpsertTest Idx A', 'String') }),
-            makeRecord(new List<UpsertRecords.FieldEntry>{ fieldEntry('Name', null, 'String') }),
-            makeRecord(new List<UpsertRecords.FieldEntry>{ fieldEntry('Name', 'UpsertTest Idx C', 'String') })
+            topicRecord('UpsertTest Idx A', 'upsert_test_idx_a'),
+            topicRecord('UpsertTest Idx B', null),
+            topicRecord('UpsertTest Idx C', 'upsert_test_idx_c')
         };
 
         // allOrNone=false: the per-record error carries the record's index, and a failed
         // record is not reported as created
-        UpsertRecords.Output partial = run(buildInput('Account', false, null, middleFails));
+        UpsertRecords.Output partial = run(buildInput(TOPIC_OBJECT, false, null, middleFails));
         Assert.areEqual(3, partial.results.size(), 'One result per input record');
         Assert.areEqual(true,  partial.results[0].created, 'Record 0 was inserted');
         Assert.areEqual(true,  partial.results[2].created, 'Record 2 was inserted');
@@ -439,16 +442,16 @@ private class UpsertRecordsTest {
         // allOrNone=true: the whole operation fails and dmlIndex is the failing record's
         // position in the input, not the position within the error list
         List<UpsertRecords.RecordInput> allOrNoneBatch = new List<UpsertRecords.RecordInput>{
-            makeRecord(new List<UpsertRecords.FieldEntry>{ fieldEntry('Name', 'UpsertTest Rollback A', 'String') }),
-            makeRecord(new List<UpsertRecords.FieldEntry>{ fieldEntry('Name', null, 'String') }),
-            makeRecord(new List<UpsertRecords.FieldEntry>{ fieldEntry('Name', 'UpsertTest Rollback C', 'String') })
+            topicRecord('UpsertTest Rollback A', 'upsert_test_rollback_a'),
+            topicRecord('UpsertTest Rollback B', null),
+            topicRecord('UpsertTest Rollback C', 'upsert_test_rollback_c')
         };
-        UpsertRecords.Output all = run(buildInput('Account', true, null, allOrNoneBatch));
+        UpsertRecords.Output all = run(buildInput(TOPIC_OBJECT, true, null, allOrNoneBatch));
         Assert.areEqual(false, all.success, 'allOrNone failure');
         Assert.isNull(all.results, 'No per-record results when the whole operation failed');
         Assert.areEqual(1, all.dmlErrors.size(), 'One failing record');
         Assert.areEqual(1, all.dmlErrors[0].dmlIndex, 'dmlIndex must be the failing record\'s index in the input');
-        Assert.areEqual(0, [SELECT COUNT() FROM Account WHERE Name LIKE 'UpsertTest Rollback%'], 'allOrNone must roll everything back');
+        Assert.areEqual(0, [SELECT COUNT() FROM ApexAgent_Topic__c WHERE Name LIKE 'UpsertTest Rollback%'], 'allOrNone must roll everything back');
     }
 
     // ─── End-to-end via the real Invocable.Action dispatch path ──────────────────
@@ -461,15 +464,13 @@ private class UpsertRecordsTest {
         // ApexAgentToolExecutor.buildTypedList() works around for real tool calls. The
         // invocation map must carry genuinely-typed objects for such parameters, not maps.
         List<UpsertRecords.RecordInput> records = new List<UpsertRecords.RecordInput>{
-            makeRecord(new List<UpsertRecords.FieldEntry>{
-                fieldEntry('Name', 'UpsertTest Invocable', 'String')
-            })
+            topicRecord('UpsertTest Invocable', 'upsert_test_invocable')
         };
 
         Invocable.Action action = Invocable.Action.createCustomAction('apex', 'UpsertRecords');
         action.setInvocations(new List<Map<String, Object>>{
             new Map<String, Object>{
-                'objectApiName' => 'Account',
+                'objectApiName' => TOPIC_OBJECT,
                 'allOrNone'     => true,
                 'records'       => records
             }
