@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Token_Costs_Non_Negative</fullName>
+    <active>true</active>
+    <description>Token costs cannot be negative.</description>
+    <errorConditionFormula>OR(
+    Uncached_Input_Token_Cost_M__c &lt; 0,
+    Cached_Input_Token_Cost_M__c &lt; 0,
+    Output_Token_Cost_M__c &lt; 0
+)</errorConditionFormula>
+    <errorDisplayField>Uncached_Input_Token_Cost_M__c</errorDisplayField>
+    <errorMessage>Token costs cannot be negative.</errorMessage>
+</ValidationRule>

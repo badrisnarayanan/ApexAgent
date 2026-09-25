@@ -34,13 +34,18 @@ private class ApexAgentLLMClientTest {
 
     @IsTest
     static void testCallEmptyChoicesDeserializesToEmptyListNotNull() {
-        Test.setMock(HttpCalloutMock.class,
-            new ApexAgentLLMCalloutMock(200, ApexAgentLLMCalloutMock.emptyChoicesResponse()));
+        ApexAgentLLMCalloutMock mock = new ApexAgentLLMCalloutMock(200, ApexAgentLLMCalloutMock.emptyChoicesResponse());
+        Test.setMock(HttpCalloutMock.class, mock);
+        // A blank path is valid when the Named Credential already holds the full URL.
+        ApexAgentConfigTypes.AgentConfig cfg = buildConfig();
+        cfg.chatCompletionsPath = null;
 
         Test.startTest();
         ApexAgentApiTypes.ChatCompletionResponse resp =
-            ApexAgentLLMClient.call(buildConfig(), new List<Object>(), new List<Map<String, Object>>());
+            ApexAgentLLMClient.call(cfg, new List<Object>(), new List<Map<String, Object>>());
         Test.stopTest();
+
+        Assert.areEqual('callout:TestCred', mock.lastEndpoint, 'A blank path should call the Named Credential URL as-is');
 
         Assert.isNotNull(resp.choices, 'choices should deserialize to an empty list, not null');
         Assert.isTrue(resp.choices.isEmpty(), 'choices should be empty');

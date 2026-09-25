@@ -22,7 +22,7 @@ public with sharing class ApexAgentLLMClient {
         Map<String, Object> body = buildRequestBody(config, messages, toolDefs);
 
         HttpRequest req = new HttpRequest();
-        req.setEndpoint('callout:' + config.namedCredential + config.chatCompletionsPath);
+        req.setEndpoint('callout:' + config.namedCredential + (config.chatCompletionsPath ?? ''));
         req.setMethod('POST');
         req.setHeader('Content-Type', 'application/json');
         String serializedBody = JSON.serialize(body, true);

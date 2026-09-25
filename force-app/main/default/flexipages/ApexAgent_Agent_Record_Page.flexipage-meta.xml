@@ -560,9 +560,6 @@
                         <valueListItems>
                             <value>Active__c</value>
                         </valueListItems>
-                        <valueListItems>
-                            <value>Quick_Access__c</value>
-                        </valueListItems>
                     </valueList>
                 </componentInstanceProperties>
                 <componentInstanceProperties>

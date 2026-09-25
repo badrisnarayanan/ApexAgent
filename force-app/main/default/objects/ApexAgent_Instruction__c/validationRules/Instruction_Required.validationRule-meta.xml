@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Instruction_Required</fullName>
+    <active>true</active>
+    <description>Instruction text is required.</description>
+    <errorConditionFormula>ISBLANK(Instruction__c)</errorConditionFormula>
+    <errorDisplayField>Instruction__c</errorDisplayField>
+    <errorMessage>Instruction text is required.</errorMessage>
+</ValidationRule>

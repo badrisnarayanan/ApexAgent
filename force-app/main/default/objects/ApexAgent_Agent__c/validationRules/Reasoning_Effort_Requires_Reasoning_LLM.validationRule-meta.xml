@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Reasoning_Effort_Requires_Reasoning_LLM</fullName>
+    <active>true</active>
+    <description>The selected LLM does not support reasoning. Clear Reasoning Effort, set it to disabled, or choose an LLM with Supports Reasoning checked.</description>
+    <errorConditionFormula>AND(
+    NOT(ISBLANK(TEXT(Reasoning_Effort__c))),
+    NOT(ISPICKVAL(Reasoning_Effort__c, &quot;disabled&quot;)),
+    NOT(LLM__r.Supports_Reasoning__c)
+)</errorConditionFormula>
+    <errorDisplayField>Reasoning_Effort__c</errorDisplayField>
+    <errorMessage>The selected LLM does not support reasoning. Clear Reasoning Effort, set it to disabled, or choose an LLM with Supports Reasoning checked.</errorMessage>
+</ValidationRule>

@@ -7,6 +7,7 @@ public class ApexAgentLLMCalloutMock implements HttpCalloutMock {
 
     private final Integer statusCode;
     private final String responseBody;
+    public String lastEndpoint;
 
     public ApexAgentLLMCalloutMock(Integer statusCode, String responseBody) {
         this.statusCode = statusCode;
@@ -14,6 +15,7 @@ public class ApexAgentLLMCalloutMock implements HttpCalloutMock {
     }
 
     public HttpResponse respond(HttpRequest req) {
+        lastEndpoint = req.getEndpoint();
         HttpResponse res = new HttpResponse();
         res.setStatusCode(statusCode);
         res.setHeader('Content-Type', 'application/json');

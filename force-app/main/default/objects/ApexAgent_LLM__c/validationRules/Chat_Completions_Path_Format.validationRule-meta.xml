@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Chat_Completions_Path_Format</fullName>
+    <active>true</active>
+    <description>Chat Completions Path must start with / (for example, /api/v1/chat/completions), or be left blank if the Named Credential already holds the full URL.</description>
+    <errorConditionFormula>AND(
+    NOT(ISBLANK(Chat_Completions_Path__c)),
+    LEFT(Chat_Completions_Path__c, 1) &lt;&gt; &quot;/&quot;
+)</errorConditionFormula>
+    <errorDisplayField>Chat_Completions_Path__c</errorDisplayField>
+    <errorMessage>Chat Completions Path must start with / (for example, /api/v1/chat/completions), or be left blank if the Named Credential already holds the full URL.</errorMessage>
+</ValidationRule>
