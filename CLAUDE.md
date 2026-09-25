@@ -65,13 +65,6 @@ After every change to Apex or LWC files, run both analyzers and fix any **Critic
 sf code-analyzer run --workspace force-app/main/default/classes/ApexAgent/core/execution/ApexAgentToolExecutor.cls --output-file results.html
 sf code-analyzer run --workspace force-app/main/default/lwc/myComponent --output-file results.html
 
-# PMD — target only the changed file(s)
-pmd check -d force-app/main/default/classes/ApexAgent/core/execution/ApexAgentToolExecutor.cls -R category/apex/bestpractices.xml,category/apex/errorprone.xml,category/apex/security.xml -f text
-
-# To check an entire subfolder (e.g., after broad refactor)
-pmd check -d force-app/main/default/classes/ApexAgent/core -R category/apex/bestpractices.xml,category/apex/errorprone.xml,category/apex/security.xml -f text
-```
-
 Scope both tools to only the files you changed — avoid running against the full `classes/` directory.
 
 Review output for Critical/High severity violations and fix them. Ignore:
