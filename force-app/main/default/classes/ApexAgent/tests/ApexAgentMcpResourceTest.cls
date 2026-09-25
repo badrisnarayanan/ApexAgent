@@ -118,6 +118,8 @@ private class ApexAgentMcpResourceTest {
         RestContext.request.addHeader('Origin', 'https://evil.example.com');
         ApexAgentMcpResource.handleRequest();
         Assert.areEqual(403, RestContext.response.statusCode, 'An Origin that cannot be confirmed should be rejected');
+        Assert.isFalse(parseResponse().containsKey('id'),
+            'An error raised before the body is read has no id, and MCP forbids a null id, so the key must be absent');
 
         // No server name segment at all.
         buildRequest('', discoverBody);
@@ -277,15 +279,42 @@ private class ApexAgentMcpResourceTest {
             '{"jsonrpc":"2.0","id":1,"method":"tools/call"}' => -32602,
             '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":5}}' => -32602,
             '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"GetObjectApiName","arguments":"x"}}' => -32602,
-            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"GetObjectApiName","arguments":[1]}}' => -32602
+            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"GetObjectApiName","arguments":[1]}}' => -32602,
+            '{"id":1,"method":"tools/list"}' => -32600,
+            '{"jsonrpc":"1.0","id":1,"method":"tools/list"}' => -32600,
+            '{"jsonrpc":2.0,"id":1,"method":"tools/list"}' => -32600,
+            '{"jsonrpc":"2.0","id":null,"method":"tools/list"}' => -32600,
+            '{"jsonrpc":"2.0","id":1.5,"method":"tools/list"}' => -32600,
+            '{"jsonrpc":"2.0","id":{"a":1},"method":"tools/list"}' => -32600,
+            '{"jsonrpc":"2.0","id":true,"method":"tools/list"}' => -32600
+        };
+        // Bodies whose id can't be read as a string or integer must answer
+        // without an id key; every other body echoes its id of 1.
+        Set<String> bodiesWithoutReadableId = new Set<String>{
+            'null', '[1,2]', '"just a string"',
+            '{"jsonrpc":"2.0","id":null,"method":"tools/list"}',
+            '{"jsonrpc":"2.0","id":1.5,"method":"tools/list"}',
+            '{"jsonrpc":"2.0","id":{"a":1},"method":"tools/list"}',
+            '{"jsonrpc":"2.0","id":true,"method":"tools/list"}'
         };
         for (String body : expectedCodeByBody.keySet()) {
             buildRequest('testserver', body);
             ApexAgentMcpResource.handleRequest();
             Assert.areEqual(400, RestContext.response.statusCode, 'Malformed body should be HTTP 400: ' + body);
-            Map<String, Object> error = (Map<String, Object>) parseResponse().get('error');
+            Map<String, Object> response = parseResponse();
+            Map<String, Object> error = (Map<String, Object>) response.get('error');
             Assert.areEqual(expectedCodeByBody.get(body), (Integer) error.get('code'), 'Wrong JSON-RPC code for: ' + body);
+            if (bodiesWithoutReadableId.contains(body)) {
+                Assert.isFalse(response.containsKey('id'), 'An unreadable id must be omitted, never sent as null: ' + body);
+            } else {
+                Assert.areEqual(1, response.get('id'), 'A readable id should be echoed back: ' + body);
+            }
         }
+
+        // A string id is just as valid as an integer one.
+        buildRequest('testserver', '{"jsonrpc":"2.0","id":"req-1","method":"server/discover"}');
+        ApexAgentMcpResource.handleRequest();
+        Assert.areEqual('req-1', parseResponse().get('id'), 'A string id should be accepted and echoed back');
 
         // None of the rejected tools/call bodies above should have reached the tool.
         Assert.areEqual(0, [SELECT COUNT() FROM ApexAgent_Tool_Log__c], 'Rejected requests should not write a Tool_Log__c');
@@ -301,6 +330,62 @@ private class ApexAgentMcpResourceTest {
             Assert.areEqual(202, RestContext.response.statusCode, 'A notification should be accepted: ' + notification);
             Assert.isNull(RestContext.response.responseBody, 'A notification response must have no body');
         }
+    }
+
+    @IsTest
+    static void testUnexpectedFailuresStayJsonRpc() {
+        User noAccessUser = new User(
+            ProfileId = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce' LIMIT 1].Id,
+            LastName = 'McpNoAccess',
+            Email = 'mcp.noaccess@example.com',
+            Username = 'mcp.noaccess.' + System.currentTimeMillis() + '@example.com',
+            Alias = 'mcpnoacc',
+            TimeZoneSidKey = 'America/Los_Angeles',
+            LocaleSidKey = 'en_US',
+            EmailEncodingKey = 'UTF-8',
+            LanguageLocaleKey = 'en_US'
+        );
+        insert noAccessUser;
+
+        // Read access to the server object only, not to the tool mapping, so the
+        // server resolves but the tools/list query fails in the dispatcher. View
+        // All because the object's sharing is Private and the record isn't theirs.
+        PermissionSet serverReadOnly = new PermissionSet(Name = 'McpServerReadOnlyTest', Label = 'MCP Server Read Only Test');
+        insert serverReadOnly;
+        insert new ObjectPermissions(
+            ParentId = serverReadOnly.Id, SobjectType = 'ApexAgent_MCP__c',
+            PermissionsRead = true, PermissionsViewAllRecords = true
+        );
+        insert new FieldPermissions(
+            ParentId = serverReadOnly.Id, SobjectType = 'ApexAgent_MCP__c',
+            Field = 'ApexAgent_MCP__c.Active__c', PermissionsRead = true
+        );
+
+        Test.startTest();
+        System.runAs(noAccessUser) {
+            // No access to ApexAgent_MCP__c at all: the server lookup itself fails,
+            // before the body (and so its id) has been read.
+            buildRequest('testserver', '{"jsonrpc":"2.0","id":7,"method":"tools/list"}');
+            ApexAgentMcpResource.handleRequest();
+            Assert.areEqual(500, RestContext.response.statusCode, 'A failed server lookup should be HTTP 500');
+            Map<String, Object> lookupResponse = parseResponse();
+            Assert.areEqual(-32603, (Integer) ((Map<String, Object>) lookupResponse.get('error')).get('code'),
+                'A failed server lookup should be a JSON-RPC internal error, not the platform error array');
+            Assert.isFalse(lookupResponse.containsKey('id'), 'The body is not read yet, so there is no id to echo');
+        }
+
+        insert new PermissionSetAssignment(AssigneeId = noAccessUser.Id, PermissionSetId = serverReadOnly.Id);
+
+        System.runAs(noAccessUser) {
+            buildRequest('testserver', '{"jsonrpc":"2.0","id":8,"method":"tools/list"}');
+            ApexAgentMcpResource.handleRequest();
+            Assert.areEqual(500, RestContext.response.statusCode, 'A failure while handling a method should be HTTP 500');
+            Map<String, Object> routeResponse = parseResponse();
+            Assert.areEqual(-32603, (Integer) ((Map<String, Object>) routeResponse.get('error')).get('code'),
+                'A failure while handling a method should be a JSON-RPC internal error');
+            Assert.areEqual(8, routeResponse.get('id'), 'The request id should be echoed once the body has been read');
+        }
+        Test.stopTest();
     }
 
     @IsTest

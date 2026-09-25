@@ -18,16 +18,24 @@ public with sharing class ApexAgentJsonRpcResponder {
         error(200, id, code, message);
     }
 
+    /**
+     * A null id means the request's id couldn't be read (or there was no
+     * request at all, e.g. an auth or Origin rejection). MCP types the error
+     * id as optional but never null, so the key is left out entirely.
+     */
     public static void error(Integer httpStatus, Object id, Integer code, String message) {
         RestContext.response.statusCode = httpStatus;
-        write(new Map<String, Object>{
+        Map<String, Object> body = new Map<String, Object>{
             'jsonrpc' => '2.0',
-            'id' => id,
             'error' => new Map<String, Object>{
                 'code' => code,
                 'message' => message
             }
-        });
+        };
+        if (id != null) {
+            body.put('id', id);
+        }
+        write(body);
     }
 
     /** A notification was accepted: HTTP 202 with no body. */

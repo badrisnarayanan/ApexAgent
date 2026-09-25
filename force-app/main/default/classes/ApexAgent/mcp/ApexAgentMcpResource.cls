@@ -50,7 +50,16 @@ global with sharing class ApexAgentMcpResource {
             return;
         }
 
-        ApexAgent_MCP__c mcpServer = resolveActiveServer(serverName);
+        // The body hasn't been parsed yet, so there's no id to echo. A caller
+        // without access to ApexAgent_MCP__c makes the USER_MODE query throw;
+        // that still has to come back as JSON-RPC, not the platform's 500.
+        ApexAgent_MCP__c mcpServer;
+        try {
+            mcpServer = resolveActiveServer(serverName);
+        } catch (Exception unexpected) {
+            ApexAgentJsonRpcResponder.error(500, null, ApexAgentJsonRpcErrorCodes.INTERNAL_ERROR, 'Internal error: ' + unexpected.getMessage());
+            return;
+        }
         if (mcpServer == null) {
             ApexAgentJsonRpcResponder.error(404, null, ApexAgentJsonRpcErrorCodes.UNKNOWN_MCP_SERVER, 'Unknown or inactive MCP server: ' + serverName);
             return;
