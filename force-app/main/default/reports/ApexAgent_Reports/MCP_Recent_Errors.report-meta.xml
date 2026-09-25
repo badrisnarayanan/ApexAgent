@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://soap.sforce.com/2006/04/metadata">
+    <columns>
+        <field>ApexAgent_Tool_Log__c$Started_At__c</field>
+    </columns>
+    <columns>
+        <field>ApexAgent_Tool_Log__c$Tool_Name__c</field>
+    </columns>
+    <columns>
+        <field>ApexAgent_Tool_Log__c$MCP__c</field>
+    </columns>
+    <columns>
+        <field>ApexAgent_Tool_Log__c$Error_Message__c</field>
+    </columns>
+    <description>The 20 most recent failed MCP tool calls.</description>
+    <filter>
+        <criteriaItems>
+            <column>ApexAgent_Tool_Log__c$MCP__c</column>
+            <columnToColumn>false</columnToColumn>
+            <isUnlocked>true</isUnlocked>
+            <operator>notEqual</operator>
+            <value></value>
+        </criteriaItems>
+        <criteriaItems>
+            <column>ApexAgent_Tool_Log__c$Status__c</column>
+            <columnToColumn>false</columnToColumn>
+            <isUnlocked>true</isUnlocked>
+            <operator>equals</operator>
+            <value>Error</value>
+        </criteriaItems>
+        <language>en_US</language>
+    </filter>
+    <format>Tabular</format>
+    <name>MCP Recent Errors</name>
+    <params>
+        <name>co</name>
+        <value>1</value>
+    </params>
+    <reportType>ApexAgent_MCP_Tool_Logs__c</reportType>
+    <rowLimit>20</rowLimit>
+    <scope>organization</scope>
+    <showDetails>true</showDetails>
+    <showGrandTotal>true</showGrandTotal>
+    <showSubTotals>true</showSubTotals>
+    <sortColumn>ApexAgent_Tool_Log__c$Started_At__c</sortColumn>
+    <sortOrder>Desc</sortOrder>
+    <timeFrameFilter>
+        <dateColumn>ApexAgent_Tool_Log__c$Started_At__c</dateColumn>
+        <interval>INTERVAL_CUSTOM</interval>
+    </timeFrameFilter>
+</Report>

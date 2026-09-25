@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://soap.sforce.com/2006/04/metadata">
+    <columns>
+        <field>ApexAgent_Message_Log__c.Error_Logs__r$CreatedDate</field>
+    </columns>
+    <columns>
+        <field>ApexAgent_Message_Log__c$Agent__c</field>
+    </columns>
+    <columns>
+        <field>ApexAgent_Message_Log__c.Error_Logs__r$Error__c</field>
+    </columns>
+    <columns>
+        <field>ApexAgent_Message_Log__c$Name</field>
+    </columns>
+    <description>The 20 most recent agent errors.</description>
+    <format>Tabular</format>
+    <name>Agent Recent Errors</name>
+    <params>
+        <name>co</name>
+        <value>1</value>
+    </params>
+    <reportType>ApexAgent_Message_Logs_with_Error_Logs__c</reportType>
+    <rowLimit>20</rowLimit>
+    <scope>organization</scope>
+    <showDetails>true</showDetails>
+    <showGrandTotal>true</showGrandTotal>
+    <showSubTotals>true</showSubTotals>
+    <sortColumn>ApexAgent_Message_Log__c.Error_Logs__r$CreatedDate</sortColumn>
+    <sortOrder>Desc</sortOrder>
+    <timeFrameFilter>
+        <dateColumn>ApexAgent_Message_Log__c$Started_At__c</dateColumn>
+        <interval>INTERVAL_CUSTOM</interval>
+    </timeFrameFilter>
+</Report>

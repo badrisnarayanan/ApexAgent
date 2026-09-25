@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://soap.sforce.com/2006/04/metadata">
+    <columns>
+        <field>ApexAgent_Tool_Log__c$Name</field>
+    </columns>
+    <columns>
+        <aggregateTypes>Average</aggregateTypes>
+        <aggregateTypes>Maximum</aggregateTypes>
+        <field>ApexAgent_Tool_Log__c$Duration_ms__c</field>
+    </columns>
+    <description>Average and max duration of MCP tool calls per tool.</description>
+    <filter>
+        <criteriaItems>
+            <column>ApexAgent_Tool_Log__c$MCP__c</column>
+            <columnToColumn>false</columnToColumn>
+            <isUnlocked>true</isUnlocked>
+            <operator>notEqual</operator>
+            <value></value>
+        </criteriaItems>
+        <language>en_US</language>
+    </filter>
+    <format>Summary</format>
+    <groupingsDown>
+        <aggregateType>Average</aggregateType>
+        <dateGranularity>Day</dateGranularity>
+        <field>ApexAgent_Tool_Log__c$Tool_Name__c</field>
+        <sortByName>ApexAgent_Tool_Log__c$Duration_ms__c</sortByName>
+        <sortOrder>Desc</sortOrder>
+        <sortType>Aggregate</sortType>
+    </groupingsDown>
+    <name>MCP Duration by Tool</name>
+    <params>
+        <name>co</name>
+        <value>1</value>
+    </params>
+    <reportType>ApexAgent_MCP_Tool_Logs__c</reportType>
+    <scope>organization</scope>
+    <showDetails>false</showDetails>
+    <showGrandTotal>true</showGrandTotal>
+    <showSubTotals>true</showSubTotals>
+    <timeFrameFilter>
+        <dateColumn>ApexAgent_Tool_Log__c$Started_At__c</dateColumn>
+        <interval>INTERVAL_CUSTOM</interval>
+    </timeFrameFilter>
+</Report>
