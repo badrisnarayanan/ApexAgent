@@ -1,0 +1,125 @@
+<template>
+    <div class="turn">
+
+        <!-- User bubble (left-aligned) -->
+        <div class="msg-row msg-row--user">
+            <div class="bubble bubble--user">
+                <p class="bubble-text">{userInput}</p>
+            </div>
+        </div>
+        <div class="sender-line sender-line--user">
+            <span>{userName}</span>
+            <span class="sender-sep">·</span>
+            <template if:true={showMeta}>
+                <button class="timestamp-link" onclick={handleOpenRecord}>{formattedStartTime}</button>
+            </template>
+            <template if:true={hideMeta}>
+                <span>{formattedStartTime}</span>
+            </template>
+        </div>
+
+        <!-- Agent response (right-aligned) -->
+        <template if:true={hasAgentResponse}>
+
+            <!-- Tool execution accordion (above bubble) -->
+            <template if:true={hasToolExecution}>
+                <div class="tool-exec-wrap">
+                    <c-apex-agent-chat-tool-execution
+                        tool-logs={toolLogs}>
+                    </c-apex-agent-chat-tool-execution>
+                </div>
+            </template>
+
+            <!-- Bubble + avatar -->
+            <div class="msg-row msg-row--agent">
+                <div class="bubble bubble--agent">
+                    <lightning-formatted-rich-text value={agentResponse}></lightning-formatted-rich-text>
+                </div>
+                <template if:true={hasAvatarUrl}>
+                    <img class="avatar avatar--img" src={avatarUrl} alt="Agent avatar" />
+                </template>
+                <template if:false={hasAvatarUrl}>
+                    <div class="avatar avatar--letter" aria-hidden="true">{agentLetter}</div>
+                </template>
+            </div>
+
+            <!-- Sender line -->
+            <div class="sender-line sender-line--agent">
+                <span>{agentName}</span>
+                <span class="sender-sep">·</span>
+                <template if:true={showMeta}>
+                    <button class="timestamp-link" onclick={handleOpenRecord}>{formattedEndTime}</button>
+                </template>
+                <template if:true={hideMeta}>
+                    <span>{formattedEndTime}</span>
+                </template>
+            </div>
+
+            <!-- Meta row: tool count · cost · duration -->
+            <template if:true={showMeta}>
+                <div class="meta-row">
+                    <template if:true={hasToolCalls}>
+                        <span class="meta-item">
+                            <lightning-icon icon-name="utility:custom_apps" size="xx-small" class="meta-icon"></lightning-icon>
+                            <span class="meta-value">{toolCallCount}</span>
+                        </span>
+                    </template>
+                    <template if:true={hasCost}>
+                        <span class="meta-item">
+                            <lightning-icon icon-name="utility:currency" size="xx-small" class="meta-icon"></lightning-icon>
+                            <span class="meta-value">{costFormatted}</span>
+                        </span>
+                    </template>
+                    <template if:true={hasDuration}>
+                        <span class="meta-item">
+                            <lightning-icon icon-name="utility:clock" size="xx-small" class="meta-icon"></lightning-icon>
+                            <span class="meta-value">{durationFormatted}</span>
+                        </span>
+                    </template>
+                </div>
+            </template>
+
+            <!-- Feedback badge (if feedback was given) -->
+            <template if:true={hasFeedback}>
+                <div class={feedbackClass}>
+                    <lightning-icon
+                        icon-name={feedbackIcon}
+                        size="xx-small"
+                        class="feedback-icon">
+                    </lightning-icon>
+                    <template if:true={feedbackNotes}>
+                        <span class="feedback-notes">{feedbackNotes}</span>
+                    </template>
+                </div>
+            </template>
+
+        </template>
+
+        <!-- Error bubbles (after the response, or in place of it when the turn failed) -->
+        <template if:true={hasErrors}>
+            <template for:each={errorLogs} for:item="errLog">
+                <div key={errLog.key} class="msg-row msg-row--agent">
+                    <div class="bubble bubble--error">
+                        <p class="bubble-text bubble-text--error">{errLog.error}</p>
+                    </div>
+                    <div class="avatar avatar--error" aria-hidden="true">!</div>
+                </div>
+            </template>
+        </template>
+
+        <!-- Loading dots (truly in-progress) -->
+        <template if:true={isLoading}>
+            <div class="msg-row msg-row--agent">
+                <div class="bubble bubble--agent bubble--loading">
+                    <div class="loading-dots" role="status" aria-label="Agent is responding">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                    </div>
+                </div>
+                <div class="avatar avatar--letter" aria-hidden="true">{agentLetter}</div>
+            </div>
+        </template>
+
+    </div>
+</template>

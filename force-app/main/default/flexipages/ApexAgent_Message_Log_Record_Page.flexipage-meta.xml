@@ -84,54 +84,6 @@
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
-                <fieldItem>Record.User_Input__c</fieldItem>
-                <identifier>RecordUser_Input_cField</identifier>
-            </fieldInstance>
-        </itemInstances>
-        <name>Facet-g1000003-b2c3-4d5e-a6f7-890123456003</name>
-        <type>Facet</type>
-    </flexiPageRegions>
-    <flexiPageRegions>
-        <itemInstances>
-            <componentInstance>
-                <componentInstanceProperties>
-                    <name>body</name>
-                    <value>Facet-g1000003-b2c3-4d5e-a6f7-890123456003</value>
-                </componentInstanceProperties>
-                <componentName>flexipage:column</componentName>
-                <identifier>flexipage_column1</identifier>
-            </componentInstance>
-        </itemInstances>
-        <name>Facet-g1000004-b2c3-4d5e-a6f7-890123456004</name>
-        <type>Facet</type>
-    </flexiPageRegions>
-    <flexiPageRegions>
-        <itemInstances>
-            <fieldInstance>
-                <fieldItem>Record.Agent_Response__c</fieldItem>
-                <identifier>RecordAgent_Response_cField</identifier>
-            </fieldInstance>
-        </itemInstances>
-        <name>Facet-g1000005-b2c3-4d5e-a6f7-890123456005</name>
-        <type>Facet</type>
-    </flexiPageRegions>
-    <flexiPageRegions>
-        <itemInstances>
-            <componentInstance>
-                <componentInstanceProperties>
-                    <name>body</name>
-                    <value>Facet-g1000005-b2c3-4d5e-a6f7-890123456005</value>
-                </componentInstanceProperties>
-                <componentName>flexipage:column</componentName>
-                <identifier>flexipage_column2</identifier>
-            </componentInstance>
-        </itemInstances>
-        <name>Facet-g1000006-b2c3-4d5e-a6f7-890123456006</name>
-        <type>Facet</type>
-    </flexiPageRegions>
-    <flexiPageRegions>
-        <itemInstances>
-            <fieldInstance>
                 <fieldItem>Record.Agent__c</fieldItem>
                 <identifier>RecordAgent_cField2</identifier>
             </fieldInstance>
@@ -413,38 +365,8 @@
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
-                <componentInstanceProperties>
-                    <name>columns</name>
-                    <value>Facet-g1000004-b2c3-4d5e-a6f7-890123456004</value>
-                </componentInstanceProperties>
-                <componentInstanceProperties>
-                    <name>horizontalAlignment</name>
-                    <value>false</value>
-                </componentInstanceProperties>
-                <componentInstanceProperties>
-                    <name>label</name>
-                    <value>User Input</value>
-                </componentInstanceProperties>
-                <componentName>flexipage:fieldSection</componentName>
-                <identifier>flexipage_fieldSection1</identifier>
-            </componentInstance>
-        </itemInstances>
-        <itemInstances>
-            <componentInstance>
-                <componentInstanceProperties>
-                    <name>columns</name>
-                    <value>Facet-g1000006-b2c3-4d5e-a6f7-890123456006</value>
-                </componentInstanceProperties>
-                <componentInstanceProperties>
-                    <name>horizontalAlignment</name>
-                    <value>false</value>
-                </componentInstanceProperties>
-                <componentInstanceProperties>
-                    <name>label</name>
-                    <value>Agent Response</value>
-                </componentInstanceProperties>
-                <componentName>flexipage:fieldSection</componentName>
-                <identifier>flexipage_fieldSection2</identifier>
+                <componentName>apexAgentMessageViewer</componentName>
+                <identifier>c_apexAgentMessageViewer</identifier>
             </componentInstance>
         </itemInstances>
         <itemInstances>

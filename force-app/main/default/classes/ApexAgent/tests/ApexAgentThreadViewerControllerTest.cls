@@ -16,7 +16,10 @@ private class ApexAgentThreadViewerControllerTest {
             Started_At__c   = Datetime.now().addMinutes(-9),
             Ended_At__c     = Datetime.now().addMinutes(-8),
             Duration_ms__c  = 3200,
-            Cost__c         = 0.00123
+            Cost__c         = 0.00123,
+            Model_Name__c   = 'gpt-test',
+            Input_Tokens__c = 1200,
+            Output_Tokens__c = 340
         );
         ApexAgent_Message_Log__c msg2 = new ApexAgent_Message_Log__c(
             Thread__c       = thread.Id,
@@ -36,13 +39,13 @@ private class ApexAgentThreadViewerControllerTest {
         ApexAgent_Thread_Log__c thread = [SELECT Id FROM ApexAgent_Thread_Log__c LIMIT 1];
 
         Test.startTest();
-        List<ApexAgentThreadViewerController.MessageWrapper> result =
+        List<ApexAgentConversationLogService.MessageWrapper> result =
             ApexAgentThreadViewerController.getThreadMessages(thread.Id);
         Test.stopTest();
 
         Assert.areEqual(2, result.size(), 'Should return both messages ordered by Started_At__c');
 
-        ApexAgentThreadViewerController.MessageWrapper first = result[0];
+        ApexAgentConversationLogService.MessageWrapper first = result[0];
         Assert.areEqual('What is Apex?', first.userInput, 'First message userInput should match');
         Assert.isNotNull(first.agentResponse, 'First message should have an agent response');
         Assert.areEqual(2, first.toolCallCount, 'First message should show 2 tool calls');
@@ -50,8 +53,12 @@ private class ApexAgentThreadViewerControllerTest {
         Assert.isNotNull(first.durationMs, 'First message should have durationMs');
         Assert.isNotNull(first.startedAt, 'startedAt should be populated');
         Assert.isNotNull(first.endedAt, 'endedAt should be populated');
+        Assert.areEqual('gpt-test', first.modelName, 'modelName should be populated');
+        Assert.areEqual(1200, first.inputTokens, 'inputTokens should be populated');
+        Assert.areEqual(340, first.outputTokens, 'outputTokens should be populated');
+        Assert.isNull(first.reasoningTokens, 'Unset token counts should stay null');
 
-        ApexAgentThreadViewerController.MessageWrapper second = result[1];
+        ApexAgentConversationLogService.MessageWrapper second = result[1];
         Assert.areEqual('Tell me more.', second.userInput, 'Second message userInput should match');
         Assert.isNull(second.agentResponse, 'Second message should have no response yet');
         Assert.areEqual(0, second.toolCallCount, 'Second message should have 0 tool calls');
@@ -78,7 +85,7 @@ private class ApexAgentThreadViewerControllerTest {
         insert messages;
 
         Test.startTest();
-        List<ApexAgentThreadViewerController.MessageWrapper> result =
+        List<ApexAgentConversationLogService.MessageWrapper> result =
             ApexAgentThreadViewerController.getThreadMessages(thread.Id);
         Test.stopTest();
 
@@ -95,9 +102,9 @@ private class ApexAgentThreadViewerControllerTest {
         insert emptyThread;
 
         Test.startTest();
-        List<ApexAgentThreadViewerController.MessageWrapper> emptyResult =
+        List<ApexAgentConversationLogService.MessageWrapper> emptyResult =
             ApexAgentThreadViewerController.getThreadMessages(emptyThread.Id);
-        List<ApexAgentThreadViewerController.MessageWrapper> nullResult =
+        List<ApexAgentConversationLogService.MessageWrapper> nullResult =
             ApexAgentThreadViewerController.getThreadMessages(null);
         Test.stopTest();
 

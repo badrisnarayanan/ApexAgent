@@ -17,6 +17,10 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
+        <apexClass>ApexAgentMessageViewerController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>ApexAgentThreadViewerController</apexClass>
         <enabled>true</enabled>
     </classAccesses>

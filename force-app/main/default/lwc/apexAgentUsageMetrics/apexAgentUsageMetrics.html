@@ -1,0 +1,23 @@
+<template>
+    <div class="metric-groups">
+        <dl class="metric-group">
+            <template for:each={runMetrics} for:item="metric">
+                <div key={metric.key} class="metric">
+                    <dt class="metric-label">{metric.label}</dt>
+                    <dd class="metric-value">{metric.value}</dd>
+                </div>
+            </template>
+        </dl>
+        <div class="metric-group metric-group--tokens" role="group" aria-label="Tokens">
+            <span class="metric-group-title">Tokens</span>
+            <dl class="metric-group-row">
+                <template for:each={tokenMetrics} for:item="metric">
+                    <div key={metric.key} class="metric">
+                        <dt class="metric-label">{metric.label}</dt>
+                        <dd class="metric-value">{metric.value}</dd>
+                    </div>
+                </template>
+            </dl>
+        </div>
+    </div>
+</template>

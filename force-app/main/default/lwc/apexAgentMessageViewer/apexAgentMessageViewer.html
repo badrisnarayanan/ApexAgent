@@ -1,0 +1,61 @@
+<template>
+    <div class="viewer-container" style={themeStyle}>
+
+        <template if:true={hasMessage}>
+
+            <!-- Summary bar -->
+            <div class="summary">
+                <div class="summary-head">
+                    <div class="summary-head-left">
+                        <span class={statusClass}>
+                            <lightning-icon icon-name={statusIcon} size="xx-small" class="status-icon"></lightning-icon>
+                            {statusLabel}
+                        </span>
+                        <template if:true={modelName}>
+                            <span class="model-name" title="Model">{modelName}</span>
+                        </template>
+                    </div>
+                </div>
+
+                <c-apex-agent-usage-metrics
+                    cost={message.cost}
+                    duration-ms={message.durationMs}
+                    tool-call-count={message.toolCallCount}
+                    input-tokens={message.inputTokens}
+                    output-tokens={message.outputTokens}
+                    cached-input-tokens={message.cachedInputTokens}
+                    reasoning-tokens={message.reasoningTokens}>
+                </c-apex-agent-usage-metrics>
+
+                <template if:true={hasFeedback}>
+                    <div class={feedbackClass}>
+                        <lightning-icon icon-name={feedbackIcon} size="xx-small" class="feedback-icon"></lightning-icon>
+                        <span class="feedback-label">{feedbackLabel}</span>
+                        <template if:true={feedbackNotes}>
+                            <span class="feedback-notes">{feedbackNotes}</span>
+                        </template>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Conversation -->
+            <div class="msg-body">
+                <c-apex-agent-message-turn
+                    message={message}
+                    avatar-url={agentAvatarUrl}
+                    hide-meta>
+                </c-apex-agent-message-turn>
+            </div>
+
+        </template>
+
+        <!-- Load failure -->
+        <template if:true={showNotFound}>
+            <div class="empty-state">
+                <lightning-icon icon-name="utility:chat" size="medium" class="empty-icon"></lightning-icon>
+                <p class="empty-text">This message couldn't be loaded. Refresh the page or check that you have access to it.</p>
+            </div>
+        </template>
+
+    </div>
+</template>
