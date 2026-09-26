@@ -52,3 +52,6 @@ dev_docs/
 **/__pycache__/
 **/.venv/
 **/venv/
+
+# Local planning docs
+docs/
