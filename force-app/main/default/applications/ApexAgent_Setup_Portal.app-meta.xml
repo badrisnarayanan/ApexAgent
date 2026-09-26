@@ -20,10 +20,15 @@
     <tabs>ApexAgent_Message_Log__c</tabs>
     <tabs>ApexAgent_Tool_Log__c</tabs>
     <tabs>ApexAgent_Error_Log__c</tabs>
+    <tabs>ApexAgent_Agent_Dashboard</tabs>
+    <tabs>ApexAgent_MCP_Dashboard</tabs>
     <tabs>Lumen_Agent</tabs>
     <uiType>Lightning</uiType>
     <utilityBar>ApexAgent_Setup_Portal_UtilityBar</utilityBar>
     <workspaceConfig>
+        <mappings>
+            <tab>ApexAgent_Agent_Dashboard</tab>
+        </mappings>
         <mappings>
             <tab>ApexAgent_Agent__c</tab>
         </mappings>
@@ -35,6 +40,9 @@
         </mappings>
         <mappings>
             <tab>ApexAgent_LLM__c</tab>
+        </mappings>
+        <mappings>
+            <tab>ApexAgent_MCP_Dashboard</tab>
         </mappings>
         <mappings>
             <tab>ApexAgent_MCP__c</tab>

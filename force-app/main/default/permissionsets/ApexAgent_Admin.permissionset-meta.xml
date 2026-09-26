@@ -521,6 +521,14 @@
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>
+        <tab>ApexAgent_Agent_Dashboard</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>ApexAgent_MCP_Dashboard</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
         <tab>ApexAgent_Message_Log__c</tab>
         <visibility>Visible</visibility>
     </tabSettings>
