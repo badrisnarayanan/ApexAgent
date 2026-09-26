@@ -1,7 +1,7 @@
 /**
  * Apex Action tool: resolves the Salesforce object API name for a record Id.
  */
-public with sharing class GetObjectApiName {
+public with sharing class ApexAgentGetObjectApiName {
 
     public class Input {
         @InvocableVariable(required=true label='Record Id' description='The Salesforce record Id to determine the object type for.')

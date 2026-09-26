@@ -19,17 +19,17 @@ private class ApexAgentMessageBuilderTest {
         Datetime firstStart = Datetime.now().addSeconds(-30);
         insert new List<ApexAgent_Tool_Log__c>{
             new ApexAgent_Tool_Log__c(
-                Message_Log__c = msg.Id, Tool_Call_Id__c = 'call-ok', Tool_Name__c = 'GetObjectApiName',
+                Message_Log__c = msg.Id, Tool_Call_Id__c = 'call-ok', Tool_Name__c = 'ApexAgentGetObjectApiName',
                 Input__c = '{"recordId":"001000000000000AAA"}', Output__c = '{"objectApiName":"Account"}', Status__c = 'Success',
                 Started_At__c = firstStart.addSeconds(20)
             ),
             new ApexAgent_Tool_Log__c(
-                Message_Log__c = msg.Id, Tool_Call_Id__c = 'call-failed', Tool_Name__c = 'GetRecordDetails',
+                Message_Log__c = msg.Id, Tool_Call_Id__c = 'call-failed', Tool_Name__c = 'ApexAgentGetRecordDetails',
                 Input__c = '{"recordId":"not-an-id"}', Error_Message__c = 'recordId is not a valid Salesforce ID: not-an-id', Status__c = 'Error',
                 Started_At__c = firstStart.addSeconds(10)
             ),
             new ApexAgent_Tool_Log__c(
-                Message_Log__c = msg.Id, Tool_Call_Id__c = 'call-blank', Tool_Name__c = 'GetObjectApiName',
+                Message_Log__c = msg.Id, Tool_Call_Id__c = 'call-blank', Tool_Name__c = 'ApexAgentGetObjectApiName',
                 Input__c = '{}', Status__c = 'Success',
                 Started_At__c = firstStart
             )

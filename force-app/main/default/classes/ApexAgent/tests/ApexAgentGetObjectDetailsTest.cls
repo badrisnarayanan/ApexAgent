@@ -1,5 +1,5 @@
 @IsTest
-private class GetObjectDetailsTest {
+private class ApexAgentGetObjectDetailsTest {
 
     // ─── Input validation ────────────────────────────────────────────────────────
 
@@ -27,7 +27,7 @@ private class GetObjectDetailsTest {
 
     @IsTest
     static void testObjectMetadata() {
-        GetObjectDetails.Output result = run('Account');
+        ApexAgentGetObjectDetails.Output result = run('Account');
 
         Assert.areEqual('Account', result.objectApiName, 'objectApiName should be Account');
         Assert.isNotNull(result.label, 'label should be present');
@@ -46,12 +46,12 @@ private class GetObjectDetailsTest {
 
     @IsTest
     static void testFieldsStructure() {
-        GetObjectDetails.Output result = run('Account');
+        ApexAgentGetObjectDetails.Output result = run('Account');
 
         Assert.isTrue(!result.fields.isEmpty(), 'Fields should not be empty');
         Map<String, List<String>> entriesBySoapType = new Map<String, List<String>>();
         List<String> soapTypesInOrder = new List<String>();
-        for (GetObjectDetails.FieldGroup fieldGroup : result.fields) {
+        for (ApexAgentGetObjectDetails.FieldGroup fieldGroup : result.fields) {
             soapTypesInOrder.add(fieldGroup.soapType);
             Assert.isFalse(entriesBySoapType.containsKey(fieldGroup.soapType), 'Each SOAP type should appear in one group only');
             entriesBySoapType.put(fieldGroup.soapType, fieldGroup.fields);
@@ -89,7 +89,7 @@ private class GetObjectDetailsTest {
 
     @IsTest
     static void testRequiredAndNameField() {
-        GetObjectDetails.Output result = run('Account');
+        ApexAgentGetObjectDetails.Output result = run('Account');
 
         Assert.isNotNull(result.requiredFields, 'requiredFields should not be null');
         Assert.isTrue(result.requiredFields.contains('Name'), 'Account.Name should appear in requiredFields');
@@ -100,7 +100,7 @@ private class GetObjectDetailsTest {
 
     @IsTest
     static void testRecordTypesAndChildren() {
-        GetObjectDetails.Output result = run('Account');
+        ApexAgentGetObjectDetails.Output result = run('Account');
 
         Assert.isTrue(!result.recordTypes.isEmpty(), 'Account should have at least the Master record type');
         for (String rt : result.recordTypes) {
@@ -124,17 +124,17 @@ private class GetObjectDetailsTest {
 
     @IsTest
     static void testEntryEncoding() {
-        Assert.areEqual('Name|Account Name', GetObjectDetails.toEntry(new List<String>{ 'Name', 'Account Name' }));
-        Assert.areEqual('A|B/C|D', GetObjectDetails.toEntry(new List<String>{ 'A', 'B|C', 'D' }),
+        Assert.areEqual('Name|Account Name', ApexAgentGetObjectDetails.toEntry(new List<String>{ 'Name', 'Account Name' }));
+        Assert.areEqual('A|B/C|D', ApexAgentGetObjectDetails.toEntry(new List<String>{ 'A', 'B|C', 'D' }),
             'A delimiter inside a part must be replaced so it cannot split the entry');
-        Assert.areEqual('A|', GetObjectDetails.toEntry(new List<String>{ 'A', null }), 'A null part should become empty');
+        Assert.areEqual('A|', ApexAgentGetObjectDetails.toEntry(new List<String>{ 'A', null }), 'A null part should become empty');
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-    private static GetObjectDetails.Output run(String objectApiName) {
-        GetObjectDetails.Input inp = new GetObjectDetails.Input();
+    private static ApexAgentGetObjectDetails.Output run(String objectApiName) {
+        ApexAgentGetObjectDetails.Input inp = new ApexAgentGetObjectDetails.Input();
         inp.objectApiName = objectApiName;
-        return GetObjectDetails.run(new List<GetObjectDetails.Input>{ inp })[0];
+        return ApexAgentGetObjectDetails.run(new List<ApexAgentGetObjectDetails.Input>{ inp })[0];
     }
 }

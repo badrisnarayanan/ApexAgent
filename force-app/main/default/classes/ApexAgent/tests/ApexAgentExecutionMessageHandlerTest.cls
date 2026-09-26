@@ -15,7 +15,7 @@ private class ApexAgentExecutionMessageHandlerTest {
         EventBus.publish(new ApexAgent_Tool_Execution__e(
             Message_UUID__c      = messageUUID,
             Tool_Call_Id__c      = 'call-1',
-            Tool_Name__c         = 'SearchRecords',
+            Tool_Name__c         = 'ApexAgentSearchRecords',
             Execution_Message__c = 'Searching for account records',
             Status__c             = 'In Progress'
         ));
@@ -24,7 +24,7 @@ private class ApexAgentExecutionMessageHandlerTest {
         List<Map<String, Object>> actions = ApexAgentExecutionMessageHandler.getToolActions(messageUUID);
         Assert.areEqual(1, actions.size(), 'One tool action should be cached');
         Assert.areEqual('call-1', actions[0].get('toolCallId'), 'Tool call id mismatch');
-        Assert.areEqual('SearchRecords', actions[0].get('toolName'), 'Tool name mismatch');
+        Assert.areEqual('ApexAgentSearchRecords', actions[0].get('toolName'), 'Tool name mismatch');
         Assert.areEqual('Searching for account records', actions[0].get('executionMessage'), 'Execution message mismatch');
         Assert.areEqual('In Progress', actions[0].get('status'), 'Status mismatch');
     }
@@ -37,7 +37,7 @@ private class ApexAgentExecutionMessageHandlerTest {
         EventBus.publish(new ApexAgent_Tool_Execution__e(
             Message_UUID__c      = messageUUID,
             Tool_Call_Id__c      = 'call-2',
-            Tool_Name__c         = 'QueryRecords',
+            Tool_Name__c         = 'ApexAgentQueryRecords',
             Execution_Message__c = 'Querying open cases',
             Status__c             = 'In Progress'
         ));
@@ -52,7 +52,7 @@ private class ApexAgentExecutionMessageHandlerTest {
         Assert.areEqual(1, actions.size(), 'Completed event should merge into the existing entry, not duplicate it');
         Assert.areEqual('Completed', actions[0].get('status'), 'Status should update to Completed');
         Assert.areEqual('Querying open cases', actions[0].get('executionMessage'), 'Execution message from the In Progress event should be preserved');
-        Assert.areEqual('QueryRecords', actions[0].get('toolName'), 'Tool name from the In Progress event should be preserved');
+        Assert.areEqual('ApexAgentQueryRecords', actions[0].get('toolName'), 'Tool name from the In Progress event should be preserved');
     }
 
     @IsTest

@@ -70,7 +70,7 @@ private class ApexAgentSymbolTableServiceTest {
         middle.name = 'RecordInput';
         middle.innerClasses = new List<ApexAgentSymbolTableTypes.SymbolTableNode>{ nested };
         ApexAgentSymbolTableTypes.SymbolTableNode root = new ApexAgentSymbolTableTypes.SymbolTableNode();
-        root.name = 'UpsertRecords';
+        root.name = 'ApexAgentUpsertRecords';
         root.innerClasses = new List<ApexAgentSymbolTableTypes.SymbolTableNode>{ middle };
 
         Assert.areEqual('FieldEntry', ApexAgentSymbolTableService.findInnerClass(root, 'FieldEntry').name,
@@ -89,22 +89,22 @@ private class ApexAgentSymbolTableServiceTest {
             'Empty input should short-circuit to an empty map without a callout');
 
         ApexAgentSymbolTableTypes.ApexClassRecord rec = new ApexAgentSymbolTableTypes.ApexClassRecord();
-        rec.name = 'UpsertRecords';
-        rec.body = 'public class UpsertRecords {}';
+        rec.name = 'ApexAgentUpsertRecords';
+        rec.body = 'public class ApexAgentUpsertRecords {}';
         rec.symbolTable = new ApexAgentSymbolTableTypes.SymbolTableNode();
-        rec.symbolTable.name = 'UpsertRecords';
+        rec.symbolTable.name = 'ApexAgentUpsertRecords';
         ApexAgentSymbolTableTypes.ToolingQueryResult queryResult = new ApexAgentSymbolTableTypes.ToolingQueryResult();
         queryResult.records = new List<ApexAgentSymbolTableTypes.ApexClassRecord>{ rec };
 
         Test.setMock(HttpCalloutMock.class, new ApexAgentToolingQueryMock(200, JSON.serialize(queryResult)));
         Test.startTest();
         Map<String, ApexAgentSymbolTableTypes.ApexClassRecord> byName =
-            ApexAgentSymbolTableService.querySymbolTables(new Set<String>{ 'UpsertRecords' });
+            ApexAgentSymbolTableService.querySymbolTables(new Set<String>{ 'ApexAgentUpsertRecords' });
         Test.stopTest();
 
         Assert.areEqual(1, byName.size(), 'Should key the bulk-resolved result by class name');
-        Assert.isTrue(byName.containsKey('UpsertRecords'), 'Result map should be keyed by the resolved class name');
-        Assert.areEqual('UpsertRecords', byName.get('UpsertRecords').name,
+        Assert.isTrue(byName.containsKey('ApexAgentUpsertRecords'), 'Result map should be keyed by the resolved class name');
+        Assert.areEqual('ApexAgentUpsertRecords', byName.get('ApexAgentUpsertRecords').name,
             'Should carry through the class name from the Tooling API response');
     }
 
@@ -115,7 +115,7 @@ private class ApexAgentSymbolTableServiceTest {
 
         Test.startTest();
         try {
-            ApexAgentSymbolTableService.querySymbolTables(new Set<String>{ 'UpsertRecords' });
+            ApexAgentSymbolTableService.querySymbolTables(new Set<String>{ 'ApexAgentUpsertRecords' });
         } catch (ApexAgentSymbolTableService.SymbolTableException e) {
             threw = true;
             Assert.isTrue(e.getMessage().contains('500'), 'Exception should carry the failing status code');

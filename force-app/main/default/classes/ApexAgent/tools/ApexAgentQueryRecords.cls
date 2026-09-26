@@ -2,10 +2,10 @@
  * Apex Action tool: runs an LLM-supplied SOQL query with a default row limit.
  *
  * Not bulk-mergeable: each input carries an independent, arbitrary query string,
- * so there is no shared key to group on the way GetRecordDetails groups by object
+ * so there is no shared key to group on the way ApexAgentGetRecordDetails groups by object
  * type. ApexAgentToolExecutor only ever invokes this action with a single input.
  */
-public with sharing class QueryRecords {
+public with sharing class ApexAgentQueryRecords {
 
     private static final Integer DEFAULT_LIMIT = 50;
     private static final Integer GROUP_BY_LIMIT = 200;
@@ -42,7 +42,7 @@ public with sharing class QueryRecords {
         public String error;
     }
 
-    @InvocableMethod(label='Query Records' description='Executes a SOQL query and returns matching records. Automatically caps results at 50 records (lower limits are respected, higher limits are reduced to 50). GROUP BY queries are capped at 200 groups instead. Aggregate queries without GROUP BY (COUNT, SUM, etc.) are supported and never limited. SELECT COUNT() returns the count in recordCount; SELECT COUNT(Id) returns it in the records\n\nCritical usage rules:\n- Always construct a valid SOQL query first based on the user\'s request, then pass it to this tool for execution.\n- If the object name is unfamiliar, use SearchObjects first to confirm it exists and get its exact API name.\n- Always use GetObjectDetails first (if not already called) to discover available fields on the object. Use GetFieldDetails if you need deeper field metadata before building your query. Never guess field names.\n\nWhen not to use:\n- You need fuzzy name search within one object → use SearchRecords.\n- You need a single record by ID → use GetRecordDetails.')
+    @InvocableMethod(label='Query Records' description='Executes a SOQL query and returns matching records. Automatically caps results at 50 records (lower limits are respected, higher limits are reduced to 50). GROUP BY queries are capped at 200 groups instead. Aggregate queries without GROUP BY (COUNT, SUM, etc.) are supported and never limited. SELECT COUNT() returns the count in recordCount; SELECT COUNT(Id) returns it in the records\n\nCritical usage rules:\n- Always construct a valid SOQL query first based on the user\'s request, then pass it to this tool for execution.\n- If the object name is unfamiliar, use ApexAgentSearchObjects first to confirm it exists and get its exact API name.\n- Always use ApexAgentGetObjectDetails first (if not already called) to discover available fields on the object. Use ApexAgentGetFieldDetails if you need deeper field metadata before building your query. Never guess field names.\n\nWhen not to use:\n- You need fuzzy name search within one object → use ApexAgentSearchRecords.\n- You need a single record by ID → use ApexAgentGetRecordDetails.')
     public static List<Output> run(List<Input> inputs) {
         try {
             List<Output> results = new List<Output>();

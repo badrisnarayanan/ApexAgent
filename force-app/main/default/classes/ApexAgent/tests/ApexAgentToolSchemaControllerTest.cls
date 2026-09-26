@@ -23,7 +23,7 @@ private class ApexAgentToolSchemaControllerTest {
 
     @IsTest
     static void testRegenerateSchemaEnqueuesAndRunsRegenerationForAValidTool() {
-        ApexAgent_Tool__c tool = new ApexAgent_Tool__c(Apex_Class_Name__c = 'GetObjectApiName');
+        ApexAgent_Tool__c tool = new ApexAgent_Tool__c(Apex_Class_Name__c = 'ApexAgentGetObjectApiName');
         insert tool;
 
         Test.startTest();

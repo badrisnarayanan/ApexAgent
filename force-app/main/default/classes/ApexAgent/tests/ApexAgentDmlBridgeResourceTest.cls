@@ -9,7 +9,7 @@ private class ApexAgentDmlBridgeResourceTest {
     @IsTest
     static void testExecuteSuccessWritesRawJsonBody() {
         Map<String, Object> requestBody = new Map<String, Object>{
-            'executionName' => 'GetObjectApiName',
+            'executionName' => 'ApexAgentGetObjectApiName',
             'inputs' => new Map<String, Object>{ 'recordId' => UserInfo.getUserId() }
         };
         RestContext.request = new RestRequest();

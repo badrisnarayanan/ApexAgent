@@ -19,8 +19,8 @@ private class ApexAgentToolTriggerHandlerTest {
         Test.startTest();
         Integer jobsBefore = Limits.getQueueableJobs();
         insert new List<ApexAgent_Tool__c>{
-            new ApexAgent_Tool__c(Apex_Class_Name__c = 'GetFieldDetails'),
-            new ApexAgent_Tool__c(Apex_Class_Name__c = 'GetObjectDetails')
+            new ApexAgent_Tool__c(Apex_Class_Name__c = 'ApexAgentGetFieldDetails'),
+            new ApexAgent_Tool__c(Apex_Class_Name__c = 'ApexAgentGetObjectDetails')
         };
         Integer jobsAfter = Limits.getQueueableJobs();
         Test.stopTest();
@@ -31,7 +31,7 @@ private class ApexAgentToolTriggerHandlerTest {
 
     @IsTest
     static void testUpdateEnqueuesOnlyWhenRegenerationInputsChange() {
-        ApexAgent_Tool__c tool = new ApexAgent_Tool__c(Apex_Class_Name__c = 'GetFieldDetails');
+        ApexAgent_Tool__c tool = new ApexAgent_Tool__c(Apex_Class_Name__c = 'ApexAgentGetFieldDetails');
         insert tool;
 
         Test.startTest();
@@ -47,7 +47,7 @@ private class ApexAgentToolTriggerHandlerTest {
         Assert.areEqual(jobsAfterInsert + 1, Limits.getQueueableJobs(),
             'Changing Modifies_Salesforce_Data__c must enqueue regeneration, since it drives the MCP readOnlyHint');
 
-        tool.Apex_Class_Name__c = 'GetObjectDetails';
+        tool.Apex_Class_Name__c = 'ApexAgentGetObjectDetails';
         update tool;
         Assert.areEqual(jobsAfterInsert + 2, Limits.getQueueableJobs(),
             'Changing Apex_Class_Name__c must enqueue regeneration');

@@ -9,7 +9,7 @@
  * two concurrent transactions). The pre-check here exists only so a
  * duplicate fails with a readable message on the offending field instead of
  * the raw DUPLICATE_VALUE error, which matters when the save comes from an
- * LLM through UpsertRecords.
+ * LLM through ApexAgentUpsertRecords.
  *
  * Call from before insert and before update. Both master-detail fields are
  * non-reparentable, so the key never changes after insert; running on update

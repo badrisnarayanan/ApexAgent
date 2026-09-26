@@ -5,7 +5,7 @@
  * shared key to group on. ApexAgentToolExecutor only ever invokes this action
  * with a single input.
  */
-public with sharing class SearchObjects {
+public with sharing class ApexAgentSearchObjects {
 
     private static final Integer MAX_RESULTS = 10;
 

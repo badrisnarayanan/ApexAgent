@@ -1,5 +1,5 @@
 @IsTest
-private class GetFieldDetailsTest {
+private class ApexAgentGetFieldDetailsTest {
 
     // ─── Input validation ────────────────────────────────────────────────────────
 
@@ -154,10 +154,10 @@ private class GetFieldDetailsTest {
     // ─── Helpers ──────────────────────────────────────────────────────────────────
 
     private static Map<String, Object> run(String objectApiName, List<String> fieldApiNameList) {
-        GetFieldDetails.Input inp = new GetFieldDetails.Input();
+        ApexAgentGetFieldDetails.Input inp = new ApexAgentGetFieldDetails.Input();
         inp.objectApiName = objectApiName;
         inp.fieldApiNameList = fieldApiNameList;
-        List<GetFieldDetails.Output> out = GetFieldDetails.run(new List<GetFieldDetails.Input>{ inp });
+        List<ApexAgentGetFieldDetails.Output> out = ApexAgentGetFieldDetails.run(new List<ApexAgentGetFieldDetails.Input>{ inp });
         return (Map<String, Object>) JSON.deserializeUntyped(JSON.serialize(out[0], true));
     }
 }

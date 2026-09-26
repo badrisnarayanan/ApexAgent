@@ -1,5 +1,5 @@
 /**
- * Text-matching helpers shared by the fuzzy-search tools (SearchRecords, SearchObjects):
+ * Text-matching helpers shared by the fuzzy-search tools (ApexAgentSearchRecords, ApexAgentSearchObjects):
  * camelCase splitting, plural/singular variants, and a word-overlap measure used for scoring.
  */
 public with sharing class ApexAgentTextMatch {

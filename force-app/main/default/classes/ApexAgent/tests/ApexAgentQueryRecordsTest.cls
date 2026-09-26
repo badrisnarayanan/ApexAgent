@@ -1,5 +1,5 @@
 @IsTest
-private class QueryRecordsTest {
+private class ApexAgentQueryRecordsTest {
 
     // ─── Input validation ────────────────────────────────────────────────────────
 
@@ -18,59 +18,59 @@ private class QueryRecordsTest {
     @IsTest
     static void testSanitization() {
         // Whitespace + trailing semicolon stripped, default LIMIT 50 appended
-        String q1 = QueryRecords.sanitize('  SELECT Id FROM Account ;  ');
+        String q1 = ApexAgentQueryRecords.sanitize('  SELECT Id FROM Account ;  ');
         Assert.isTrue(q1.equalsIgnoreCase('SELECT Id FROM Account LIMIT 50'),
             'Should trim whitespace, remove semicolon, and add default LIMIT — got: ' + q1);
 
         // WITH SECURITY_ENFORCED removed (mixed case)
-        String q2 = QueryRecords.sanitize('SELECT Id FROM Account WITH Security_Enforced');
+        String q2 = ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WITH Security_Enforced');
         Assert.isFalse(q2.containsIgnoreCase('SECURITY_ENFORCED'),
             'WITH SECURITY_ENFORCED should be removed — got: ' + q2);
         Assert.isTrue(q2.containsIgnoreCase('LIMIT 50'), 'Default LIMIT should be added');
 
         // Existing LIMIT above 50 → replaced with 50
-        String q3 = QueryRecords.sanitize('SELECT Id FROM Account LIMIT 200');
+        String q3 = ApexAgentQueryRecords.sanitize('SELECT Id FROM Account LIMIT 200');
         Assert.isTrue(q3.containsIgnoreCase('LIMIT 50'),
             'LIMIT above 50 should be capped — got: ' + q3);
         Assert.isFalse(q3.containsIgnoreCase('LIMIT 200'), 'Original high LIMIT should be gone');
 
         // Existing LIMIT at 50 → unchanged
-        String q4 = QueryRecords.sanitize('SELECT Id FROM Account LIMIT 50');
+        String q4 = ApexAgentQueryRecords.sanitize('SELECT Id FROM Account LIMIT 50');
         Assert.isTrue(q4.containsIgnoreCase('LIMIT 50'), 'LIMIT 50 should be preserved');
 
         // Existing LIMIT below 50 → unchanged
-        String q5 = QueryRecords.sanitize('SELECT Id FROM Account LIMIT 10');
+        String q5 = ApexAgentQueryRecords.sanitize('SELECT Id FROM Account LIMIT 10');
         Assert.isTrue(q5.containsIgnoreCase('LIMIT 10'),
             'LIMIT below 50 should be left as-is — got: ' + q5);
 
         // Plain aggregates (no GROUP BY) are left exactly as written — no LIMIT added or capped
-        String q6 = QueryRecords.sanitize('SELECT COUNT(Id) FROM Account');
+        String q6 = ApexAgentQueryRecords.sanitize('SELECT COUNT(Id) FROM Account');
         Assert.areEqual('SELECT COUNT(Id) FROM Account', q6, 'COUNT query must not get a LIMIT');
         Assert.areEqual('SELECT COUNT() FROM Account WHERE Name = \'x\' LIMIT 500',
-            QueryRecords.sanitize('SELECT COUNT() FROM Account WHERE Name = \'x\' LIMIT 500'), 'plain aggregate keeps its own LIMIT');
+            ApexAgentQueryRecords.sanitize('SELECT COUNT() FROM Account WHERE Name = \'x\' LIMIT 500'), 'plain aggregate keeps its own LIMIT');
 
         // GROUP BY can return up to 2000 rows, so it is capped at 200 rather than 50
         Assert.areEqual('SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName LIMIT 200',
-            QueryRecords.sanitize('SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName;'), 'GROUP BY gets 200');
+            ApexAgentQueryRecords.sanitize('SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName;'), 'GROUP BY gets 200');
         Assert.areEqual('SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName LIMIT 200',
-            QueryRecords.sanitize('SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName LIMIT 900'), 'GROUP BY LIMIT above 200 is capped');
+            ApexAgentQueryRecords.sanitize('SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName LIMIT 900'), 'GROUP BY LIMIT above 200 is capped');
         Assert.areEqual('SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName LIMIT 120',
-            QueryRecords.sanitize('SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName LIMIT 120'), 'GROUP BY LIMIT up to 200 is kept');
+            ApexAgentQueryRecords.sanitize('SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName LIMIT 120'), 'GROUP BY LIMIT up to 200 is kept');
         Assert.areEqual('SELECT Type FROM Account GROUP BY Type LIMIT 200',
-            QueryRecords.sanitize('SELECT Type FROM Account GROUP BY Type'), 'GROUP BY without an aggregate function');
+            ApexAgentQueryRecords.sanitize('SELECT Type FROM Account GROUP BY Type'), 'GROUP BY without an aggregate function');
         Assert.areEqual('SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName HAVING COUNT(Id) > 1 ORDER BY COUNT(Id) DESC LIMIT 200',
-            QueryRecords.sanitize('SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName HAVING COUNT(Id) > 1 ORDER BY COUNT(Id) DESC'),
+            ApexAgentQueryRecords.sanitize('SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName HAVING COUNT(Id) > 1 ORDER BY COUNT(Id) DESC'),
             'LIMIT goes after HAVING / ORDER BY, whose parentheses must not confuse the boundary');
         Assert.areEqual('SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName LIMIT 200 OFFSET 5',
-            QueryRecords.sanitize('SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName OFFSET 5'), 'GROUP BY + OFFSET');
+            ApexAgentQueryRecords.sanitize('SELECT StageName, COUNT(Id) FROM Opportunity GROUP BY StageName OFFSET 5'), 'GROUP BY + OFFSET');
 
         // Zero-padded and zero LIMITs are read as their numeric value
         Assert.areEqual('SELECT Id FROM Account LIMIT 0000000000010',
-            QueryRecords.sanitize('SELECT Id FROM Account LIMIT 0000000000010'), 'zero-padded small LIMIT is kept');
-        Assert.areEqual('SELECT Id FROM Account LIMIT 0', QueryRecords.sanitize('SELECT Id FROM Account LIMIT 0'), 'LIMIT 0 is kept');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account LIMIT 0000000000010'), 'zero-padded small LIMIT is kept');
+        Assert.areEqual('SELECT Id FROM Account LIMIT 0', ApexAgentQueryRecords.sanitize('SELECT Id FROM Account LIMIT 0'), 'LIMIT 0 is kept');
 
         // A subquery's aggregate does not make the outer query an aggregate
-        String q9 = QueryRecords.sanitize('SELECT Id, (SELECT COUNT() FROM Contacts) FROM Account');
+        String q9 = ApexAgentQueryRecords.sanitize('SELECT Id, (SELECT COUNT() FROM Contacts) FROM Account');
         Assert.isTrue(q9.endsWith('LIMIT 50'), 'Non-aggregate outer query must still be limited — got: ' + q9);
     }
 
@@ -82,7 +82,7 @@ private class QueryRecordsTest {
         // outer query must get the default LIMIT appended, and the subquery's own
         // LIMIT must be left completely untouched (200, not capped to 50) since it
         // governs a child relationship, not top-level record count.
-        String q1 = QueryRecords.sanitize(
+        String q1 = ApexAgentQueryRecords.sanitize(
             'SELECT Id, (SELECT Id FROM Contacts LIMIT 200) FROM Account'
         );
         Assert.isTrue(q1.containsIgnoreCase('LIMIT 200'),
@@ -92,7 +92,7 @@ private class QueryRecordsTest {
 
         // Subquery has a small LIMIT, outer query has an oversized LIMIT that must be
         // capped — the subquery's LIMIT must not be the one that gets rewritten.
-        String q2 = QueryRecords.sanitize(
+        String q2 = ApexAgentQueryRecords.sanitize(
             'SELECT Id, (SELECT Id FROM Contacts LIMIT 5) FROM Account LIMIT 500'
         );
         Assert.isTrue(q2.containsIgnoreCase('LIMIT 5)'),
@@ -107,21 +107,21 @@ private class QueryRecordsTest {
     @IsTest
     static void testDefaultLimitPrecedesTrailingClauses() {
         Assert.areEqual('SELECT Id FROM Account ORDER BY Id LIMIT 50 OFFSET 10',
-            QueryRecords.sanitize('SELECT Id FROM Account ORDER BY Id OFFSET 10'), 'OFFSET');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account ORDER BY Id OFFSET 10'), 'OFFSET');
         Assert.areEqual('SELECT Id FROM Account LIMIT 50 for view',
-            QueryRecords.sanitize('SELECT Id FROM Account for view;'), 'lowercase FOR VIEW with semicolon');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account for view;'), 'lowercase FOR VIEW with semicolon');
         Assert.areEqual('SELECT Id FROM Account LIMIT 50 FOR UPDATE',
-            QueryRecords.sanitize('SELECT Id FROM Account FOR UPDATE'), 'FOR UPDATE');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account FOR UPDATE'), 'FOR UPDATE');
         Assert.areEqual('SELECT Id FROM Account LIMIT 50 FOR REFERENCE UPDATE TRACKING',
-            QueryRecords.sanitize('SELECT Id FROM Account FOR REFERENCE UPDATE TRACKING'), 'FOR REFERENCE');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account FOR REFERENCE UPDATE TRACKING'), 'FOR REFERENCE');
         Assert.areEqual('SELECT Id FROM Account WHERE IsDeleted = true LIMIT 50 ALL ROWS',
-            QueryRecords.sanitize('SELECT Id FROM Account WHERE IsDeleted = true ALL ROWS'), 'ALL ROWS');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WHERE IsDeleted = true ALL ROWS'), 'ALL ROWS');
         Assert.areEqual('SELECT Id, (SELECT Id FROM Contacts) FROM Account LIMIT 50 OFFSET 5',
-            QueryRecords.sanitize('SELECT Id, (SELECT Id FROM Contacts) FROM Account OFFSET 5'), 'subquery + OFFSET');
+            ApexAgentQueryRecords.sanitize('SELECT Id, (SELECT Id FROM Contacts) FROM Account OFFSET 5'), 'subquery + OFFSET');
 
         // An existing LIMIT is still capped in place when a trailing clause follows it
         Assert.areEqual('SELECT Id FROM Account LIMIT 50 OFFSET 5',
-            QueryRecords.sanitize('SELECT Id FROM Account LIMIT 500 OFFSET 5'), 'capped LIMIT + OFFSET');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account LIMIT 500 OFFSET 5'), 'capped LIMIT + OFFSET');
     }
 
     // ─── String literals are never mistaken for SOQL syntax ───────────────────────
@@ -130,62 +130,62 @@ private class QueryRecordsTest {
     static void testStringLiteralsAreNeverRewritten() {
         // Trailing-clause keywords inside a literal: LIMIT goes at the very end, literal intact
         Assert.areEqual('SELECT Id FROM Account WHERE Name LIKE \'%Offset%\' LIMIT 50',
-            QueryRecords.sanitize('SELECT Id FROM Account WHERE Name LIKE \'%Offset%\''), 'OFFSET in literal');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WHERE Name LIKE \'%Offset%\''), 'OFFSET in literal');
         Assert.areEqual('SELECT Id FROM Account WHERE Name = \'for update\' LIMIT 50',
-            QueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'for update\''), 'FOR UPDATE in literal');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'for update\''), 'FOR UPDATE in literal');
         Assert.areEqual('SELECT Id FROM Account WHERE Name = \'all rows\' LIMIT 50',
-            QueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'all rows\''), 'ALL ROWS in literal');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'all rows\''), 'ALL ROWS in literal');
 
         // A LIMIT inside a literal is neither the query's LIMIT nor rewritten
         Assert.areEqual('SELECT Id FROM Account WHERE Name = \'LIMIT 500\' LIMIT 50',
-            QueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'LIMIT 500\''), 'LIMIT in literal, none real');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'LIMIT 500\''), 'LIMIT in literal, none real');
         Assert.areEqual('SELECT Id FROM Account WHERE Name = \'LIMIT 500\' LIMIT 50',
-            QueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'LIMIT 500\' LIMIT 500'), 'LIMIT in literal, real one capped');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'LIMIT 500\' LIMIT 500'), 'LIMIT in literal, real one capped');
         Assert.areEqual('SELECT Id FROM Account WHERE Name = \'LIMIT 500\' LIMIT 10',
-            QueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'LIMIT 500\' LIMIT 10'), 'LIMIT in literal, small real one kept');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'LIMIT 500\' LIMIT 10'), 'LIMIT in literal, small real one kept');
 
         // A real trailing clause is still found after a literal that contains keywords
         Assert.areEqual('SELECT Id FROM Account WHERE Name = \'offset\' LIMIT 50 OFFSET 3',
-            QueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'offset\' OFFSET 3'), 'literal then real OFFSET');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'offset\' OFFSET 3'), 'literal then real OFFSET');
 
         // ')' or '(' inside a literal must not move the outer-query boundary
         Assert.areEqual('SELECT Id FROM Account WHERE Name = \'a)b\' LIMIT 50 OFFSET 3',
-            QueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'a)b\' OFFSET 3'), ') in literal');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'a)b\' OFFSET 3'), ') in literal');
         Assert.areEqual('SELECT Id FROM Account WHERE Name = \'(x\' LIMIT 50',
-            QueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'(x\''), '( in literal');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'(x\''), '( in literal');
 
         // Escapes: \' keeps the literal open, \\ before the closing quote does not
         Assert.areEqual('SELECT Id FROM Account WHERE Name = \'O\\\'Brien for update\' LIMIT 50',
-            QueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'O\\\'Brien for update\''), 'escaped quote');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'O\\\'Brien for update\''), 'escaped quote');
         Assert.areEqual('SELECT Id FROM Account WHERE Name = \'a\\\\\' LIMIT 50 OFFSET 1',
-            QueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'a\\\\\' OFFSET 1'), 'escaped backslash then closing quote');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'a\\\\\' OFFSET 1'), 'escaped backslash then closing quote');
 
         // Aggregate keywords inside a literal do not make the query an aggregate
         Assert.areEqual('SELECT Id FROM Account WHERE Name = \'COUNT(x\' LIMIT 50',
-            QueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'COUNT(x\''), 'COUNT( in literal');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'COUNT(x\''), 'COUNT( in literal');
         Assert.areEqual('SELECT Id FROM Account WHERE Name = \'group by\' LIMIT 50',
-            QueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'group by\''), 'GROUP BY in literal');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'group by\''), 'GROUP BY in literal');
         Assert.areEqual('SELECT COUNT(Id) FROM Account WHERE Name = \'x\'',
-            QueryRecords.sanitize('SELECT COUNT(Id) FROM Account WHERE Name = \'x\''), 'real aggregate with a literal');
+            ApexAgentQueryRecords.sanitize('SELECT COUNT(Id) FROM Account WHERE Name = \'x\''), 'real aggregate with a literal');
 
         // WITH SECURITY_ENFORCED: removed when real, kept when inside a literal
         Assert.areEqual('SELECT Id FROM Account LIMIT 50',
-            QueryRecords.sanitize('SELECT Id FROM Account WITH SECURITY_ENFORCED'), 'real SECURITY_ENFORCED');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WITH SECURITY_ENFORCED'), 'real SECURITY_ENFORCED');
         Assert.areEqual('SELECT Id FROM Account WHERE Name = \'with security_enforced\' LIMIT 50',
-            QueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'with security_enforced\' WITH SECURITY_ENFORCED'),
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'with security_enforced\' WITH SECURITY_ENFORCED'),
             'literal SECURITY_ENFORCED kept, real one removed');
 
         // An oversized LIMIT that overflows Integer is still capped
         Assert.areEqual('SELECT Id FROM Account LIMIT 50',
-            QueryRecords.sanitize('SELECT Id FROM Account LIMIT 99999999999999'), 'overflowing LIMIT');
+            ApexAgentQueryRecords.sanitize('SELECT Id FROM Account LIMIT 99999999999999'), 'overflowing LIMIT');
 
         // Unterminated literal: left alone for SOQL to reject, no exception from sanitizing
-        String unterminated = QueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'oops OFFSET 3');
+        String unterminated = ApexAgentQueryRecords.sanitize('SELECT Id FROM Account WHERE Name = \'oops OFFSET 3');
         Assert.isTrue(unterminated.endsWith('LIMIT 50'), 'Unterminated literal — got: ' + unterminated);
 
         // The mask keeps positions aligned with the original
         String q = 'SELECT Id FROM Account WHERE Name = \'a\\\'b LIMIT 5\'';
-        Assert.areEqual(q.length(), QueryRecords.maskStringLiterals(q).length(), 'Mask must preserve length');
+        Assert.areEqual(q.length(), ApexAgentQueryRecords.maskStringLiterals(q).length(), 'Mask must preserve length');
 
         // End to end: the query actually runs and matches the record whose name holds the keywords
         insert ApexAgentTestDataFactory.newTopic('Offset Printing for update', 'offset_printing');
@@ -208,9 +208,9 @@ private class QueryRecordsTest {
 
     @IsTest
     static void testSuccessfulQuery() {
-        insert ApexAgentTestDataFactory.newTopic('QueryRecordsTest Topic', 'query_records_test');
+        insert ApexAgentTestDataFactory.newTopic('ApexAgentQueryRecordsTest Topic', 'query_records_test');
 
-        Map<String, Object> result = run('SELECT Id, Name FROM ApexAgent_Topic__c WHERE Name = \'QueryRecordsTest Topic\'');
+        Map<String, Object> result = run('SELECT Id, Name FROM ApexAgent_Topic__c WHERE Name = \'ApexAgentQueryRecordsTest Topic\'');
 
         Assert.isTrue(result.containsKey('query'), 'Result should contain query key');
         Assert.isTrue(result.containsKey('recordCount'), 'Result should contain recordCount key');
@@ -273,9 +273,9 @@ private class QueryRecordsTest {
     // ─── Helpers ──────────────────────────────────────────────────────────────────
 
     private static Map<String, Object> run(String soqlQuery) {
-        QueryRecords.Input inp = new QueryRecords.Input();
+        ApexAgentQueryRecords.Input inp = new ApexAgentQueryRecords.Input();
         inp.soqlQuery = soqlQuery;
-        List<QueryRecords.Output> out = QueryRecords.run(new List<QueryRecords.Input>{ inp });
+        List<ApexAgentQueryRecords.Output> out = ApexAgentQueryRecords.run(new List<ApexAgentQueryRecords.Input>{ inp });
         return (Map<String, Object>) JSON.deserializeUntyped(JSON.serialize(out[0], true));
     }
 }

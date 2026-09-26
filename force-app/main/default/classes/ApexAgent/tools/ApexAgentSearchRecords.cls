@@ -5,7 +5,7 @@
  * with no shared key to group on. ApexAgentToolExecutor only ever invokes this
  * action with a single input.
  */
-public with sharing class SearchRecords {
+public with sharing class ApexAgentSearchRecords {
 
     private static final Integer SOSL_LIMIT = 50;
     private static final Integer MAX_RESULTS = 25;
@@ -34,7 +34,7 @@ public with sharing class SearchRecords {
         public Double score;
     }
 
-    @InvocableMethod(label='Search Records' description='Executes a fuzzy SOSL search for records by Name within a specified object. Returns up to 25 scored results, each containing Id, Name, and a relevance score\n\nWhen to use:\nUser asks "find", "search for", or "look up" a record by name or text.\nYou know the exact object but lack the record ID.\nThe search term fo record is ambiguous\n\nWhen not to use:\nYou already have the record ID → use GetRecordDetails.\nYou need filtered results by non-name fields → use QueryRecords with SOQL.')
+    @InvocableMethod(label='Search Records' description='Executes a fuzzy SOSL search for records by Name within a specified object. Returns up to 25 scored results, each containing Id, Name, and a relevance score\n\nWhen to use:\nUser asks "find", "search for", or "look up" a record by name or text.\nYou know the exact object but lack the record ID.\nThe search term fo record is ambiguous\n\nWhen not to use:\nYou already have the record ID → use ApexAgentGetRecordDetails.\nYou need filtered results by non-name fields → use ApexAgentQueryRecords with SOQL.')
     public static List<Output> run(List<Input> inputs) {
         try {
             List<Output> results = new List<Output>();
@@ -63,7 +63,7 @@ public with sharing class SearchRecords {
         String nameField = ApexAgentUtils.getNameField(describe);
         if (String.isBlank(nameField)) {
             throw new IllegalArgumentException(
-                'Object "' + objectApiName + '" has no name field to search by. Use QueryRecords with SOQL instead'
+                'Object "' + objectApiName + '" has no name field to search by. Use ApexAgentQueryRecords with SOQL instead'
             );
         }
 

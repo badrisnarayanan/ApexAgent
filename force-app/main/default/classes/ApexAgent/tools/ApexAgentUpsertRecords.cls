@@ -6,7 +6,7 @@
  * value (or passing null) explicitly clears that field on the record.
  */
 @SuppressWarnings('PMD.EagerlyLoadedDescribeSObjectResult')
-public with sharing class UpsertRecords {
+public with sharing class ApexAgentUpsertRecords {
 
     private static final Integer MAX_RECORDS = 200;
 
@@ -88,7 +88,7 @@ public with sharing class UpsertRecords {
         public String statusType;
     }
 
-    @InvocableMethod(label='Upsert Records' description='Creates new records or updates existing ones in a single operation. Supports up to 200 records per call. Returns upsert results with success/error status per record.\n\nCritical usage rules:\n- Always confirm with the user before executing — this modifies data.\n- Always use GetObjectDetails first to discover field API names and required fields.\n- Always verify field types using GetFieldDetails if unsure about the Apex type.\n- Each record must include Id or an external ID field to update existing records. Without either, new records are always created.\n- Max 200 records per call — split larger batches.')
+    @InvocableMethod(label='Upsert Records' description='Creates new records or updates existing ones in a single operation. Supports up to 200 records per call. Returns upsert results with success/error status per record.\n\nCritical usage rules:\n- Always confirm with the user before executing — this modifies data.\n- Always use ApexAgentGetObjectDetails first to discover field API names and required fields.\n- Always verify field types using ApexAgentGetFieldDetails if unsure about the Apex type.\n- Each record must include Id or an external ID field to update existing records. Without either, new records are always created.\n- Max 200 records per call — split larger batches.')
     public static List<Output> run(List<Input> inputs) {
         try {
             List<Output> results = new List<Output>();

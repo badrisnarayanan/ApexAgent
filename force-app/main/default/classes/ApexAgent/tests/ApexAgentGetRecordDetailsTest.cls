@@ -1,5 +1,5 @@
 @IsTest
-private class GetRecordDetailsTest {
+private class ApexAgentGetRecordDetailsTest {
 
     // ─── Input validation ────────────────────────────────────────────────────────
 
@@ -24,13 +24,13 @@ private class GetRecordDetailsTest {
 
     @IsTest
     static void testHappyPath() {
-        ApexAgent_Topic__c topic = ApexAgentTestDataFactory.newTopic('Test Topic GetRecordDetails', 'get_record_details');
+        ApexAgent_Topic__c topic = ApexAgentTestDataFactory.newTopic('Test Topic ApexAgentGetRecordDetails', 'get_record_details');
         insert topic;
 
         Map<String, Object> res = run(String.valueOf(topic.Id));
 
         // JSON.serialize produces flat fields + nested 'attributes' with type info
-        Assert.areEqual('Test Topic GetRecordDetails', res.get('Name'), 'Name should match');
+        Assert.areEqual('Test Topic ApexAgentGetRecordDetails', res.get('Name'), 'Name should match');
         Assert.areEqual(String.valueOf(topic.Id), res.get('Id'), 'Id should match');
         Map<String, Object> attrs = (Map<String, Object>) res.get('attributes');
         Assert.areEqual('ApexAgent_Topic__c', attrs.get('type'), 'attributes.type should be ApexAgent_Topic__c');
@@ -45,11 +45,11 @@ private class GetRecordDetailsTest {
         ApexAgent_LLM__c llm = ApexAgentTestDataFactory.newLlm('Bulk Test LLM');
         insert llm;
 
-        List<GetRecordDetails.Input> inputs = new List<GetRecordDetails.Input>{
+        List<ApexAgentGetRecordDetails.Input> inputs = new List<ApexAgentGetRecordDetails.Input>{
             buildInput(String.valueOf(topic.Id)),
             buildInput(String.valueOf(llm.Id))
         };
-        List<GetRecordDetails.Output> outputs = GetRecordDetails.run(inputs);
+        List<ApexAgentGetRecordDetails.Output> outputs = ApexAgentGetRecordDetails.run(inputs);
 
         Assert.areEqual(2, outputs.size(), 'Should return one output per input, in order');
         Assert.areEqual('Bulk Test Topic', outputs[0].record.get('Name'), 'First output should be the Topic');
@@ -81,8 +81,8 @@ private class GetRecordDetailsTest {
         Id ghostId = topic.Id;
         delete topic;
 
-        GetRecordDetails.Output out = GetRecordDetails.run(
-            new List<GetRecordDetails.Input>{ buildInput(String.valueOf(ghostId)) }
+        ApexAgentGetRecordDetails.Output out = ApexAgentGetRecordDetails.run(
+            new List<ApexAgentGetRecordDetails.Input>{ buildInput(String.valueOf(ghostId)) }
         )[0];
 
         Assert.areEqual(false, out.found, 'found should be false');
@@ -123,14 +123,14 @@ private class GetRecordDetailsTest {
 
     // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-    private static GetRecordDetails.Input buildInput(String recordId) {
-        GetRecordDetails.Input inp = new GetRecordDetails.Input();
+    private static ApexAgentGetRecordDetails.Input buildInput(String recordId) {
+        ApexAgentGetRecordDetails.Input inp = new ApexAgentGetRecordDetails.Input();
         inp.recordId = recordId;
         return inp;
     }
 
     private static Map<String, Object> run(String recordId) {
-        List<GetRecordDetails.Output> out = GetRecordDetails.run(new List<GetRecordDetails.Input>{ buildInput(recordId) });
+        List<ApexAgentGetRecordDetails.Output> out = ApexAgentGetRecordDetails.run(new List<ApexAgentGetRecordDetails.Input>{ buildInput(recordId) });
         return (Map<String, Object>) JSON.deserializeUntyped(JSON.serialize(out[0].record));
     }
 }

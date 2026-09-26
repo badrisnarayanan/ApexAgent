@@ -12,14 +12,14 @@ private class ApexAgentToolSchemaRegenQueueableTest {
 
     @IsTest
     static void testRegeneratesValidToolsAndLeavesInvalidOneUntouched() {
-        // GetFieldDetails outputs a nested Apex class, so its symbol table is queried.
+        // ApexAgentGetFieldDetails outputs a nested Apex class, so its symbol table is queried.
         ApexAgentSymbolTableTypes.ToolingQueryResult noSymbolTables = new ApexAgentSymbolTableTypes.ToolingQueryResult();
         noSymbolTables.records = new List<ApexAgentSymbolTableTypes.ApexClassRecord>();
         Test.setMock(HttpCalloutMock.class, new ApexAgentToolingQueryMock(200, JSON.serialize(noSymbolTables)));
 
-        ApexAgent_Tool__c readOnlyTool = new ApexAgent_Tool__c(Apex_Class_Name__c = 'GetFieldDetails');
+        ApexAgent_Tool__c readOnlyTool = new ApexAgent_Tool__c(Apex_Class_Name__c = 'ApexAgentGetFieldDetails');
         ApexAgent_Tool__c writeTool = new ApexAgent_Tool__c(
-            Apex_Class_Name__c = 'GetObjectApiName',
+            Apex_Class_Name__c = 'ApexAgentGetObjectApiName',
             Modifies_Salesforce_Data__c = true
         );
         ApexAgent_Tool__c invalidTool = new ApexAgent_Tool__c(
@@ -44,10 +44,10 @@ private class ApexAgentToolSchemaRegenQueueableTest {
 
         Map<String, Object> chatDef = (Map<String, Object>) JSON.deserializeUntyped(toolsById.get(readOnlyTool.Id).Schema__c);
         Map<String, Object> function = (Map<String, Object>) chatDef.get('function');
-        Assert.areEqual('GetFieldDetails', function.get('name'), 'The generated chat schema must describe the right tool');
+        Assert.areEqual('ApexAgentGetFieldDetails', function.get('name'), 'The generated chat schema must describe the right tool');
 
         Map<String, Object> readOnlyMcp = (Map<String, Object>) JSON.deserializeUntyped(toolsById.get(readOnlyTool.Id).MCP_Schema__c);
-        Assert.areEqual('GetFieldDetails', readOnlyMcp.get('name'), 'The generated MCP schema must describe the right tool');
+        Assert.areEqual('ApexAgentGetFieldDetails', readOnlyMcp.get('name'), 'The generated MCP schema must describe the right tool');
         Assert.isNotNull(readOnlyMcp.get('inputSchema'), 'The MCP schema must carry an inputSchema');
         Assert.isNotNull(readOnlyMcp.get('outputSchema'), 'The MCP schema must carry an outputSchema');
         Map<String, Object> readOnlyAnnotations = (Map<String, Object>) readOnlyMcp.get('annotations');

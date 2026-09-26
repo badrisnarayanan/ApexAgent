@@ -42,7 +42,7 @@ Always prefer the specialized sf-skill over generic approaches — they enforce 
   - `mcp/` — MCP-only code, with `jsonrpc/` for the JSON-RPC helpers
   - `tests/` — all test classes and test mocks, flat
   - Dependencies point one way: `agent/` and `mcp/` may use `core/` and `tools/`; `core/` never depends on `agent/` or `mcp/`, and `agent/` and `mcp/` never depend on each other. Create new subfolders freely if none fit
-- Core framework classes (non-tool classes) must be prefixed with `ApexAgent` (e.g., `ApexAgentOrchestrator`, `ApexAgentMessageBuilder`)
+- All Apex classes, including tools and tests, must be prefixed with `ApexAgent` (e.g., `ApexAgentOrchestrator`, `ApexAgentQueryRecords`, `ApexAgentQueryRecordsTest`). The package has no namespace, so the prefix prevents name collisions in installing orgs. A tool's class name is also its LLM/MCP-facing tool name.
 - Apex must be properly abstracted: use interfaces/abstract classes for extensibility, separate concerns (service, selector, domain layers), and avoid god classes
 - If code is repeated, put it in a utility class
 - Tools are called by an LLM, so exceptions (missing input variables, input variables with no value, etc.) must be caught and thrown with clear messages

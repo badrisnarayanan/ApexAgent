@@ -16,7 +16,7 @@ private class ApexAgentToolSchemaBuilderTest {
 
     @IsTest
     static void testBuildDefinitionsReflectsRealToolClassesAndDropsInvalidOnes() {
-        // GetFieldDetails/GetRecordDetails output nested Apex classes, so their
+        // ApexAgentGetFieldDetails/ApexAgentGetRecordDetails output nested Apex classes, so their
         // symbol tables are queried; an empty result leaves those classes unresolved.
         ApexAgentSymbolTableTypes.ToolingQueryResult noSymbolTables = new ApexAgentSymbolTableTypes.ToolingQueryResult();
         noSymbolTables.records = new List<ApexAgentSymbolTableTypes.ApexClassRecord>();
@@ -26,8 +26,8 @@ private class ApexAgentToolSchemaBuilderTest {
         Map<String, ApexAgentToolSchemaBuilder.ToolDefinitions> emptyResult =
             ApexAgentToolSchemaBuilder.buildDefinitions(new Set<String>());
         Map<String, ApexAgentToolSchemaBuilder.ToolDefinitions> defsByClass = ApexAgentToolSchemaBuilder.buildDefinitions(new Set<String>{
-            'GetFieldDetails',
-            'GetRecordDetails',
+            'ApexAgentGetFieldDetails',
+            'ApexAgentGetRecordDetails',
             // Real class with no @InvocableMethod — simulates a stale/typo'd Apex_Class_Name__c.
             'ApexAgentToolInput'
         });
@@ -37,10 +37,10 @@ private class ApexAgentToolSchemaBuilderTest {
         Assert.areEqual(2, defsByClass.size(),
             'One invalid tool class must be dropped, not fail schema-building for the whole batch');
 
-        ApexAgentToolSchemaBuilder.ToolDefinitions defs = defsByClass.get('GetFieldDetails');
+        ApexAgentToolSchemaBuilder.ToolDefinitions defs = defsByClass.get('ApexAgentGetFieldDetails');
         Assert.isNotNull(defs, 'The remaining valid tool must still build correctly');
         Map<String, Object> function = (Map<String, Object>) defs.chat.get('function');
-        Assert.areEqual('GetFieldDetails', function.get('name'), 'Function name should be the Apex class name');
+        Assert.areEqual('ApexAgentGetFieldDetails', function.get('name'), 'Function name should be the Apex class name');
         Map<String, Object> parameters = (Map<String, Object>) function.get('parameters');
         Map<String, Object> properties = (Map<String, Object>) parameters.get('properties');
         Assert.isTrue(properties.containsKey('objectApiName'), 'Should expose the tool\'s declared input parameters');
@@ -48,7 +48,7 @@ private class ApexAgentToolSchemaBuilderTest {
             'execution_message is a per-turn addition, never part of the persisted base definition');
 
         Map<String, Object> mcp = defs.mcp;
-        Assert.areEqual('GetFieldDetails', mcp.get('name'), 'The MCP definition should carry the same tool name');
+        Assert.areEqual('ApexAgentGetFieldDetails', mcp.get('name'), 'The MCP definition should carry the same tool name');
         Assert.areEqual('Get Field Details', mcp.get('title'), 'The MCP title should come from the action label');
         Assert.areEqual(function.get('description'), mcp.get('description'), 'Both shapes share one description');
         Assert.areEqual(parameters, mcp.get('inputSchema'), 'The MCP inputSchema is the same schema as the chat parameters');
@@ -65,7 +65,7 @@ private class ApexAgentToolSchemaBuilderTest {
             'A List output of an Apex class should map to an array even when the class can\'t be resolved');
 
         Map<String, Object> recordOutput = (Map<String, Object>) ((Map<String, Object>)
-            ((Map<String, Object>) defsByClass.get('GetRecordDetails').mcp.get('outputSchema')).get('properties')).get('record');
+            ((Map<String, Object>) defsByClass.get('ApexAgentGetRecordDetails').mcp.get('outputSchema')).get('properties')).get('record');
         Assert.areEqual('object', recordOutput.get('type'), 'An SObject output should map to a free-form object, not a string');
     }
 
@@ -75,10 +75,10 @@ private class ApexAgentToolSchemaBuilderTest {
 
         Test.startTest();
         Map<String, ApexAgentToolSchemaBuilder.ToolDefinitions> defsByClass =
-            ApexAgentToolSchemaBuilder.buildDefinitions(new Set<String>{ 'UpsertRecords' });
+            ApexAgentToolSchemaBuilder.buildDefinitions(new Set<String>{ 'ApexAgentUpsertRecords' });
         Test.stopTest();
 
-        Map<String, Object> function = (Map<String, Object>) defsByClass.get('UpsertRecords').chat.get('function');
+        Map<String, Object> function = (Map<String, Object>) defsByClass.get('ApexAgentUpsertRecords').chat.get('function');
         Map<String, Object> parameters = (Map<String, Object>) function.get('parameters');
         Map<String, Object> properties = (Map<String, Object>) parameters.get('properties');
 
@@ -99,13 +99,13 @@ private class ApexAgentToolSchemaBuilderTest {
         Assert.isTrue(fieldEntryProperties.containsKey('fieldApiName'),
             'Should resolve two levels of nesting (RecordInput -> FieldEntry)');
 
-        Assert.isFalse(JSON.serialize(defsByClass.get('UpsertRecords').mcp.get('outputSchema')).contains('additionalProperties'),
+        Assert.isFalse(JSON.serialize(defsByClass.get('ApexAgentUpsertRecords').mcp.get('outputSchema')).contains('additionalProperties'),
             'Nested output objects must not be strict, since a client validates structuredContent against them');
-        Assert.isTrue(JSON.serialize(defsByClass.get('UpsertRecords').mcp.get('inputSchema')).contains('additionalProperties'),
+        Assert.isTrue(JSON.serialize(defsByClass.get('ApexAgentUpsertRecords').mcp.get('inputSchema')).contains('additionalProperties'),
             'The input schema keeps additionalProperties:false');
 
         Map<String, Object> outputProperties = (Map<String, Object>)
-            ((Map<String, Object>) defsByClass.get('UpsertRecords').mcp.get('outputSchema')).get('properties');
+            ((Map<String, Object>) defsByClass.get('ApexAgentUpsertRecords').mcp.get('outputSchema')).get('properties');
         Assert.isTrue(outputProperties.containsKey('success') && outputProperties.containsKey('results'),
             'Output classes should be included in the symbol-table lookup and reflected into outputSchema');
         Assert.areEqual('array', ((Map<String, Object>) outputProperties.get('results')).get('type'),
@@ -117,7 +117,7 @@ private class ApexAgentToolSchemaBuilderTest {
         String storedSchema = JSON.serialize(new Map<String, Object>{
             'type' => 'function',
             'function' => new Map<String, Object>{
-                'name' => 'GetFieldDetails',
+                'name' => 'ApexAgentGetFieldDetails',
                 'description' => 'Looks up field metadata.',
                 'parameters' => new Map<String, Object>{
                     'type' => 'object',
@@ -130,7 +130,7 @@ private class ApexAgentToolSchemaBuilderTest {
         });
 
         Map<String, ApexAgent_Tool__c> toolsByName = new Map<String, ApexAgent_Tool__c>{
-            'GetFieldDetails' => new ApexAgent_Tool__c(Apex_Class_Name__c = 'GetFieldDetails', Schema__c = storedSchema),
+            'ApexAgentGetFieldDetails' => new ApexAgent_Tool__c(Apex_Class_Name__c = 'ApexAgentGetFieldDetails', Schema__c = storedSchema),
             // Never generated (e.g. Apex class invalid) — must be skipped, not fail the turn.
             'NeverGenerated' => new ApexAgent_Tool__c(Apex_Class_Name__c = 'NeverGenerated', Schema__c = null),
             // Corrupted stored value — must also be skipped, not throw.
@@ -165,13 +165,13 @@ private class ApexAgentToolSchemaBuilderTest {
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // Fixture: a crafted SymbolTable/Body for UpsertRecords's RecordInput ->
+    // Fixture: a crafted SymbolTable/Body for ApexAgentUpsertRecords's RecordInput ->
     // FieldEntry nesting, independent of the real file's actual source text.
     // ─────────────────────────────────────────────────────────────────
 
     private static ApexAgentSymbolTableTypes.ToolingQueryResult buildUpsertRecordsSymbolTableResponse() {
         String body = String.join(new List<String>{
-            'public class UpsertRecords {',
+            'public class ApexAgentUpsertRecords {',
             '    public class RecordInput {',
             '        @InvocableVariable(description=\'Field values to set on this record.\')',
             '        public List<FieldEntry> fields;',
@@ -206,11 +206,11 @@ private class ApexAgentToolSchemaBuilderTest {
         fieldEntryNode.properties = new List<ApexAgentSymbolTableTypes.SymbolProperty>{ fieldApiNameProp };
 
         ApexAgentSymbolTableTypes.SymbolTableNode rootNode = new ApexAgentSymbolTableTypes.SymbolTableNode();
-        rootNode.name = 'UpsertRecords';
+        rootNode.name = 'ApexAgentUpsertRecords';
         rootNode.innerClasses = new List<ApexAgentSymbolTableTypes.SymbolTableNode>{ recordInputNode, fieldEntryNode };
 
         ApexAgentSymbolTableTypes.ApexClassRecord rec = new ApexAgentSymbolTableTypes.ApexClassRecord();
-        rec.name = 'UpsertRecords';
+        rec.name = 'ApexAgentUpsertRecords';
         rec.body = body;
         rec.symbolTable = rootNode;
 

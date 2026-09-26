@@ -1,5 +1,5 @@
 @IsTest
-private class UpsertRecordsTest {
+private class ApexAgentUpsertRecordsTest {
 
     // A package object rather than a standard one, so the subscriber org's own
     // validation rules and automation on standard objects can't affect the DML here
@@ -7,36 +7,36 @@ private class UpsertRecordsTest {
 
     // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-    private static UpsertRecords.FieldEntry fieldEntry(String fieldApiName, String value, String apexType) {
-        UpsertRecords.FieldEntry fe = new UpsertRecords.FieldEntry();
+    private static ApexAgentUpsertRecords.FieldEntry fieldEntry(String fieldApiName, String value, String apexType) {
+        ApexAgentUpsertRecords.FieldEntry fe = new ApexAgentUpsertRecords.FieldEntry();
         fe.fieldApiName = fieldApiName;
         fe.value = value;
         fe.apexType = apexType;
         return fe;
     }
 
-    private static UpsertRecords.RecordInput makeRecord(List<UpsertRecords.FieldEntry> fields) {
-        UpsertRecords.RecordInput ri = new UpsertRecords.RecordInput();
+    private static ApexAgentUpsertRecords.RecordInput makeRecord(List<ApexAgentUpsertRecords.FieldEntry> fields) {
+        ApexAgentUpsertRecords.RecordInput ri = new ApexAgentUpsertRecords.RecordInput();
         ri.fields = fields;
         return ri;
     }
 
     // Topic_API_Name__c is required and unique, so every record that should save
     // needs its own value; passing null makes the record fail on that required field
-    private static UpsertRecords.RecordInput topicRecord(String name, String topicApiName) {
-        return makeRecord(new List<UpsertRecords.FieldEntry>{
+    private static ApexAgentUpsertRecords.RecordInput topicRecord(String name, String topicApiName) {
+        return makeRecord(new List<ApexAgentUpsertRecords.FieldEntry>{
             fieldEntry('Name', name, 'String'),
             fieldEntry('Topic_API_Name__c', topicApiName, 'String')
         });
     }
 
-    private static UpsertRecords.Input buildInput(
+    private static ApexAgentUpsertRecords.Input buildInput(
         String objectApiName,
         Boolean allOrNone,
         String externalIdFieldName,
-        List<UpsertRecords.RecordInput> records
+        List<ApexAgentUpsertRecords.RecordInput> records
     ) {
-        UpsertRecords.Input inp = new UpsertRecords.Input();
+        ApexAgentUpsertRecords.Input inp = new ApexAgentUpsertRecords.Input();
         inp.objectApiName = objectApiName;
         inp.allOrNone = allOrNone;
         inp.externalIdFieldName = externalIdFieldName;
@@ -44,8 +44,8 @@ private class UpsertRecordsTest {
         return inp;
     }
 
-    private static UpsertRecords.Output run(UpsertRecords.Input inp) {
-        List<UpsertRecords.Output> out = UpsertRecords.run(new List<UpsertRecords.Input>{ inp });
+    private static ApexAgentUpsertRecords.Output run(ApexAgentUpsertRecords.Input inp) {
+        List<ApexAgentUpsertRecords.Output> out = ApexAgentUpsertRecords.run(new List<ApexAgentUpsertRecords.Input>{ inp });
         return out[0];
     }
 
@@ -55,8 +55,8 @@ private class UpsertRecordsTest {
     static void testInputValidation() {
         // missing/blank objectApiName
         try {
-            run(buildInput(null, true, null, new List<UpsertRecords.RecordInput>{
-                makeRecord(new List<UpsertRecords.FieldEntry>{ fieldEntry('Name', 'x', 'String') })
+            run(buildInput(null, true, null, new List<ApexAgentUpsertRecords.RecordInput>{
+                makeRecord(new List<ApexAgentUpsertRecords.FieldEntry>{ fieldEntry('Name', 'x', 'String') })
             }));
             Assert.fail('Expected exception for missing objectApiName');
         } catch (IllegalArgumentException e) {
@@ -65,8 +65,8 @@ private class UpsertRecordsTest {
 
         // missing allOrNone
         try {
-            run(buildInput(TOPIC_OBJECT, null, null, new List<UpsertRecords.RecordInput>{
-                makeRecord(new List<UpsertRecords.FieldEntry>{ fieldEntry('Name', 'x', 'String') })
+            run(buildInput(TOPIC_OBJECT, null, null, new List<ApexAgentUpsertRecords.RecordInput>{
+                makeRecord(new List<ApexAgentUpsertRecords.FieldEntry>{ fieldEntry('Name', 'x', 'String') })
             }));
             Assert.fail('Expected exception for missing allOrNone');
         } catch (IllegalArgumentException e) {
@@ -81,16 +81,16 @@ private class UpsertRecordsTest {
             Assert.isTrue(e.getMessage().contains('records'), 'Should mention records');
         }
         try {
-            run(buildInput(TOPIC_OBJECT, true, null, new List<UpsertRecords.RecordInput>()));
+            run(buildInput(TOPIC_OBJECT, true, null, new List<ApexAgentUpsertRecords.RecordInput>()));
             Assert.fail('Expected exception for empty records');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('empty'), 'Should mention empty');
         }
 
         // records exceed 200
-        List<UpsertRecords.RecordInput> bigList = new List<UpsertRecords.RecordInput>();
+        List<ApexAgentUpsertRecords.RecordInput> bigList = new List<ApexAgentUpsertRecords.RecordInput>();
         for (Integer i = 0; i < 201; i++) {
-            bigList.add(makeRecord(new List<UpsertRecords.FieldEntry>{
+            bigList.add(makeRecord(new List<ApexAgentUpsertRecords.FieldEntry>{
                 fieldEntry('Name', 'Test', 'String')
             }));
         }
@@ -104,7 +104,7 @@ private class UpsertRecordsTest {
         // unknown objectApiName
         try {
             run(buildInput('NonExistentObject__xyz', true, null,
-                new List<UpsertRecords.RecordInput>{ makeRecord(new List<UpsertRecords.FieldEntry>{
+                new List<ApexAgentUpsertRecords.RecordInput>{ makeRecord(new List<ApexAgentUpsertRecords.FieldEntry>{
                     fieldEntry('Name', 'x', 'String')
                 }) }
             ));
@@ -116,7 +116,7 @@ private class UpsertRecordsTest {
         // record with missing/empty fields array
         try {
             run(buildInput(TOPIC_OBJECT, true, null,
-                new List<UpsertRecords.RecordInput>{ makeRecord(null) }
+                new List<ApexAgentUpsertRecords.RecordInput>{ makeRecord(null) }
             ));
             Assert.fail('Expected exception for missing fields');
         } catch (IllegalArgumentException e) {
@@ -124,7 +124,7 @@ private class UpsertRecordsTest {
         }
         try {
             run(buildInput(TOPIC_OBJECT, true, null,
-                new List<UpsertRecords.RecordInput>{ makeRecord(new List<UpsertRecords.FieldEntry>()) }
+                new List<ApexAgentUpsertRecords.RecordInput>{ makeRecord(new List<ApexAgentUpsertRecords.FieldEntry>()) }
             ));
             Assert.fail('Expected exception for empty fields');
         } catch (IllegalArgumentException e) {
@@ -134,7 +134,7 @@ private class UpsertRecordsTest {
         // missing fieldApiName
         try {
             run(buildInput(TOPIC_OBJECT, true, null,
-                new List<UpsertRecords.RecordInput>{ makeRecord(new List<UpsertRecords.FieldEntry>{
+                new List<ApexAgentUpsertRecords.RecordInput>{ makeRecord(new List<ApexAgentUpsertRecords.FieldEntry>{
                     fieldEntry(null, 'x', 'String')
                 }) }
             ));
@@ -146,7 +146,7 @@ private class UpsertRecordsTest {
         // missing apexType
         try {
             run(buildInput(TOPIC_OBJECT, true, null,
-                new List<UpsertRecords.RecordInput>{ makeRecord(new List<UpsertRecords.FieldEntry>{
+                new List<ApexAgentUpsertRecords.RecordInput>{ makeRecord(new List<ApexAgentUpsertRecords.FieldEntry>{
                     fieldEntry('Name', 'x', null)
                 }) }
             ));
@@ -158,7 +158,7 @@ private class UpsertRecordsTest {
         // invalid externalIdFieldName — non-existent field
         try {
             run(buildInput(TOPIC_OBJECT, true, 'NonExistentField__xyz',
-                new List<UpsertRecords.RecordInput>{ makeRecord(new List<UpsertRecords.FieldEntry>{
+                new List<ApexAgentUpsertRecords.RecordInput>{ makeRecord(new List<ApexAgentUpsertRecords.FieldEntry>{
                     fieldEntry('Name', 'Test', 'String')
                 }) }
             ));
@@ -173,7 +173,7 @@ private class UpsertRecordsTest {
         // invalid externalIdFieldName — non-external-ID standard field
         try {
             run(buildInput(TOPIC_OBJECT, true, 'Name',
-                new List<UpsertRecords.RecordInput>{ makeRecord(new List<UpsertRecords.FieldEntry>{
+                new List<ApexAgentUpsertRecords.RecordInput>{ makeRecord(new List<ApexAgentUpsertRecords.FieldEntry>{
                     fieldEntry('Name', 'Test', 'String')
                 }) }
             ));
@@ -193,72 +193,72 @@ private class UpsertRecordsTest {
     @IsTest
     static void testConvertValue() {
         // null value always returns null regardless of type
-        Assert.isNull(UpsertRecords.convertValue(null, 'String',  'f', 0), 'null → null for String');
-        Assert.isNull(UpsertRecords.convertValue(null, 'Boolean', 'f', 0), 'null → null for Boolean');
-        Assert.isNull(UpsertRecords.convertValue(null, 'Integer', 'f', 0), 'null → null for Integer');
-        Assert.isNull(UpsertRecords.convertValue(null, 'Date',    'f', 0), 'null → null for Date');
+        Assert.isNull(ApexAgentUpsertRecords.convertValue(null, 'String',  'f', 0), 'null → null for String');
+        Assert.isNull(ApexAgentUpsertRecords.convertValue(null, 'Boolean', 'f', 0), 'null → null for Boolean');
+        Assert.isNull(ApexAgentUpsertRecords.convertValue(null, 'Integer', 'f', 0), 'null → null for Integer');
+        Assert.isNull(ApexAgentUpsertRecords.convertValue(null, 'Date',    'f', 0), 'null → null for Date');
 
         // String
-        Assert.areEqual('hello', UpsertRecords.convertValue('hello', 'String', 'f', 0));
+        Assert.areEqual('hello', ApexAgentUpsertRecords.convertValue('hello', 'String', 'f', 0));
 
         // ID — from string
-        Object convertedId = UpsertRecords.convertValue(UserInfo.getUserId(), 'ID', 'f', 0);
+        Object convertedId = ApexAgentUpsertRecords.convertValue(UserInfo.getUserId(), 'ID', 'f', 0);
         Assert.areEqual(UserInfo.getUserId(), (Id) convertedId, 'ID from string should match');
         try {
-            UpsertRecords.convertValue('not-a-real-id', 'ID', 'f', 0);
+            ApexAgentUpsertRecords.convertValue('not-a-real-id', 'ID', 'f', 0);
             Assert.fail('Expected exception for invalid ID');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('not a valid Salesforce ID'), 'Should mention invalid ID');
         }
 
         // Boolean — from string
-        Assert.areEqual(true,  UpsertRecords.convertValue('true',  'Boolean', 'f', 0));
-        Assert.areEqual(false, UpsertRecords.convertValue('false', 'Boolean', 'f', 0));
+        Assert.areEqual(true,  ApexAgentUpsertRecords.convertValue('true',  'Boolean', 'f', 0));
+        Assert.areEqual(false, ApexAgentUpsertRecords.convertValue('false', 'Boolean', 'f', 0));
         try {
-            UpsertRecords.convertValue('yes', 'Boolean', 'f', 0);
+            ApexAgentUpsertRecords.convertValue('yes', 'Boolean', 'f', 0);
             Assert.fail('Expected exception for invalid boolean string');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().containsIgnoreCase('boolean'), 'Should mention boolean');
         }
 
         // Integer
-        Assert.areEqual(42, (Integer) UpsertRecords.convertValue('42', 'Integer', 'f', 0));
+        Assert.areEqual(42, (Integer) ApexAgentUpsertRecords.convertValue('42', 'Integer', 'f', 0));
         try {
-            UpsertRecords.convertValue('abc', 'Integer', 'f', 0);
+            ApexAgentUpsertRecords.convertValue('abc', 'Integer', 'f', 0);
             Assert.fail('Expected exception for invalid integer');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().containsIgnoreCase('integer'), 'Should mention Integer');
         }
 
         // Decimal
-        Assert.areEqual(1.5, (Decimal) UpsertRecords.convertValue('1.5', 'Decimal', 'f', 0));
+        Assert.areEqual(1.5, (Decimal) ApexAgentUpsertRecords.convertValue('1.5', 'Decimal', 'f', 0));
         try {
-            UpsertRecords.convertValue('xyz', 'Decimal', 'f', 0);
+            ApexAgentUpsertRecords.convertValue('xyz', 'Decimal', 'f', 0);
             Assert.fail('Expected exception for invalid decimal');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().containsIgnoreCase('decimal'), 'Should mention Decimal');
         }
 
         // Long
-        Assert.areEqual(100L, (Long) UpsertRecords.convertValue('100', 'Long', 'f', 0));
+        Assert.areEqual(100L, (Long) ApexAgentUpsertRecords.convertValue('100', 'Long', 'f', 0));
         try {
-            UpsertRecords.convertValue('nope', 'Long', 'f', 0);
+            ApexAgentUpsertRecords.convertValue('nope', 'Long', 'f', 0);
             Assert.fail('Expected exception for invalid long');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().containsIgnoreCase('long'), 'Should mention Long');
         }
 
         // Date — ISO YYYY-MM-DD
-        Date isoDate = (Date) UpsertRecords.convertValue('2024-06-15', 'Date', 'f', 0);
+        Date isoDate = (Date) ApexAgentUpsertRecords.convertValue('2024-06-15', 'Date', 'f', 0);
         Assert.areEqual(Date.newInstance(2024, 6, 15), isoDate, 'ISO date should parse');
         // Date — MM/DD/YYYY
-        Date slashDate = (Date) UpsertRecords.convertValue('06/15/2024', 'Date', 'f', 0);
+        Date slashDate = (Date) ApexAgentUpsertRecords.convertValue('06/15/2024', 'Date', 'f', 0);
         Assert.areEqual(Date.newInstance(2024, 6, 15), slashDate, 'MM/DD/YYYY should parse');
         // Date — DD-MM-YYYY
-        Date euDate = (Date) UpsertRecords.convertValue('15-06-2024', 'Date', 'f', 0);
+        Date euDate = (Date) ApexAgentUpsertRecords.convertValue('15-06-2024', 'Date', 'f', 0);
         Assert.areEqual(Date.newInstance(2024, 6, 15), euDate, 'DD-MM-YYYY should parse');
         try {
-            UpsertRecords.convertValue('not-a-date', 'Date', 'f', 0);
+            ApexAgentUpsertRecords.convertValue('not-a-date', 'Date', 'f', 0);
             Assert.fail('Expected exception for invalid date');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().containsIgnoreCase('date'), 'Should mention date');
@@ -266,14 +266,14 @@ private class UpsertRecordsTest {
 
         // Datetime — ISO 8601 with Z. Accessors must be the Gmt variants — the running
         // org's default time zone would otherwise shift hour/minute and mask a UTC bug.
-        Datetime dt = (Datetime) UpsertRecords.convertValue('2024-06-15T13:30:45Z', 'DateTime', 'f', 0);
+        Datetime dt = (Datetime) ApexAgentUpsertRecords.convertValue('2024-06-15T13:30:45Z', 'DateTime', 'f', 0);
         Assert.areEqual(2024, dt.yearGmt(),   'Year should be 2024');
         Assert.areEqual(6,    dt.monthGmt(),  'Month should be 6');
         Assert.areEqual(15,   dt.dayGmt(),    'Day should be 15');
         Assert.areEqual(13,   dt.hourGmt(),   'Hour should be 13');
         Assert.areEqual(30,   dt.minuteGmt(), 'Minute should be 30');
         // Datetime — with milliseconds
-        Datetime dtMs = (Datetime) UpsertRecords.convertValue('2024-06-15T13:30:45.000Z', 'DateTime', 'f', 0);
+        Datetime dtMs = (Datetime) ApexAgentUpsertRecords.convertValue('2024-06-15T13:30:45.000Z', 'DateTime', 'f', 0);
         Assert.areEqual(2024, dtMs.yearGmt(), 'Year should be 2024 (with ms)');
 
         // Datetime — explicit positive UTC offset (+05:30) must shift to the correct
@@ -282,42 +282,42 @@ private class UpsertRecordsTest {
         // (hour/minute/second) always return GMT components, so this is unambiguous
         // regardless of the running org's default time zone — 13:30:45+05:30 is
         // 08:00:45 UTC.
-        Datetime dtPosOffset = (Datetime) UpsertRecords.convertValue('2024-06-15T13:30:45+05:30', 'DateTime', 'f', 0);
+        Datetime dtPosOffset = (Datetime) ApexAgentUpsertRecords.convertValue('2024-06-15T13:30:45+05:30', 'DateTime', 'f', 0);
         Assert.areEqual(8,  dtPosOffset.hourGmt(),   '+05:30 offset should shift to 08:00:45 UTC (hour)');
         Assert.areEqual(0,  dtPosOffset.minuteGmt(), '+05:30 offset should shift to 08:00:45 UTC (minute)');
         Assert.areEqual(45, dtPosOffset.secondGmt(), '+05:30 offset should shift to 08:00:45 UTC (second)');
 
         // Datetime — explicit negative UTC offset (-05:00): 13:30:45-05:00 is 18:30:45 UTC.
-        Datetime dtNegOffset = (Datetime) UpsertRecords.convertValue('2024-06-15T13:30:45-05:00', 'DateTime', 'f', 0);
+        Datetime dtNegOffset = (Datetime) ApexAgentUpsertRecords.convertValue('2024-06-15T13:30:45-05:00', 'DateTime', 'f', 0);
         Assert.areEqual(18, dtNegOffset.hourGmt(),   '-05:00 offset should shift to 18:30:45 UTC (hour)');
         Assert.areEqual(30, dtNegOffset.minuteGmt(), '-05:00 offset should shift to 18:30:45 UTC (minute)');
 
         // Datetime — negative offset with fractional seconds present before the offset marker
-        Datetime dtNegOffsetMs = (Datetime) UpsertRecords.convertValue('2024-06-15T13:30:45.500-05:00', 'DateTime', 'f', 0);
+        Datetime dtNegOffsetMs = (Datetime) ApexAgentUpsertRecords.convertValue('2024-06-15T13:30:45.500-05:00', 'DateTime', 'f', 0);
         Assert.areEqual(18, dtNegOffsetMs.hourGmt(), '-05:00 offset with fractional seconds should still shift correctly');
 
         // Datetime — Z always maps to a fixed UTC instant regardless of offset math
-        Datetime dtZ = (Datetime) UpsertRecords.convertValue('2024-06-15T13:30:45Z', 'DateTime', 'f', 0);
+        Datetime dtZ = (Datetime) ApexAgentUpsertRecords.convertValue('2024-06-15T13:30:45Z', 'DateTime', 'f', 0);
         Assert.areEqual(13, dtZ.hourGmt(), 'Z should map directly to 13:30:45 UTC');
 
         try {
-            UpsertRecords.convertValue('not-a-datetime', 'DateTime', 'f', 0);
+            ApexAgentUpsertRecords.convertValue('not-a-datetime', 'DateTime', 'f', 0);
             Assert.fail('Expected exception for invalid datetime');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().containsIgnoreCase('datetime'), 'Should mention Datetime');
         }
 
         // Time — HH:mm:ss
-        Time t = (Time) UpsertRecords.convertValue('13:30:45', 'Time', 'f', 0);
+        Time t = (Time) ApexAgentUpsertRecords.convertValue('13:30:45', 'Time', 'f', 0);
         Assert.areEqual(Time.newInstance(13, 30, 45, 0), t, 'Time should parse HH:mm:ss');
         // Time — with trailing Z and milliseconds
-        Time tZ = (Time) UpsertRecords.convertValue('09:05:00.000Z', 'Time', 'f', 0);
+        Time tZ = (Time) ApexAgentUpsertRecords.convertValue('09:05:00.000Z', 'Time', 'f', 0);
         Assert.areEqual(Time.newInstance(9, 5, 0, 0), tZ, 'Time should strip Z and ms');
         // Time — HH:mm (no seconds)
-        Time tShort = (Time) UpsertRecords.convertValue('08:00', 'Time', 'f', 0);
+        Time tShort = (Time) ApexAgentUpsertRecords.convertValue('08:00', 'Time', 'f', 0);
         Assert.areEqual(Time.newInstance(8, 0, 0, 0), tShort, 'Time should handle HH:mm');
         try {
-            UpsertRecords.convertValue('not-a-time', 'Time', 'f', 0);
+            ApexAgentUpsertRecords.convertValue('not-a-time', 'Time', 'f', 0);
             Assert.fail('Expected exception for invalid time');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().containsIgnoreCase('time'), 'Should mention Time');
@@ -325,7 +325,7 @@ private class UpsertRecordsTest {
 
         // Unsupported type throws
         try {
-            UpsertRecords.convertValue('x', 'Blob', 'f', 0);
+            ApexAgentUpsertRecords.convertValue('x', 'Blob', 'f', 0);
             Assert.fail('Expected exception for unsupported type');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('Blob'), 'Should mention the unsupported type');
@@ -337,18 +337,18 @@ private class UpsertRecordsTest {
     @IsTest
     static void testInsertAndUpdate() {
         // ── Insert: two new Topic records (no Id → creates) ────────────────────
-        List<UpsertRecords.RecordInput> insertRecords = new List<UpsertRecords.RecordInput>{
+        List<ApexAgentUpsertRecords.RecordInput> insertRecords = new List<ApexAgentUpsertRecords.RecordInput>{
             topicRecord('UpsertTest Alpha', 'upsert_test_alpha'),
             topicRecord('UpsertTest Beta',  'upsert_test_beta')
         };
 
-        UpsertRecords.Output insertOutput = run(buildInput(TOPIC_OBJECT, true, null, insertRecords));
+        ApexAgentUpsertRecords.Output insertOutput = run(buildInput(TOPIC_OBJECT, true, null, insertRecords));
 
         Assert.areEqual(true, insertOutput.success, 'Overall result should be successful');
         Assert.areEqual(2, insertOutput.results.size(), 'Result should have 2 entries');
 
-        UpsertRecords.RecordResult r0 = insertOutput.results[0];
-        UpsertRecords.RecordResult r1 = insertOutput.results[1];
+        ApexAgentUpsertRecords.RecordResult r0 = insertOutput.results[0];
+        ApexAgentUpsertRecords.RecordResult r1 = insertOutput.results[1];
         Assert.areEqual(true, r0.success, 'First record should succeed');
         Assert.areEqual(true, r1.success, 'Second record should succeed');
         Assert.areEqual(true, r0.created, 'First record should be created');
@@ -359,18 +359,18 @@ private class UpsertRecordsTest {
         Assert.isNotNull(id1, 'Second result should have an id');
 
         // ── Update: re-upsert the same records by Id ───────────────────────────
-        List<UpsertRecords.RecordInput> updateRecords = new List<UpsertRecords.RecordInput>{
-            makeRecord(new List<UpsertRecords.FieldEntry>{
+        List<ApexAgentUpsertRecords.RecordInput> updateRecords = new List<ApexAgentUpsertRecords.RecordInput>{
+            makeRecord(new List<ApexAgentUpsertRecords.FieldEntry>{
                 fieldEntry('Id',   id0,                    'ID'),
                 fieldEntry('Name', 'UpsertTest Alpha v2',  'String')
             }),
-            makeRecord(new List<UpsertRecords.FieldEntry>{
+            makeRecord(new List<ApexAgentUpsertRecords.FieldEntry>{
                 fieldEntry('Id',   id1,                    'ID'),
                 fieldEntry('Name', 'UpsertTest Beta v2',   'String')
             })
         };
 
-        List<UpsertRecords.RecordResult> updateResult = run(buildInput(TOPIC_OBJECT, true, null, updateRecords)).results;
+        List<ApexAgentUpsertRecords.RecordResult> updateResult = run(buildInput(TOPIC_OBJECT, true, null, updateRecords)).results;
 
         Assert.areEqual(false, updateResult[0].created, 'Record 0 should be updated, not created');
         Assert.areEqual(false, updateResult[1].created, 'Record 1 should be updated, not created');
@@ -391,13 +391,13 @@ private class UpsertRecordsTest {
         // field null — partial success should be returned. The failure comes from
         // Topic_API_Name__c rather than Name, since a blank custom-object Name is
         // filled in by the platform instead of being rejected.
-        List<UpsertRecords.RecordInput> partialRecords = new List<UpsertRecords.RecordInput>{
+        List<ApexAgentUpsertRecords.RecordInput> partialRecords = new List<ApexAgentUpsertRecords.RecordInput>{
             topicRecord('UpsertTest Partial OK',   'upsert_test_partial_ok'),
             topicRecord('UpsertTest Partial Fail', null)
         };
 
-        UpsertRecords.Output partialOutput = run(buildInput(TOPIC_OBJECT, false, null, partialRecords));
-        List<UpsertRecords.RecordResult> partialResult = partialOutput.results;
+        ApexAgentUpsertRecords.Output partialOutput = run(buildInput(TOPIC_OBJECT, false, null, partialRecords));
+        List<ApexAgentUpsertRecords.RecordResult> partialResult = partialOutput.results;
 
         Assert.areEqual(false, partialOutput.success, 'Overall result should be unsuccessful when any record fails');
         Assert.areEqual(2, partialResult.size(), 'Should have 2 result entries');
@@ -405,7 +405,7 @@ private class UpsertRecordsTest {
         Integer successCt = 0;
         Integer failCount = 0;
         Boolean foundErrors = false;
-        for (UpsertRecords.RecordResult det : partialResult) {
+        for (ApexAgentUpsertRecords.RecordResult det : partialResult) {
             if (det.success == true) {
                 successCt++;
             } else {
@@ -422,7 +422,7 @@ private class UpsertRecordsTest {
 
         // The failing record sits in the middle of the batch so a wrong index can't
         // coincide with the right one.
-        List<UpsertRecords.RecordInput> middleFails = new List<UpsertRecords.RecordInput>{
+        List<ApexAgentUpsertRecords.RecordInput> middleFails = new List<ApexAgentUpsertRecords.RecordInput>{
             topicRecord('UpsertTest Idx A', 'upsert_test_idx_a'),
             topicRecord('UpsertTest Idx B', null),
             topicRecord('UpsertTest Idx C', 'upsert_test_idx_c')
@@ -430,7 +430,7 @@ private class UpsertRecordsTest {
 
         // allOrNone=false: the per-record error carries the record's index, and a failed
         // record is not reported as created
-        UpsertRecords.Output partial = run(buildInput(TOPIC_OBJECT, false, null, middleFails));
+        ApexAgentUpsertRecords.Output partial = run(buildInput(TOPIC_OBJECT, false, null, middleFails));
         Assert.areEqual(3, partial.results.size(), 'One result per input record');
         Assert.areEqual(true,  partial.results[0].created, 'Record 0 was inserted');
         Assert.areEqual(true,  partial.results[2].created, 'Record 2 was inserted');
@@ -441,12 +441,12 @@ private class UpsertRecordsTest {
 
         // allOrNone=true: the whole operation fails and dmlIndex is the failing record's
         // position in the input, not the position within the error list
-        List<UpsertRecords.RecordInput> allOrNoneBatch = new List<UpsertRecords.RecordInput>{
+        List<ApexAgentUpsertRecords.RecordInput> allOrNoneBatch = new List<ApexAgentUpsertRecords.RecordInput>{
             topicRecord('UpsertTest Rollback A', 'upsert_test_rollback_a'),
             topicRecord('UpsertTest Rollback B', null),
             topicRecord('UpsertTest Rollback C', 'upsert_test_rollback_c')
         };
-        UpsertRecords.Output all = run(buildInput(TOPIC_OBJECT, true, null, allOrNoneBatch));
+        ApexAgentUpsertRecords.Output all = run(buildInput(TOPIC_OBJECT, true, null, allOrNoneBatch));
         Assert.areEqual(false, all.success, 'allOrNone failure');
         Assert.isNull(all.results, 'No per-record results when the whole operation failed');
         Assert.areEqual(1, all.dmlErrors.size(), 'One failing record');
@@ -459,15 +459,15 @@ private class UpsertRecordsTest {
     @IsTest
     static void testHappyPathViaInvocableAction() {
         // Invocable.Action.setInvocations() cannot coerce a raw List<Object>/Map literal
-        // into a nested Apex-defined wrapper type (List<UpsertRecords.RecordInput> whose
+        // into a nested Apex-defined wrapper type (List<ApexAgentUpsertRecords.RecordInput> whose
         // own "fields" is itself List<FieldEntry>) — the same platform limitation
         // ApexAgentToolExecutor.buildTypedList() works around for real tool calls. The
         // invocation map must carry genuinely-typed objects for such parameters, not maps.
-        List<UpsertRecords.RecordInput> records = new List<UpsertRecords.RecordInput>{
+        List<ApexAgentUpsertRecords.RecordInput> records = new List<ApexAgentUpsertRecords.RecordInput>{
             topicRecord('UpsertTest Invocable', 'upsert_test_invocable')
         };
 
-        Invocable.Action action = Invocable.Action.createCustomAction('apex', 'UpsertRecords');
+        Invocable.Action action = Invocable.Action.createCustomAction('apex', 'ApexAgentUpsertRecords');
         action.setInvocations(new List<Map<String, Object>>{
             new Map<String, Object>{
                 'objectApiName' => TOPIC_OBJECT,

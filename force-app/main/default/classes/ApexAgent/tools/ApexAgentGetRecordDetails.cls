@@ -6,7 +6,7 @@
  * covering all its Ids — never one query per input inside the loop.
  */
 @SuppressWarnings('PMD.EagerlyLoadedDescribeSObjectResult')
-public with sharing class GetRecordDetails {
+public with sharing class ApexAgentGetRecordDetails {
 
     public class Input {
         @InvocableVariable(required=true label='Record Id' description='The Salesforce record Id to fetch details for.')
@@ -34,7 +34,7 @@ public with sharing class GetRecordDetails {
         Output earlyResult; // set when resolution itself already determined the outcome
     }
 
-    @InvocableMethod(label='Get Record Details' description='Returns all accessible fields and its values for a single record given its Salesforce ID. Skips long text areas and rich text fields, and enriches lookup fields with their related record\'s name.\n\nWhen to use:\n\nYou have an exact record ID and need to inspect its data.\nUser asks "what\'s on this record?" or "show me the details for [ID]".\nYou need to verify field values before performing an update or upsert.\n\nWhen not to use:\n\nYou need to find records by criteria → use QueryRecords or SearchRecords.\nYou don\'t have the record ID → use SearchRecords first.\nYou need to query multiple records → use QueryRecords.\nYou need data from long text area rich text fiels -> use QueryRecords.')
+    @InvocableMethod(label='Get Record Details' description='Returns all accessible fields and its values for a single record given its Salesforce ID. Skips long text areas and rich text fields, and enriches lookup fields with their related record\'s name.\n\nWhen to use:\n\nYou have an exact record ID and need to inspect its data.\nUser asks "what\'s on this record?" or "show me the details for [ID]".\nYou need to verify field values before performing an update or upsert.\n\nWhen not to use:\n\nYou need to find records by criteria → use ApexAgentQueryRecords or ApexAgentSearchRecords.\nYou don\'t have the record ID → use ApexAgentSearchRecords first.\nYou need to query multiple records → use ApexAgentQueryRecords.\nYou need data from long text area rich text fiels -> use ApexAgentQueryRecords.')
     public static List<Output> run(List<Input> inputs) {
         try {
             List<ResolvedRequest> resolved = new List<ResolvedRequest>();

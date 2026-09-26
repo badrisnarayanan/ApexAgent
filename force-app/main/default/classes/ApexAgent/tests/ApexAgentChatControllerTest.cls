@@ -469,7 +469,7 @@ private class ApexAgentChatControllerTest {
             res.setStatusCode(200);
             res.setHeader('Content-Type', 'application/json');
             res.setBody(requestBodies.size() == 1
-                ? ApexAgentLLMCalloutMock.toolCallResponse('call-err-1', 'GetRecordDetails', '{"recordId":"not-an-id"}')
+                ? ApexAgentLLMCalloutMock.toolCallResponse('call-err-1', 'ApexAgentGetRecordDetails', '{"recordId":"not-an-id"}')
                 : ApexAgentLLMCalloutMock.stopResponse('The tool failed.'));
             return res;
         }
@@ -485,12 +485,12 @@ private class ApexAgentChatControllerTest {
         insert topic;
         insert new ApexAgent_Topic_Map__c(Agent__c = agent.Id, Topic__c = topic.Id, Active__c = true, Order__c = 1);
         ApexAgent_Tool__c tool = new ApexAgent_Tool__c(
-            Apex_Class_Name__c = 'GetRecordDetails',
+            Apex_Class_Name__c = 'ApexAgentGetRecordDetails',
             Modifies_Salesforce_Data__c = false,
             Schema__c = JSON.serialize(new Map<String, Object>{
                 'type' => 'function',
                 'function' => new Map<String, Object>{
-                    'name' => 'GetRecordDetails',
+                    'name' => 'ApexAgentGetRecordDetails',
                     'description' => 'Fetches a record by Id.',
                     'parameters' => new Map<String, Object>{
                         'type' => 'object',

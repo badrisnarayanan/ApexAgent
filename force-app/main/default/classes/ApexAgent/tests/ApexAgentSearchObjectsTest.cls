@@ -1,5 +1,5 @@
 @IsTest
-private class SearchObjectsTest {
+private class ApexAgentSearchObjectsTest {
 
     // ─── Input validation ────────────────────────────────────────────────────────
 
@@ -108,9 +108,9 @@ private class SearchObjectsTest {
     // ─── Helpers ──────────────────────────────────────────────────────────────────
 
     private static List<Object> search(String searchTerm) {
-        SearchObjects.Input inp = new SearchObjects.Input();
+        ApexAgentSearchObjects.Input inp = new ApexAgentSearchObjects.Input();
         inp.searchTerm = searchTerm;
-        List<SearchObjects.Output> results = SearchObjects.run(new List<SearchObjects.Input>{ inp });
+        List<ApexAgentSearchObjects.Output> results = ApexAgentSearchObjects.run(new List<ApexAgentSearchObjects.Input>{ inp });
         return (List<Object>) JSON.deserializeUntyped(JSON.serialize(results[0].results));
     }
 

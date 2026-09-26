@@ -25,12 +25,12 @@ private class ApexAgentToolExecutorTest {
 
     @IsTest
     static void testExecuteInlineNonDmlToolSuccess() {
-        ApexAgent_Tool__c tool = buildTool('GetObjectApiName', false);
+        ApexAgent_Tool__c tool = buildTool('ApexAgentGetObjectApiName', false);
         Map<String, ApexAgent_Tool__c> toolsByName = new Map<String, ApexAgent_Tool__c>{
-            'GetObjectApiName' => tool
+            'ApexAgentGetObjectApiName' => tool
         };
         String args = JSON.serialize(new Map<String, Object>{ 'recordId' => UserInfo.getUserId() });
-        ApexAgentApiTypes.ToolCall tc = buildToolCall('call-1', 'GetObjectApiName', args);
+        ApexAgentApiTypes.ToolCall tc = buildToolCall('call-1', 'ApexAgentGetObjectApiName', args);
 
         Test.startTest();
         ApexAgentExecTypes.ToolResult result = ApexAgentToolExecutor.execute(toolsByName, tc);
@@ -60,12 +60,12 @@ private class ApexAgentToolExecutorTest {
 
     @IsTest
     static void testExecuteViaDmlBridgeRoundTripSuccess() {
-        ApexAgent_Tool__c tool = buildTool('GetObjectApiName', true);
+        ApexAgent_Tool__c tool = buildTool('ApexAgentGetObjectApiName', true);
         Map<String, ApexAgent_Tool__c> toolsByName = new Map<String, ApexAgent_Tool__c>{
-            'GetObjectApiName' => tool
+            'ApexAgentGetObjectApiName' => tool
         };
         String args = JSON.serialize(new Map<String, Object>{ 'recordId' => UserInfo.getUserId() });
-        ApexAgentApiTypes.ToolCall tc = buildToolCall('call-3', 'GetObjectApiName', args);
+        ApexAgentApiTypes.ToolCall tc = buildToolCall('call-3', 'ApexAgentGetObjectApiName', args);
 
         Test.setMock(HttpCalloutMock.class, new ApexAgentDmlBridgeRoundTripMock());
         Test.startTest();
@@ -84,12 +84,12 @@ private class ApexAgentToolExecutorTest {
         // (an HTTP callout), which would throw here since no callout mock is
         // registered - success without a mock is itself proof forceInline
         // took the inline path instead.
-        ApexAgent_Tool__c tool = buildTool('GetObjectApiName', true);
+        ApexAgent_Tool__c tool = buildTool('ApexAgentGetObjectApiName', true);
         Map<String, ApexAgent_Tool__c> toolsByName = new Map<String, ApexAgent_Tool__c>{
-            'GetObjectApiName' => tool
+            'ApexAgentGetObjectApiName' => tool
         };
         String args = JSON.serialize(new Map<String, Object>{ 'recordId' => UserInfo.getUserId() });
-        ApexAgentApiTypes.ToolCall tc = buildToolCall('call-5', 'GetObjectApiName', args);
+        ApexAgentApiTypes.ToolCall tc = buildToolCall('call-5', 'ApexAgentGetObjectApiName', args);
 
         Test.startTest();
         ApexAgentExecTypes.ToolResult result = ApexAgentToolExecutor.execute(toolsByName, tc, true);
@@ -122,10 +122,10 @@ private class ApexAgentToolExecutorTest {
     @IsTest
     static void testToolThrownErrorKeepsToolStackFramesAheadOfExecutorFrames() {
         Map<String, ApexAgent_Tool__c> toolsByName = new Map<String, ApexAgent_Tool__c>{
-            'GetObjectApiName' => buildTool('GetObjectApiName', false)
+            'ApexAgentGetObjectApiName' => buildTool('ApexAgentGetObjectApiName', false)
         };
         ApexAgentApiTypes.ToolCall tc = buildToolCall(
-            'call-5', 'GetObjectApiName', JSON.serialize(new Map<String, Object>{ 'recordId' => 'not-an-id' })
+            'call-5', 'ApexAgentGetObjectApiName', JSON.serialize(new Map<String, Object>{ 'recordId' => 'not-an-id' })
         );
 
         Test.startTest();
@@ -135,14 +135,14 @@ private class ApexAgentToolExecutorTest {
         Assert.isTrue(result.isError(), 'A tool that throws should produce an error result');
         Assert.isTrue(result.errorMessage.contains('not a valid Salesforce ID'), 'Should carry the tool\'s own message');
         String trace = result.errorStackTrace;
-        Assert.isTrue(trace.contains('Class.GetObjectApiName.processOne'), 'Trace should include the frame in the tool that threw. Trace=' + trace);
+        Assert.isTrue(trace.contains('Class.ApexAgentGetObjectApiName.processOne'), 'Trace should include the frame in the tool that threw. Trace=' + trace);
         Assert.isTrue(
-            trace.indexOf('Class.GetObjectApiName') < trace.indexOf('Class.ApexAgentToolExecutor.executeInline'),
+            trace.indexOf('Class.ApexAgentGetObjectApiName') < trace.indexOf('Class.ApexAgentToolExecutor.executeInline'),
             'Tool frames should come before the executor frames. Trace=' + trace
         );
 
         // A later successful call must not inherit the earlier failure's trace
-        tc = buildToolCall('call-6', 'GetObjectApiName', JSON.serialize(new Map<String, Object>{ 'recordId' => UserInfo.getUserId() }));
+        tc = buildToolCall('call-6', 'ApexAgentGetObjectApiName', JSON.serialize(new Map<String, Object>{ 'recordId' => UserInfo.getUserId() }));
         Assert.isFalse(ApexAgentToolExecutor.execute(toolsByName, tc).isError(), 'Follow-up call should succeed');
         Assert.isNull(ApexAgentToolErrorContext.consume(), 'A successful call should leave no recorded trace behind');
     }
@@ -155,7 +155,7 @@ private class ApexAgentToolExecutorTest {
         insert topic;
 
         // Nested typed lists survive, and null Output fields are dropped
-        Map<String, Object> fieldDetails = executeInline('GetFieldDetails', new Map<String, Object>{
+        Map<String, Object> fieldDetails = executeInline('ApexAgentGetFieldDetails', new Map<String, Object>{
             'objectApiName'    => 'Lead',
             'fieldApiNameList' => new List<Object>{ 'LeadSource', 'NoSuchField__xyz' }
         });
@@ -168,17 +168,17 @@ private class ApexAgentToolExecutorTest {
         Assert.areEqual(false, ((Map<String, Object>) fields[1]).get('found'), 'An unknown field should report found=false');
 
         // Compact string entries stay strings
-        Map<String, Object> objectDetails = executeInline('GetObjectDetails', new Map<String, Object>{ 'objectApiName' => 'Account' });
+        Map<String, Object> objectDetails = executeInline('ApexAgentGetObjectDetails', new Map<String, Object>{ 'objectApiName' => 'Account' });
         Map<String, Object> firstGroup = (Map<String, Object>) ((List<Object>) objectDetails.get('fields'))[0];
         Assert.isTrue(firstGroup.containsKey('soapType'), 'Each group should carry its SOAP type');
         Assert.isTrue(((List<Object>) firstGroup.get('fields'))[0] instanceof String, 'Field entries should stay compact strings');
 
         // SObject payloads are nested under their Output field
-        Map<String, Object> recordDetails = executeInline('GetRecordDetails', new Map<String, Object>{ 'recordId' => String.valueOf(topic.Id) });
+        Map<String, Object> recordDetails = executeInline('ApexAgentGetRecordDetails', new Map<String, Object>{ 'recordId' => String.valueOf(topic.Id) });
         Assert.areEqual('Executor Typed Output Topic', ((Map<String, Object>) recordDetails.get('record')).get('Name'), 'The record should be under record');
         Assert.isFalse(recordDetails.containsKey('found'), 'A null Output field should be suppressed');
 
-        Map<String, Object> queried = executeInline('QueryRecords', new Map<String, Object>{
+        Map<String, Object> queried = executeInline('ApexAgentQueryRecords', new Map<String, Object>{
             'soqlQuery' => 'SELECT Id, Name FROM ApexAgent_Topic__c WHERE Id = \'' + topic.Id + '\''
         });
         Assert.areEqual(1, queried.get('recordCount'), 'recordCount should be at the top level');

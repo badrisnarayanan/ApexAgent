@@ -1,26 +1,26 @@
 @IsTest
-private class GetObjectApiNameTest {
+private class ApexAgentGetObjectApiNameTest {
 
     // ─── Input validation ────────────────────────────────────────────────────────
 
     @IsTest
     static void testInputValidation() {
         try {
-            GetObjectApiName.run(new List<GetObjectApiName.Input>{ buildInput(null) });
+            ApexAgentGetObjectApiName.run(new List<ApexAgentGetObjectApiName.Input>{ buildInput(null) });
             Assert.fail('Expected exception for blank recordId');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('blank'), 'Message should mention blank');
         }
 
         try {
-            GetObjectApiName.run(new List<GetObjectApiName.Input>{ buildInput('   ') });
+            ApexAgentGetObjectApiName.run(new List<ApexAgentGetObjectApiName.Input>{ buildInput('   ') });
             Assert.fail('Expected exception for blank recordId');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('blank'), 'Message should mention blank');
         }
 
         try {
-            GetObjectApiName.run(new List<GetObjectApiName.Input>{ buildInput('not-a-valid-id') });
+            ApexAgentGetObjectApiName.run(new List<ApexAgentGetObjectApiName.Input>{ buildInput('not-a-valid-id') });
             Assert.fail('Expected exception for invalid ID');
         } catch (IllegalArgumentException e) {
             Assert.isTrue(e.getMessage().contains('not a valid Salesforce ID'), 'Message should mention invalid ID');
@@ -35,11 +35,11 @@ private class GetObjectApiNameTest {
         ApexAgent_LLM__c llm = ApexAgentTestDataFactory.newLlm('Test LLM');
         insert llm;
 
-        List<GetObjectApiName.Output> userResults = GetObjectApiName.run(
-            new List<GetObjectApiName.Input>{ buildInput(UserInfo.getUserId()) }
+        List<ApexAgentGetObjectApiName.Output> userResults = ApexAgentGetObjectApiName.run(
+            new List<ApexAgentGetObjectApiName.Input>{ buildInput(UserInfo.getUserId()) }
         );
-        List<GetObjectApiName.Output> llmResults = GetObjectApiName.run(
-            new List<GetObjectApiName.Input>{ buildInput(String.valueOf(llm.Id)) }
+        List<ApexAgentGetObjectApiName.Output> llmResults = ApexAgentGetObjectApiName.run(
+            new List<ApexAgentGetObjectApiName.Input>{ buildInput(String.valueOf(llm.Id)) }
         );
 
         Assert.areEqual('User', userResults[0].objectApiName, 'objectApiName should be User');
@@ -50,7 +50,7 @@ private class GetObjectApiNameTest {
 
     @IsTest
     static void testHappyPathViaInvocableAction() {
-        Invocable.Action action = Invocable.Action.createCustomAction('apex', 'GetObjectApiName');
+        Invocable.Action action = Invocable.Action.createCustomAction('apex', 'ApexAgentGetObjectApiName');
         action.setInvocations(new List<Map<String, Object>>{
             new Map<String, Object>{ 'recordId' => UserInfo.getUserId() }
         });
@@ -66,8 +66,8 @@ private class GetObjectApiNameTest {
 
     // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-    private static GetObjectApiName.Input buildInput(String recordId) {
-        GetObjectApiName.Input inp = new GetObjectApiName.Input();
+    private static ApexAgentGetObjectApiName.Input buildInput(String recordId) {
+        ApexAgentGetObjectApiName.Input inp = new ApexAgentGetObjectApiName.Input();
         inp.recordId = recordId;
         return inp;
     }

@@ -31,7 +31,7 @@ private class ApexAgentMcpResourceTest {
         insert new List<ApexAgent_MCP__c>{ activeServer, inactiveServer };
 
         String readOnlyMcpSchema = JSON.serialize(new Map<String, Object>{
-            'name' => 'GetObjectApiName',
+            'name' => 'ApexAgentGetObjectApiName',
             'title' => 'Get Object API Name',
             'description' => 'Resolves the object type of a record ID.',
             'inputSchema' => new Map<String, Object>{
@@ -59,7 +59,7 @@ private class ApexAgentMcpResourceTest {
 
         ApexAgent_Tool__c readOnlyTool = new ApexAgent_Tool__c(
             Name = 'Get Object Api Name',
-            Apex_Class_Name__c = 'GetObjectApiName',
+            Apex_Class_Name__c = 'ApexAgentGetObjectApiName',
             Modifies_Salesforce_Data__c = false,
             MCP_Schema__c = readOnlyMcpSchema
         );
@@ -73,9 +73,9 @@ private class ApexAgentMcpResourceTest {
         // tools/call scoping rejects it even though it exists in the org.
         ApexAgent_Tool__c unmappedTool = new ApexAgent_Tool__c(
             Name = 'Get Field Details',
-            Apex_Class_Name__c = 'GetFieldDetails',
+            Apex_Class_Name__c = 'ApexAgentGetFieldDetails',
             Modifies_Salesforce_Data__c = false,
-            MCP_Schema__c = readOnlyMcpSchema.replace('GetObjectApiName', 'GetFieldDetails')
+            MCP_Schema__c = readOnlyMcpSchema.replace('ApexAgentGetObjectApiName', 'ApexAgentGetFieldDetails')
         );
         // Mapped, but its stored definition is corrupt JSON - must be left out of
         // tools/list rather than failing the listing.
@@ -157,10 +157,10 @@ private class ApexAgentMcpResourceTest {
         Assert.areEqual(2, tools.size(),
             'Only the two valid tools mapped to this server should be listed - not the unmapped one or the corrupt one');
 
-        Map<String, Object> dmlTool = (Map<String, Object>) tools[0];
-        Map<String, Object> readOnlyTool = (Map<String, Object>) tools[1];
+        Map<String, Object> readOnlyTool = (Map<String, Object>) tools[0];
+        Map<String, Object> dmlTool = (Map<String, Object>) tools[1];
         Assert.areEqual('FakeDmlTool', dmlTool.get('name'), 'Tools should be sorted by name for a deterministic order');
-        Assert.areEqual('GetObjectApiName', readOnlyTool.get('name'), 'Tools should be sorted by name for a deterministic order');
+        Assert.areEqual('ApexAgentGetObjectApiName', readOnlyTool.get('name'), 'Tools should be sorted by name for a deterministic order');
 
         Map<String, Object> readOnlyAnnotations = (Map<String, Object>) readOnlyTool.get('annotations');
         Map<String, Object> dmlAnnotations = (Map<String, Object>) dmlTool.get('annotations');
@@ -181,7 +181,7 @@ private class ApexAgentMcpResourceTest {
             'id' => 3,
             'method' => 'tools/call',
             'params' => new Map<String, Object>{
-                'name' => 'GetObjectApiName',
+                'name' => 'ApexAgentGetObjectApiName',
                 'arguments' => new Map<String, Object>{ 'recordId' => UserInfo.getUserId() }
             }
         });
@@ -217,7 +217,7 @@ private class ApexAgentMcpResourceTest {
         // Real tool in the org, but not mapped to this server - protocol error, no log written.
         String unmappedCall = JSON.serialize(new Map<String, Object>{
             'jsonrpc' => '2.0', 'id' => 4, 'method' => 'tools/call',
-            'params' => new Map<String, Object>{ 'name' => 'GetFieldDetails', 'arguments' => new Map<String, Object>() }
+            'params' => new Map<String, Object>{ 'name' => 'ApexAgentGetFieldDetails', 'arguments' => new Map<String, Object>() }
         });
         buildRequest('testserver', unmappedCall);
         ApexAgentMcpResource.handleRequest();
@@ -232,7 +232,7 @@ private class ApexAgentMcpResourceTest {
         String failingCall = JSON.serialize(new Map<String, Object>{
             'jsonrpc' => '2.0', 'id' => 6, 'method' => 'tools/call',
             'params' => new Map<String, Object>{
-                'name' => 'GetObjectApiName',
+                'name' => 'ApexAgentGetObjectApiName',
                 'arguments' => new Map<String, Object>{ 'recordId' => 'not-an-id' }
             }
         });
@@ -278,8 +278,8 @@ private class ApexAgentMcpResourceTest {
             '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":[1]}' => -32602,
             '{"jsonrpc":"2.0","id":1,"method":"tools/call"}' => -32602,
             '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":5}}' => -32602,
-            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"GetObjectApiName","arguments":"x"}}' => -32602,
-            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"GetObjectApiName","arguments":[1]}}' => -32602,
+            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"ApexAgentGetObjectApiName","arguments":"x"}}' => -32602,
+            '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"ApexAgentGetObjectApiName","arguments":[1]}}' => -32602,
             '{"id":1,"method":"tools/list"}' => -32600,
             '{"jsonrpc":"1.0","id":1,"method":"tools/list"}' => -32600,
             '{"jsonrpc":2.0,"id":1,"method":"tools/list"}' => -32600,

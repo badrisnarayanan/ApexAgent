@@ -1,11 +1,11 @@
 @isTest
-private class SearchRecordsTest {
+private class ApexAgentSearchRecordsTest {
 
     // ─── Test data ────────────────────────────────────────────────────────────────
 
     @testSetup
     static void setup() {
-        ApexAgent_LLM__c llm = ApexAgentTestDataFactory.newLlm('SearchRecordsTest LLM');
+        ApexAgent_LLM__c llm = ApexAgentTestDataFactory.newLlm('ApexAgentSearchRecordsTest LLM');
         insert llm;
         // Company-style and person-style names on one searchable package object, so the
         // subscriber org's own automation on standard objects can't affect the setup
@@ -40,10 +40,10 @@ private class SearchRecordsTest {
     }
 
     private static List<Map<String, Object>> search(String searchTerm, String objectApiName) {
-        SearchRecords.Input inp = new SearchRecords.Input();
+        ApexAgentSearchRecords.Input inp = new ApexAgentSearchRecords.Input();
         inp.searchTerm = searchTerm;
         inp.objectApiName = objectApiName;
-        List<SearchRecords.Output> out = SearchRecords.run(new List<SearchRecords.Input>{ inp });
+        List<ApexAgentSearchRecords.Output> out = ApexAgentSearchRecords.run(new List<ApexAgentSearchRecords.Input>{ inp });
         List<Object> raw = (List<Object>) JSON.deserializeUntyped(JSON.serialize(out[0].results));
         List<Map<String, Object>> results = new List<Map<String, Object>>();
         for (Object o : raw) {
@@ -53,12 +53,12 @@ private class SearchRecordsTest {
     }
 
     private static void assertThrows(String searchTerm, String objectApiName, String scenario) {
-        SearchRecords.Input inp = new SearchRecords.Input();
+        ApexAgentSearchRecords.Input inp = new ApexAgentSearchRecords.Input();
         inp.searchTerm = searchTerm;
         inp.objectApiName = objectApiName;
         Boolean threw = false;
         try {
-            SearchRecords.run(new List<SearchRecords.Input>{ inp });
+            ApexAgentSearchRecords.run(new List<ApexAgentSearchRecords.Input>{ inp });
         } catch (Exception e) {
             threw = true;
         }
@@ -412,19 +412,19 @@ private class SearchRecordsTest {
 
     @isTest
     static void testEscapeSoslEscapesAllReservedCharacters() {
-        Assert.areEqual('a\\{b\\}c',  SearchRecords.escapeSosl('a{b}c'),  'Curly braces must be escaped');
-        Assert.areEqual('a\\(b\\)c',  SearchRecords.escapeSosl('a(b)c'),  'Parentheses must be escaped');
-        Assert.areEqual('a\\*b',      SearchRecords.escapeSosl('a*b'),    'Asterisk must be escaped');
-        Assert.areEqual('a\\?b',      SearchRecords.escapeSosl('a?b'),    'Question mark must be escaped');
-        Assert.areEqual('a\\[b\\]c',  SearchRecords.escapeSosl('a[b]c'),  'Square brackets must be escaped');
-        Assert.areEqual('a\\\\b',     SearchRecords.escapeSosl('a\\b'),   'Backslash must be escaped');
-        Assert.areEqual('a\\"b',      SearchRecords.escapeSosl('a"b'),    'Double quote must be escaped');
+        Assert.areEqual('a\\{b\\}c',  ApexAgentSearchRecords.escapeSosl('a{b}c'),  'Curly braces must be escaped');
+        Assert.areEqual('a\\(b\\)c',  ApexAgentSearchRecords.escapeSosl('a(b)c'),  'Parentheses must be escaped');
+        Assert.areEqual('a\\*b',      ApexAgentSearchRecords.escapeSosl('a*b'),    'Asterisk must be escaped');
+        Assert.areEqual('a\\?b',      ApexAgentSearchRecords.escapeSosl('a?b'),    'Question mark must be escaped');
+        Assert.areEqual('a\\[b\\]c',  ApexAgentSearchRecords.escapeSosl('a[b]c'),  'Square brackets must be escaped');
+        Assert.areEqual('a\\\\b',     ApexAgentSearchRecords.escapeSosl('a\\b'),   'Backslash must be escaped');
+        Assert.areEqual('a\\"b',      ApexAgentSearchRecords.escapeSosl('a"b'),    'Double quote must be escaped');
 
         // A term combining several reserved characters, including one that would
         // otherwise close the FIND {...} block early
         Assert.areEqual(
             '\\{escape\\}\\*me\\?',
-            SearchRecords.escapeSosl('{escape}*me?'),
+            ApexAgentSearchRecords.escapeSosl('{escape}*me?'),
             'Combined reserved characters must all be escaped'
         );
 
