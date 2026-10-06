@@ -7,6 +7,6 @@
     <columns>CREATED_DATE</columns>
     <columns>LAST_UPDATE</columns>
     <columns>UPDATEDBY_USER</columns>
-    <filterScope>Mine</filterScope>
+    <filterScope>Everything</filterScope>
     <label>All</label>
 </ListView>

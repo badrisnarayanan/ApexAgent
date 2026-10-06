@@ -9,6 +9,6 @@
     <columns>CREATEDBY_USER</columns>
     <columns>Duration_ms__c</columns>
     <columns>Ended_At__c</columns>
-    <filterScope>Mine</filterScope>
+    <filterScope>Everything</filterScope>
     <label>All</label>
 </ListView>

@@ -7,6 +7,6 @@
     <columns>Supports_Reasoning__c</columns>
     <columns>CREATED_DATE</columns>
     <columns>LAST_UPDATE</columns>
-    <filterScope>Mine</filterScope>
+    <filterScope>Everything</filterScope>
     <label>All</label>
 </ListView>

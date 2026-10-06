@@ -8,6 +8,6 @@
     <columns>Cost__c</columns>
     <columns>Started_At__c</columns>
     <columns>Ended_At__c</columns>
-    <filterScope>Mine</filterScope>
+    <filterScope>Everything</filterScope>
     <label>All</label>
 </ListView>

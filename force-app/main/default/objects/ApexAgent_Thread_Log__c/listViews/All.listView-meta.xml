@@ -5,6 +5,6 @@
     <columns>OWNER.FIRST_NAME</columns>
     <columns>CREATED_DATE</columns>
     <columns>Last_Activity_At__c</columns>
-    <filterScope>Mine</filterScope>
+    <filterScope>Everything</filterScope>
     <label>All</label>
 </ListView>

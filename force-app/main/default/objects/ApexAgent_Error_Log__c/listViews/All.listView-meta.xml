@@ -6,6 +6,6 @@
     <columns>Message_Log__c</columns>
     <columns>CREATEDBY_USER</columns>
     <columns>CREATED_DATE</columns>
-    <filterScope>Mine</filterScope>
+    <filterScope>Everything</filterScope>
     <label>All</label>
 </ListView>
