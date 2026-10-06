@@ -24,8 +24,6 @@
     <masterLabel>ApexAgent MCP Server</masterLabel>
     <redirectToCustomDomain>true</redirectToCustomDomain>
     <referrerPolicyOriginWhenCrossOrigin>true</referrerPolicyOriginWhenCrossOrigin>
-    <siteAdmin>s.badrinarayanan791.b178e0ef4fd7@agentforce.com</siteAdmin>
-    <siteGuestRecordDefaultOwner>s.badrinarayanan791.b178e0ef4fd7@agentforce.com</siteGuestRecordDefaultOwner>
     <siteTemplate>SiteTemplate</siteTemplate>
     <siteType>Visualforce</siteType>
 </CustomSite>
