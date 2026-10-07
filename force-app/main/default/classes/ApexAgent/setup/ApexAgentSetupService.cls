@@ -44,8 +44,6 @@ public with sharing class ApexAgentSetupService {
         Result result = new Result();
         List<String> summary = new List<String>();
 
-        // Runs first: the Remote Site check is a callout, which Salesforce only
-        // allows before the transaction has saved anything.
         ApexAgentSetupPreflight.Report preflight = ApexAgentSetupPreflight.check();
         if (!preflight.blockers.isEmpty()) {
             result.blocked = true;
@@ -100,8 +98,7 @@ public with sharing class ApexAgentSetupService {
     private static List<String> repairIncompleteRecords(ApexAgentSetupPreflight.Report preflight) {
         List<String> summary = new List<String>();
 
-        // Blank after an earlier run whose schema generation failed, typically
-        // because the Remote Site Setting was not in place yet.
+        // Blank when schema generation failed after the tool was created.
         // Long text fields cannot be filtered in SOQL, so blanks are found here.
         Set<Id> toolIdsWithoutSchema = new Set<Id>();
         for (ApexAgent_Tool__c tool : [

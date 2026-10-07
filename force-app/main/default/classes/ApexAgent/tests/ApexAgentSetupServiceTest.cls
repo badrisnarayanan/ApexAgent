@@ -14,7 +14,6 @@ private class ApexAgentSetupServiceTest {
 
     @IsTest
     static void testRunCreatesLinkedRecordsOnceThenOnlyRepairs() {
-        ApexAgentSetupPreflight.probe = new StubProbe(null);
         ApexAgentSeedArchive archive = archiveOf(validSeed(), new Map<String, String>{ INSTRUCTION_FILE => INSTRUCTION_TEXT });
 
         Test.startTest();
@@ -78,7 +77,6 @@ private class ApexAgentSetupServiceTest {
 
     @IsTest
     static void testInvalidSeedDataFailsClearlyAndSavesNothing() {
-        ApexAgentSetupPreflight.probe = new StubProbe(null);
         Map<String, String> files = new Map<String, String>{ INSTRUCTION_FILE => INSTRUCTION_TEXT };
 
         try {
@@ -124,7 +122,6 @@ private class ApexAgentSetupServiceTest {
 
     @IsTest
     static void testShippedSeedDataIsValid() {
-        ApexAgentSetupPreflight.probe = new StubProbe(null);
         // Lets the schema job run for real, so a shipped tool that cannot produce a schema fails this test.
         ApexAgentSymbolTableTypes.ToolingQueryResult noSymbolTables = new ApexAgentSymbolTableTypes.ToolingQueryResult();
         noSymbolTables.records = new List<ApexAgentSymbolTableTypes.ApexClassRecord>();
@@ -156,7 +153,10 @@ private class ApexAgentSetupServiceTest {
 
     @IsTest
     static void testUnreadyOrgIsBlockedBeforeAnythingIsCreated() {
-        ApexAgentSetupPreflight.probe = new StubProbe('no Remote Site Setting allows it');
+        // An org where part of the project was not deployed: the guest permission set is missing.
+        String missingPermissionSet = ApexAgentSetupService.GUEST_PERMISSION_SET;
+        delete [SELECT Id FROM PermissionSetAssignment WHERE PermissionSet.Name = :missingPermissionSet];
+        delete [SELECT Id FROM PermissionSet WHERE Name = :missingPermissionSet];
         ApexAgentSeedArchive archive = archiveOf(validSeed(), new Map<String, String>{ INSTRUCTION_FILE => INSTRUCTION_TEXT });
 
         Test.startTest();
@@ -164,22 +164,11 @@ private class ApexAgentSetupServiceTest {
         Integer jobsEnqueued = Limits.getQueueableJobs();
         Test.stopTest();
 
-        Assert.isTrue(result.blocked, 'Setup must not run without a Remote Site Setting');
-        Assert.isTrue(result.message.contains('Remote Site Settings'), 'The message should say where to fix it: ' + result.message);
-        Assert.isTrue(result.message.contains(URL.getOrgDomainUrl().toExternalForm()), 'The message should give the exact URL to add: ' + result.message);
+        Assert.isTrue(result.blocked, 'Setup must not run when a permission set it assigns is missing');
+        Assert.isTrue(result.message.contains(missingPermissionSet), 'The message should name what is missing: ' + result.message);
+        Assert.isTrue(result.message.contains('Deploy the whole force-app folder'), 'The message should say how to fix it: ' + result.message);
         Assert.areEqual(0, jobsEnqueued, 'A blocked setup must not start any job');
         Assert.areEqual(0, [SELECT COUNT() FROM ApexAgent_Tool__c], 'A blocked setup must create nothing');
-
-        // The real probe: allowed, refused for lack of a Remote Site Setting, and failing for another reason.
-        ApexAgentSetupPreflight.RemoteSiteProbe httpProbe = new ApexAgentSetupPreflight.HttpRemoteSiteProbe();
-        Test.setMock(HttpCalloutMock.class, new ApexAgentToolingQueryMock(200, '{}'));
-        Assert.isNull(httpProbe.findProblem('https://example.my.salesforce.com'), 'A completed callout means the domain is allowed');
-        Test.setMock(HttpCalloutMock.class, new FailingCalloutMock('Unauthorized endpoint, please check Setup->Security->Remote site settings.'));
-        Assert.areEqual('no Remote Site Setting allows it', httpProbe.findProblem('https://example.my.salesforce.com'),
-            'A refused endpoint should be reported as a missing Remote Site Setting');
-        Test.setMock(HttpCalloutMock.class, new FailingCalloutMock('Read timed out'));
-        Assert.areEqual('Read timed out', httpProbe.findProblem('https://example.my.salesforce.com'),
-            'Any other callout failure should be reported as it is');
     }
 
     @IsTest
@@ -204,26 +193,6 @@ private class ApexAgentSetupServiceTest {
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
-
-    private class StubProbe implements ApexAgentSetupPreflight.RemoteSiteProbe {
-        private final String problem;
-        StubProbe(String problem) {
-            this.problem = problem;
-        }
-        public String findProblem(String orgDomainUrl) {
-            return problem;
-        }
-    }
-
-    private class FailingCalloutMock implements HttpCalloutMock {
-        private final String message;
-        FailingCalloutMock(String message) {
-            this.message = message;
-        }
-        public HttpResponse respond(HttpRequest request) {
-            throw new CalloutException(message);
-        }
-    }
 
     private static Map<String, Object> validSeed() {
         return new Map<String, Object>{

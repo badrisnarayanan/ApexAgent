@@ -1,5 +1,4 @@
-// One-time setup for a newly installed org. Run after deploying the project and
-// adding the Remote Site Setting for your org's own domain:
+// One-time setup for a newly installed org. Run after deploying the project:
 //
 //     sf apex run --file seed/setup.apex
 //
