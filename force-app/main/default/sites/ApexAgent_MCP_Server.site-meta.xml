@@ -8,19 +8,19 @@
     <allowStandardLookups>false</allowStandardLookups>
     <allowStandardPortalPages>true</allowStandardPortalPages>
     <allowStandardSearch>false</allowStandardSearch>
-    <authorizationRequiredPage>Unauthorized</authorizationRequiredPage>
-    <bandwidthExceededPage>BandwidthExceeded</bandwidthExceededPage>
+    <authorizationRequiredPage>ApexAgentMcpSite</authorizationRequiredPage>
+    <bandwidthExceededPage>ApexAgentMcpSite</bandwidthExceededPage>
     <browserXssProtection>true</browserXssProtection>
     <cachePublicVisualforcePagesInProxyServers>true</cachePublicVisualforcePagesInProxyServers>
     <clickjackProtectionLevel>SameOriginOnly</clickjackProtectionLevel>
     <contentSniffingProtection>true</contentSniffingProtection>
     <description>Hosts the ApexAgent MCP server — the resource-server endpoint (/services/apexrest/ApexAgent/mcp) that MCP clients connect to for tool discovery and execution. Serves RFC 9728 Protected Resource Metadata and a 401 challenge to unauthenticated requests so clients can discover the authorization server; all actual authentication happens via Salesforce&apos;s native OAuth (org-level, not this site). Once a client presents a valid token, this same endpoint dispatches MCP JSON-RPC requests (server/discover, tools/list, tools/call) running as the real authenticated user&apos;s own permissions. Guest access is scoped to exactly two Apex classes and performs no data access.</description>
     <enableAuraRequests>true</enableAuraRequests>
-    <fileNotFoundPage>FileNotFound</fileNotFoundPage>
-    <genericErrorPage>Exception</genericErrorPage>
-    <inMaintenancePage>InMaintenance</inMaintenancePage>
-    <inactiveIndexPage>InMaintenance</inactiveIndexPage>
-    <indexPage>UnderConstruction</indexPage>
+    <fileNotFoundPage>ApexAgentMcpSite</fileNotFoundPage>
+    <genericErrorPage>ApexAgentMcpSite</genericErrorPage>
+    <inMaintenancePage>ApexAgentMcpSite</inMaintenancePage>
+    <inactiveIndexPage>ApexAgentMcpSite</inactiveIndexPage>
+    <indexPage>ApexAgentMcpSite</indexPage>
     <masterLabel>ApexAgent MCP Server</masterLabel>
     <redirectToCustomDomain>true</redirectToCustomDomain>
     <referrerPolicyOriginWhenCrossOrigin>true</referrerPolicyOriginWhenCrossOrigin>

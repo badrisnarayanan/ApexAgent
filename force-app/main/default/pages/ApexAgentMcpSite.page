@@ -1,0 +1,10 @@
+<apex:page showHeader="false" sidebar="false" standardStylesheets="false" applyHtmlTag="false" applyBodyTag="false" docType="html-5.0" cache="true">
+    <html lang="en">
+        <head>
+            <title>ApexAgent MCP Server</title>
+        </head>
+        <body>
+            <p>This site hosts the ApexAgent MCP server. It has no pages to browse.</p>
+        </body>
+    </html>
+</apex:page>

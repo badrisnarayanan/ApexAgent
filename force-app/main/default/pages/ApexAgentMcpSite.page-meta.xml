@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ApexPage xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <availableInTouch>false</availableInTouch>
+    <confirmationTokenRequired>false</confirmationTokenRequired>
+    <description>The only page of the ApexAgent MCP Server site. The site exists to serve the MCP REST endpoint, so this page stands in for every page a Site must name (home, errors, maintenance) without relying on the standard Site pages, which a new org does not have.</description>
+    <label>ApexAgent MCP Site</label>
+</ApexPage>
