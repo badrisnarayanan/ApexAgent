@@ -106,7 +106,7 @@ public with sharing class ApexAgentMcpToolService {
      * with a generated MCP schema, keyed by Apex_Class_Name__c - the same key
      * ApexAgentToolExecutor and ApexAgentToolSchemaBuilder both expect.
      * WITH USER_MODE enforces the real caller's sharing and FLS, consistent
-     * with how ApexAgentTopicLoader queries tools for the Agentforce path.
+     * with how ApexAgentTopicLoader queries tools for the agent path.
      */
     public static Map<String, ApexAgent_Tool__c> queryToolsByName(Id mcpServerId) {
         Map<String, ApexAgent_Tool__c> toolsByName = new Map<String, ApexAgent_Tool__c>();
@@ -129,9 +129,9 @@ public with sharing class ApexAgentMcpToolService {
 
     /**
      * Logs an MCP-originated tool call to Tool_Log__c via the same
-     * ApexAgentLogger the Agentforce path uses, with MCP__c set instead of
+     * ApexAgentLogger the agent path uses, with MCP__c set instead of
      * Message_Log__c. Status is normalized to the same Success/Error
-     * capitalization the Agentforce path already writes, so Status__c stays
+     * capitalization the agent path already writes, so Status__c stays
      * consistent for reporting regardless of origin.
      */
     private static void logToolCall(Id mcpServerId, ApexAgentExecTypes.ToolResult toolResult, Datetime startedAt, Datetime endedAt) {

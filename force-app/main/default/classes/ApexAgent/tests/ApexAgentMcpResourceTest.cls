@@ -207,7 +207,7 @@ private class ApexAgentMcpResourceTest {
         Assert.areEqual(1, logs.size(), 'The tools/call should have written exactly one Tool_Log__c');
         Assert.areEqual(server.Id, logs[0].MCP__c, 'MCP__c should be set');
         Assert.isNull(logs[0].Message_Log__c, 'Message_Log__c should stay null for an MCP-originated call');
-        Assert.areEqual('Success', logs[0].Status__c, 'Status should be normalized to the same casing the Agentforce path uses');
+        Assert.areEqual('Success', logs[0].Status__c, 'Status should be normalized to the same casing the agent path uses');
     }
 
     @IsTest
