@@ -67,11 +67,12 @@ Every tool runs as the signed-in user. Object permissions, field-level security 
 
 - [Salesforce CLI](https://developer.salesforce.com/tools/salesforcecli) (`sf`) and Git
 - A Salesforce org where you are a System Administrator
+- **Developer, Enterprise, Performance or Unlimited Edition.** The MCP server uses a Salesforce Site, which other editions do not have.
 - Nothing in the org already using names that start with `ApexAgent`. A deploy overwrites components with the same name.
 
 **🔌 Only for the MCP server:**
 
-- An MCP client that supports remote servers with OAuth, such as Claude
+- An MCP client that supports remote servers with OAuth and lets you enter a client ID, such as Claude or ChatGPT
 
 **🤖 Only for the agent:**
 
@@ -135,13 +136,69 @@ In Setup, open **External Client App Manager**, open **ApexAgent MCP**, and copy
 
 **3. Connect your client**
 
-Add a remote MCP server in your client, with the server URL from step 1 and the client ID from step 2. When prompted, sign in with your Salesforce login.
+Add a remote MCP server in your client, with the server URL from step 1 and the client ID from step 2. When prompted, sign in with your Salesforce login. Notes for specific clients:
 
-The External Client App already allows the callback URLs for Claude (`https://claude.ai/api/mcp/auth_callback`) and the MCP Inspector (`http://localhost:6274/oauth/callback`). For any other client, add its callback URL to the app's OAuth settings first.
+<details>
+<summary><strong>Claude</strong></summary>
+
+Add a custom connector with the Endpoint URL and, under the advanced settings, the client ID. Sign in with your Salesforce login when prompted.
+
+Claude's callback URL, `https://claude.ai/api/mcp/auth_callback`, is already allowed in the External Client App.
+
+</details>
+
+<details>
+<summary><strong>ChatGPT</strong></summary>
+
+ChatGPT needs Developer Mode to add a custom connector. Create the connector with these settings:
+
+| Setting | Value |
+| --- | --- |
+| Server URL | The Endpoint URL |
+| Registration method | User-Defined OAuth Client |
+| OAuth client ID | The Consumer Key |
+| OAuth client secret | Leave blank |
+| Token endpoint auth method | Leave empty |
+| OIDC enabled | **Unticked** |
+
+Before you connect, copy the **Callback URL** ChatGPT shows on that screen and add it to the External Client App's callback URLs in Salesforce. ChatGPT gives every connector its own callback URL, so repeat this for each new connector. Salesforce can take a few minutes to apply the change.
+
+If sign-in fails with `invalid_scope`, ChatGPT is asking for scopes the app does not allow. Check that **OIDC enabled** is unticked.
+
+</details>
+
+<details>
+<summary><strong>MCP Inspector</strong></summary>
+
+Use the Endpoint URL with the client ID. Its callback URL, `http://localhost:6274/oauth/callback`, is already allowed in the External Client App.
+
+</details>
+
+<details>
+<summary><strong>Another client</strong></summary>
+
+The client must let you enter an OAuth client ID. Salesforce does not let clients register themselves.
+
+1. Add the client's callback URL to the External Client App's OAuth settings.
+2. Connect with the Endpoint URL and the client ID.
+3. If the client requests extra scopes, limit them to `api` and `refresh_token`.
+
+</details>
 
 **Who can connect:** only users with the **ApexAgent User** permission set. The app is set to admin-approved users, pre-authorised through that permission set.
 
 **More than one server:** create more MCP Server records, each with its own API name and its own set of tools. Each gets its own URL, so you can give different clients different tools.
+
+### Limits
+
+**Daily API requests.** Every tool call from an MCP client counts as one API request against your org's daily allowance. This is the limit that matters for normal use.
+
+**Site page views.** The Endpoint URL goes through a Salesforce Site, and Salesforce counts page views for requests made to a Site without a valid sign-in:
+
+- Tool calls from a signed-in user do **not** count.
+- The sign-in handshake does: about two requests each time a client connects, and about one each time a user's access token expires.
+
+Salesforce's monthly page-view allowance is 500,000 for Enterprise Edition and 1,000,000 for Unlimited and Performance. Developer Edition has no page-view limit. Because the URL is public, anyone can send it unauthenticated requests, and those count too. They cannot reach your data, but a very large flood could use up the allowance. To watch usage, open the Site under Setup > Sites and check its page-view and 24-hour usage lists.
 
 ## 🤖 Set up the agent
 
@@ -281,6 +338,8 @@ The Setup Portal has tabs for:
 **The agent replies with an authentication error.** The OpenRouter key is missing or wrong. Recheck step 1 of the agent setup, and confirm the user has the **ApexAgent User** permission set.
 
 **An MCP client can't sign in.** Check that the client ID is the app's Consumer Key, that the client's callback URL is allowed in the External Client App, and that the user has the **ApexAgent User** permission set.
+
+**Sign-in fails with `invalid_scope`.** The client asked for a scope the External Client App does not allow. Limit the scopes the client requests to `api` and `refresh_token`. In ChatGPT, untick **OIDC enabled**.
 
 **A permission set wasn't assigned.** Setup assigns them in background jobs. Check Setup > Apex Jobs for a failed `ApexAgentSetupPermissionQueueable`.
 
