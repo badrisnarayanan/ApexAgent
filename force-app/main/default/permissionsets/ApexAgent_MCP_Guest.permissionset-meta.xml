@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <classAccesses>
+        <apexClass>ApexAgentMcpProtectedResourceMetadata</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
+        <apexClass>ApexAgentMcpResource</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <description>Assign only to the ApexAgent MCP Server site guest user. Grants access to the two Apex REST classes that serve unauthenticated OAuth discovery (401 challenge and Protected Resource Metadata). No object, field or system permissions.</description>
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>ApexAgent MCP Guest</label>
+</PermissionSet>

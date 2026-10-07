@@ -1,5 +1,6 @@
 /**
- * The MCP endpoint for ApexAgent, exposed via a Site's Guest User Profile.
+ * The MCP endpoint for ApexAgent, exposed to a Site's guest user through the
+ * ApexAgent_MCP_Guest permission set.
  * Routes by server name: /services/apexrest/ApexAgent/mcp/<MCP_API_Name__c>.
  * There is no bare /ApexAgent/mcp fallback - a server name is always required.
  *
@@ -9,7 +10,7 @@
  *    Site's Guest User. That branch shapes the 401 challenge MCP clients
  *    need for OAuth discovery (RFC 9728) and nothing else - no data access.
  *    Crucially, the guest branch never queries ApexAgent_MCP__c: the guest
- *    profile has zero object permissions on it, so any query would come back
+ *    user has zero object permissions on it, so any query would come back
  *    empty and every unauthenticated request would 404 instead of issuing
  *    the 401 challenge, breaking OAuth discovery entirely. The server name
  *    is extracted as a raw string from the URL and used as-is.

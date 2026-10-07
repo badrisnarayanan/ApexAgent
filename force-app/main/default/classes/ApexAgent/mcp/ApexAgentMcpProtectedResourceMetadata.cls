@@ -5,8 +5,9 @@
  *
  * Must be guest-accessible: an MCP client fetches this document in response
  * to the 401 challenge issued by ApexAgentMcpResource, before it has any
- * token at all. Grant this class to the Site's Guest User Profile only - it
- * performs no DML and no SOQL, it only describes the resource from the URL.
+ * token at all. Grant this class only to the Site's guest user, through the
+ * ApexAgent_MCP_Guest permission set - it performs no DML and no SOQL, it
+ * only describes the resource from the URL.
  *
  * Deliberately not routed as /ApexAgent/mcp/<name>/prm: Salesforce's
  * documented urlMapping precedence only guarantees exact-beats-wildcard, not
