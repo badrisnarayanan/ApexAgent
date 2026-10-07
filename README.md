@@ -134,6 +134,8 @@ https://<your-domain>.my.salesforce-sites.com/services/apexrest/ApexAgent/mcp/de
 
 In Setup, open **External Client App Manager**, open **ApexAgent MCP**, and copy the **Consumer Key** from its OAuth settings. This is the client ID your MCP client asks for. No client secret is needed: the app uses PKCE.
 
+While you are there, edit the app and change its **Contact Email** from the placeholder `admin@example.com` to your own. It is only the contact shown for the app; sign-in works either way.
+
 **3. Connect your client**
 
 Add a remote MCP server in your client, with the server URL from step 1 and the client ID from step 2. When prompted, sign in with your Salesforce login. Notes for specific clients:
