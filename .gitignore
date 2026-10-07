@@ -39,8 +39,8 @@ ehthumbs.db
 [Dd]esktop.ini
 $RECYCLE.BIN/
 
-# Agent instructions (not for source control)
-instructions/
+# Local agent instruction drafts (the shipped ones live in the ApexAgentSeedData static resource)
+/instructions/
 
 # Internal dev docs / audit notes (not for source control)
 dev_docs/

@@ -1,19 +1,21 @@
 /**
- * Populates ApexAgent_MCP__c.Endpoint_URL__c on insert, or on update when
- * MCP_API_Name__c changes - since it can't be a formula field (formulas can't
- * issue SOQL or call Site.getBaseUrl()).
+ * Populates ApexAgent_MCP__c.Endpoint_URL__c on insert, and on update when
+ * MCP_API_Name__c changes or the URL is still blank - since it can't be a
+ * formula field (formulas can't issue SOQL or call Site.getBaseUrl()).
+ *
+ * A blank URL means the record was last saved while the Site was not active,
+ * so any later save gets another chance to fill it in.
  *
  * Deliberately does NOT call Site.getBaseUrl() - that only returns a value
  * while the transaction is already running inside the Site's own request
  * (see ApexAgentMcpResource.getResourceUrl()). A record save from Setup/
  * Lightning UI has no active Site, so it would return null. Instead this
  * derives the same base URL via SOQL against the standard Site/DomainSite/
- * Domain objects, which works from any context - see
- * dev_docs/mcp-object-model-spec.md for the full reasoning.
+ * Domain objects, which works from any context.
  */
 public with sharing class ApexAgentMcpTriggerHandler {
 
-    private static final String MCP_SITE_NAME = 'ApexAgent_MCP_Server';
+    public static final String MCP_SITE_NAME = 'ApexAgent_MCP_Server';
 
     public static void populateEndpointUrl(List<ApexAgent_MCP__c> mcpServers, Map<Id, ApexAgent_MCP__c> oldMcpServersById) {
         String baseUrl;
@@ -23,7 +25,7 @@ public with sharing class ApexAgentMcpTriggerHandler {
             ApexAgent_MCP__c oldMcp = oldMcpServersById == null ? null : oldMcpServersById.get(mcp.Id);
             Boolean isNewRecord = oldMcp == null;
             Boolean nameChanged = !isNewRecord && mcp.MCP_API_Name__c != oldMcp.MCP_API_Name__c;
-            if (!isNewRecord && !nameChanged) {
+            if (!isNewRecord && !nameChanged && String.isNotBlank(mcp.Endpoint_URL__c)) {
                 continue;
             }
 

@@ -1,0 +1,195 @@
+{
+  "llms": [
+    {
+      "Name": "Free Model Router",
+      "Model_API_Name__c": "openrouter/free",
+      "Family__c": "free",
+      "Named_Credential__c": "OpenRouter",
+      "Chat_Completions_Path__c": "/api/v1/chat/completions",
+      "Supports_Reasoning__c": true,
+      "Uncached_Input_Token_Cost_M__c": 0,
+      "Cached_Input_Token_Cost_M__c": 0,
+      "Output_Token_Cost_M__c": 0
+    },
+    {
+      "Name": "Gemini 3.7 Flash",
+      "Model_API_Name__c": "google/gemini-3.7-flash",
+      "Family__c": "Google",
+      "Named_Credential__c": "OpenRouter",
+      "Chat_Completions_Path__c": "/api/v1/chat/completions",
+      "Supports_Reasoning__c": true,
+      "Uncached_Input_Token_Cost_M__c": 0.375,
+      "Cached_Input_Token_Cost_M__c": 0.0375,
+      "Output_Token_Cost_M__c": 1.875
+    }
+  ],
+  "tools": [
+    {
+      "Name": "Get Field Details",
+      "Apex_Class_Name__c": "ApexAgentGetFieldDetails",
+      "Modifies_Salesforce_Data__c": false
+    },
+    {
+      "Name": "Get Object API Name",
+      "Apex_Class_Name__c": "ApexAgentGetObjectApiName",
+      "Modifies_Salesforce_Data__c": false
+    },
+    {
+      "Name": "Get Object Details",
+      "Apex_Class_Name__c": "ApexAgentGetObjectDetails",
+      "Modifies_Salesforce_Data__c": false
+    },
+    {
+      "Name": "Get Record Details",
+      "Apex_Class_Name__c": "ApexAgentGetRecordDetails",
+      "Modifies_Salesforce_Data__c": false
+    },
+    {
+      "Name": "Query Records",
+      "Apex_Class_Name__c": "ApexAgentQueryRecords",
+      "Modifies_Salesforce_Data__c": false
+    },
+    {
+      "Name": "Search Objects",
+      "Apex_Class_Name__c": "ApexAgentSearchObjects",
+      "Modifies_Salesforce_Data__c": false
+    },
+    {
+      "Name": "Search Records",
+      "Apex_Class_Name__c": "ApexAgentSearchRecords",
+      "Modifies_Salesforce_Data__c": false
+    },
+    {
+      "Name": "Upsert Records",
+      "Apex_Class_Name__c": "ApexAgentUpsertRecords",
+      "Modifies_Salesforce_Data__c": true
+    }
+  ],
+  "topics": [
+    {
+      "Name": "Core Operations v1",
+      "Topic_API_Name__c": "Core Operations",
+      "Description__c": "Core instructions to follow and tools available for use",
+      "instructions": [
+        {
+          "Name": "Response Formatting",
+          "Order__c": 1,
+          "Active__c": true,
+          "file": "instructions/response-formatting.md"
+        },
+        {
+          "Name": "SOQL Guidelines",
+          "Order__c": 2,
+          "Active__c": true,
+          "file": "instructions/soql-guidelines.md"
+        },
+        {
+          "Name": "Tool Workflows",
+          "Order__c": 3,
+          "Active__c": true,
+          "file": "instructions/tool-workflows.md"
+        }
+      ],
+      "tools": [
+        {
+          "tool": "ApexAgentGetFieldDetails",
+          "Active__c": true
+        },
+        {
+          "tool": "ApexAgentGetObjectApiName",
+          "Active__c": true
+        },
+        {
+          "tool": "ApexAgentGetObjectDetails",
+          "Active__c": true
+        },
+        {
+          "tool": "ApexAgentGetRecordDetails",
+          "Active__c": true
+        },
+        {
+          "tool": "ApexAgentQueryRecords",
+          "Active__c": true
+        },
+        {
+          "tool": "ApexAgentSearchObjects",
+          "Active__c": true
+        },
+        {
+          "tool": "ApexAgentSearchRecords",
+          "Active__c": true
+        },
+        {
+          "tool": "ApexAgentUpsertRecords",
+          "Active__c": true
+        }
+      ]
+    }
+  ],
+  "agents": [
+    {
+      "Name": "Lumen",
+      "Active__c": true,
+      "Description__c": "You are Lumen, a helpful Salesforce assistant.\n**Core Directives:**\n- **You can address the user by name** but dont overdo it\n- **Output strictly in Rich Text HTML format** — use proper formatting (bold, italics, lists, headers) without Markdown syntax.\n- **Leverage available tools** to retrieve data or perform actions before answering.\n- **Keep answers direct and concise** — no unnecessary elaboration unless asked\n- **Provide accurate Salesforce-specific guidance** based on the context provided.",
+      "Tagline__c": "Your helpful friendly Salesforce Assistant",
+      "Avatar_Static_Resource__c": "Lumen_Agent_Logo",
+      "Primary_Color__c": "#6147b0",
+      "Has_LWC__c": true,
+      "Show_Execution_Message__c": true,
+      "Max_Tokens__c": 10000,
+      "Conversation_Depth__c": 15,
+      "Tool_Log_Depth__c": 5,
+      "Reasoning_Effort__c": "medium",
+      "llm": "Gemini 3.7 Flash",
+      "topics": [
+        {
+          "topic": "Core Operations",
+          "Order__c": 1,
+          "Active__c": true
+        }
+      ]
+    }
+  ],
+  "mcps": [
+    {
+      "Name": "Default MCP Server",
+      "MCP_API_Name__c": "default",
+      "Description__c": "Default MCP server. Exposes the built-in ApexAgent tools for exploring the org's objects and fields and for searching, querying and saving records.",
+      "Active__c": true,
+      "tools": [
+        {
+          "tool": "ApexAgentGetFieldDetails",
+          "Active__c": true
+        },
+        {
+          "tool": "ApexAgentGetObjectApiName",
+          "Active__c": true
+        },
+        {
+          "tool": "ApexAgentGetObjectDetails",
+          "Active__c": true
+        },
+        {
+          "tool": "ApexAgentGetRecordDetails",
+          "Active__c": true
+        },
+        {
+          "tool": "ApexAgentQueryRecords",
+          "Active__c": true
+        },
+        {
+          "tool": "ApexAgentSearchObjects",
+          "Active__c": true
+        },
+        {
+          "tool": "ApexAgentSearchRecords",
+          "Active__c": true
+        },
+        {
+          "tool": "ApexAgentUpsertRecords",
+          "Active__c": true
+        }
+      ]
+    }
+  ]
+}
