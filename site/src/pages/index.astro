@@ -3,6 +3,9 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import { Code } from '@astrojs/starlight/components';
 import { Image } from 'astro:assets';
 import ThemeSelect from '@astrojs/starlight/components/ThemeSelect.astro';
+import claudeAnswer from '../assets/screens/claude-answer.png';
+import sfCases from '../assets/screens/sf-cases.png';
+import lumenCases from '../assets/screens/lumen-cases.png';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const docs = (path: string) => `${base}/${path}/`;
@@ -46,19 +49,6 @@ const costs = [
 	['Running the agent', 'Your model provider’s bill, paid directly, for what you use.'],
 ];
 
-// Product screenshots. Add an image to src/assets/ and import it here as `image`;
-// the section stays hidden until at least one screenshot has an image.
-const shots: { image?: ImageMetadata; alt: string; caption: string }[] = [
-	{
-		alt: 'Claude answering a question about Salesforce records by calling ApexAgent tools',
-		caption: 'From an MCP client: ask in Claude, and it calls the tools in your org.',
-	},
-	{
-		alt: 'Lumen, the starter agent, open in the Salesforce utility bar',
-		caption: 'From inside Salesforce: Lumen, the starter agent, in the utility bar.',
-	},
-];
-const readyShots = shots.filter((shot) => shot.image);
 ---
 
 <StarlightPage
@@ -101,25 +91,40 @@ const readyShots = shots.filter((shot) => shot.image);
 			</div>
 		</section>
 
-		{
-			readyShots.length > 0 && (
-				<section class="shots">
-					{readyShots.map((shot) => (
-						<figure>
-							<div class="shot-frame">
-								<Image
-									src={shot.image!}
-									alt={shot.alt}
-									widths={[640, 1280]}
-									sizes="(min-width: 50rem) 34rem, 100vw"
-								/>
-							</div>
-							<figcaption>{shot.caption}</figcaption>
-						</figure>
-					))}
-				</section>
-			)
-		}
+		<figure class="hero-shot">
+			<div class="hero-stage">
+				<div class="hero-win">
+					<div class="hero-win-bar">Claude</div>
+					<Image
+						src={claudeAnswer}
+						alt="Claude answering “What open cases does Northwind Traders have in Salesforce?” with a table of four cases, after searching and querying Salesforce through ApexAgent."
+						widths={[640, claudeAnswer.width]}
+						sizes="(min-width: 50rem) 32rem, 92vw"
+						loading="eager"
+					/>
+				</div>
+				<div class="hero-link" aria-hidden="true">
+					<svg viewBox="20 56 472 400">
+						<polygon points="20,456 228,56 284,56 316,117.54 140,456"></polygon>
+						<polygon points="336,156 492,456 268.98,456 357.38,352 280.88,262"></polygon>
+					</svg>
+				</div>
+				<div class="hero-win">
+					<div class="hero-win-bar">Salesforce</div>
+					<Image
+						src={sfCases}
+						alt="The Cases list for the Northwind Traders account in Salesforce, showing the same four cases that Claude listed."
+						widths={[640, sfCases.width]}
+						sizes="(min-width: 50rem) 38rem, 92vw"
+						loading="eager"
+					/>
+				</div>
+			</div>
+			<figcaption>
+				Ask in Claude. ApexAgent runs the query in your org and returns the same records you see in
+				Salesforce.
+			</figcaption>
+		</figure>
 
 		<section class="block">
 			<h2>Two ways to use it.</h2>
@@ -148,6 +153,15 @@ const readyShots = shots.filter((shot) => shot.image);
 						</div>
 					))
 				}
+				<figure class="parts-shot">
+					<Image
+						src={lumenCases}
+						alt="Lumen, the starter agent, in the Salesforce utility bar, answering the same question with a list of four open cases."
+						widths={[440, lumenCases.width]}
+						sizes="(min-width: 72rem) 22rem, (min-width: 50rem) 24rem, 92vw"
+					/>
+					<figcaption>Lumen answers the same question inside Salesforce.</figcaption>
+				</figure>
 			</div>
 		</section>
 
@@ -228,7 +242,7 @@ const readyShots = shots.filter((shot) => shot.image);
 
 	/* The header shares the content's left and right edges, and keeps its links at every width. */
 	:root:has(.aa) header.header {
-		padding-inline: max(var(--sl-nav-pad-x), calc((100% - 67.5rem) / 2));
+		padding-inline: max(1rem, calc((100% - 67.5rem) / 2));
 	}
 
 	:root:has(.aa) header.header .right-group {
@@ -351,40 +365,118 @@ const readyShots = shots.filter((shot) => shot.image);
 		clip-path: none;
 	}
 
-	/* Screenshots */
-	.shots {
+	/*
+	 * The hero: two real windows, Claude and Salesforce, with the ApexAgent mark on the
+	 * line that joins them. The figure keeps to the text column, so its edges line up
+	 * with the headline on the left and the header's controls on the right.
+	 */
+	.hero-shot {
+		margin: -1rem 0 3.5rem;
+	}
+
+	.hero-stage {
+		position: relative;
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
-		gap: 2rem;
-		padding-bottom: 4rem;
+		align-items: center;
+		padding-block: 2.5rem;
 	}
 
-	.shots figure {
-		margin: 0;
-	}
-
-	.shot-frame {
-		--cut: 3.5rem;
-		background: var(--surface);
-		clip-path: polygon(
-			0 0,
-			calc(100% - var(--cut) * var(--aa-slant)) 0,
-			100% var(--cut),
-			100% 100%,
-			0 100%
+	/*
+	 * Behind the windows: fine lines at the slant of the mark's bars, fading out towards
+	 * the edges, so the windows have something to stand in front of.
+	 */
+	.hero-stage::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: repeating-linear-gradient(
+			117.5deg,
+			transparent 0 13px,
+			color-mix(in srgb, var(--ink) 16%, transparent) 13px 14px
 		);
+		mask-image: radial-gradient(ellipse 62% 70% at 50% 50%, #000 35%, transparent 100%);
+		pointer-events: none;
 	}
 
-	.shot-frame :global(img) {
+	.hero-win {
+		position: relative;
+		overflow: hidden;
+		border: 1px solid var(--sl-color-gray-4);
+		border-radius: 0.75rem;
+		background: var(--surface);
+		z-index: 1;
+	}
+
+	/*
+	 * On black a dark shadow cannot show, so the lift comes from one soft light behind
+	 * both windows. It is a single shape, so the two windows are lit evenly.
+	 */
+	.hero-stage::after {
+		content: '';
+		position: absolute;
+		inset: 1.25rem 0 0.5rem;
+		border-radius: 3rem;
+		background: rgb(255 255 255 / 0.13);
+		filter: blur(3rem);
+		pointer-events: none;
+	}
+
+	:global([data-theme='light']) .hero-stage::after {
+		content: none;
+	}
+
+	:global([data-theme='light']) .hero-win {
+		border-color: var(--sl-color-gray-5);
+		box-shadow: 0 2.25rem 4.5rem -2rem rgb(0 0 0 / 0.35);
+	}
+
+	.hero-win-bar {
+		padding: 0.625rem 0.875rem;
+		border-bottom: 1px solid var(--rule);
+		color: var(--muted);
+		font-size: 0.8125rem;
+		font-weight: 600;
+		line-height: 1;
+	}
+
+	.hero-win :global(img) {
 		display: block;
 		width: 100%;
 		height: auto;
 	}
 
-	.shots figcaption {
-		margin-top: 0.875rem;
+	/* The join: a hairline between the windows with the mark sitting on it. */
+	.hero-link {
+		position: relative;
+		z-index: 1;
+		display: grid;
+		place-items: center;
+		height: 4.5rem;
+		/* The line is drawn through the middle of the box, so the mark is always centred on it. */
+		background: linear-gradient(var(--muted), var(--muted)) center / 1px 100% no-repeat;
+	}
+
+	.hero-link svg {
+		box-sizing: content-box;
+		width: 1.5rem;
+		height: auto;
+		padding: 0.4375rem;
+		background: var(--paper);
+		border: 1px solid var(--muted);
+		fill: var(--ink);
+	}
+
+	.hero-shot figcaption {
+		margin-top: 0;
+		max-width: 38rem;
+	}
+
+	.aa figcaption {
+		margin-top: 0.625rem;
 		color: var(--muted);
-		font-size: 0.9375rem;
+		font-size: 0.875rem;
+		line-height: 1.5;
 	}
 
 	/* Content blocks */
@@ -430,7 +522,7 @@ const readyShots = shots.filter((shot) => shot.image);
 	.part {
 		display: grid;
 		grid-template-rows: subgrid;
-		grid-row: span 4;
+		grid-row: span 6;
 		gap: 0;
 		justify-items: start;
 	}
@@ -445,14 +537,32 @@ const readyShots = shots.filter((shot) => shot.image);
 		max-width: 31rem;
 	}
 
+	/* Each fact is its own shared row, so the dividers line up across the two columns. */
 	.part dl {
+		display: contents;
+	}
+
+	.parts-shot {
+		margin: 0;
+		max-width: 24rem;
+	}
+
+	.parts-shot :global(img) {
+		display: block;
 		width: 100%;
-		margin: 1.5rem 0 0;
+		height: auto;
+		border: 1px solid var(--sl-color-gray-4);
+		border-radius: 0.75rem;
 	}
 
 	.part dl > div {
+		justify-self: stretch;
 		padding-block: 0.75rem;
 		border-top: 1px solid var(--rule);
+	}
+
+	.part dl > div:first-child {
+		margin-top: 1.5rem;
 	}
 
 	.aa dt {
@@ -538,12 +648,24 @@ const readyShots = shots.filter((shot) => shot.image);
 
 	@media (min-width: 50rem) {
 		.hero {
-			padding-block: 4rem 5rem;
+			padding-block: 3rem 3rem;
 		}
 
-		.shots,
+		.hero-stage {
+			grid-template-columns: minmax(0, 1fr) 4.5rem minmax(0, 1fr);
+		}
+
+		.hero-link {
+			height: 3rem;
+			background-size: 100% 1px;
+		}
+
 		.parts {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.parts-shot {
+			grid-column: 1 / -1;
 		}
 
 		.split {
@@ -555,6 +677,25 @@ const readyShots = shots.filter((shot) => shot.image);
 			grid-template-columns: 16rem minmax(0, 1fr);
 			gap: 2rem;
 			align-items: baseline;
+		}
+	}
+
+	/* On wide screens the Lumen capture stands beside the two columns of text. */
+	@media (min-width: 72rem) {
+		/* With page margin to spare, the light spreads a little past the windows. */
+		.hero-stage::after {
+			inset-inline: -1.5rem;
+		}
+
+		.parts {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 22rem;
+			column-gap: 2.5rem;
+		}
+
+		.parts .parts-shot {
+			grid-column: 3;
+			grid-row: 1 / span 6;
+			align-self: start;
 		}
 	}
 </style>

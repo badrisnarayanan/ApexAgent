@@ -1,0 +1,47 @@
+---
+title: Logs and dashboards
+description: Where to see conversations, tool calls, errors and usage.
+---
+
+import Screenshot from '../../../components/Screenshot.astro';
+import toolLogs from '../../../assets/screens/tool-logs.png';
+import agentDash from '../../../assets/screens/agent-dashboard.png';
+import mcpDash from '../../../assets/screens/mcp-dashboard.png';
+
+
+The Setup Portal has tabs for:
+
+- **Agent Thread Logs** and **Agent Message Logs**: each agent conversation and each turn in it, with token counts and cost
+- **Tool Logs**: every tool call from the agent or an MCP client, with inputs, outputs, duration and status
+- **Agent Error Logs**: failures, with stack traces
+- **Agent Dashboard** and **MCP Dashboard**: usage, errors and slowest calls
+
+## Tool logs
+
+Each row is one tool call. Open a row to see its inputs, its output and, for a failure, the error.
+
+<Screenshot
+	src={toolLogs}
+	alt="The Tool Logs list filtered to MCP calls, with columns for the tool name, the MCP server and the status of each call."
+	caption="Tool Logs records every call, including the ones that failed."
+/>
+
+## Agent dashboard
+
+How much the agent is used and what it costs: users, messages, threads, tokens and spend.
+
+<Screenshot
+	src={agentDash}
+	alt="Tiles from the Agent Activity dashboard showing users, messages, threads, total cost and average cost per message."
+	caption="The first tiles on the Agent Dashboard."
+/>
+
+## MCP dashboard
+
+What connected clients are doing: how many calls, which tools, how many failed and how long they took.
+
+<Screenshot
+	src={mcpDash}
+	alt="Tiles from the MCP Activity dashboard showing users, tool calls, tools used and errors, above a chart of calls per day by server."
+	caption="The first tiles on the MCP Dashboard, with calls per day below."
+/>

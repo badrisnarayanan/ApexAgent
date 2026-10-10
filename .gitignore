@@ -62,3 +62,6 @@ site/.astro/
 
 # Local browser-testing screenshots
 .playwright-mcp/
+
+# Raw screenshots and recordings for the docs site; only cleaned-up copies go in site/
+captures/

@@ -28,7 +28,7 @@ export default {
 	},
 	defaultProps: { frame: 'none' },
 	styleOverrides: {
-		borderRadius: '0',
+		borderRadius: '0.75rem',
 		codeBackground: 'var(--sl-color-gray-6)',
 		frames: { frameBoxShadowCssValue: 'none' },
 	},

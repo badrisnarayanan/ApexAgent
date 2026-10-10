@@ -1,0 +1,77 @@
+---
+title: Set up the agent
+description: Turn on Lumen, the chat assistant that lives in the Salesforce utility bar.
+---
+
+import Screenshot from '../../../components/Screenshot.astro';
+import Animation from '../../../components/Animation.astro';
+import openrouter from '../../../assets/screens/openrouter-credential.png';
+import lumenEmpty from '../../../assets/screens/lumen-empty.png';
+import agentRecord from '../../../assets/screens/agent-record.png';
+
+
+The agent is a chat assistant that lives in the Salesforce utility bar. The starter agent is called **Lumen**. Users ask it questions in plain language, and it uses the same tools to look things up and make changes in the org.
+
+Here the AI model is called from Apex, so **you need an OpenRouter API key**.
+
+[Install ApexAgent](../../start/install/) before you start.
+
+## 1. Add your OpenRouter key
+
+In Setup, go to **Named Credentials**, open the **External Credentials** tab, and open **OpenRouter Credential**. Under **Principals**, open the **Actions** menu at the end of the **Authorization** row and choose **Edit**. Add an authentication parameter:
+
+- **Name:** `Authorization`
+- **Value:** your OpenRouter API key, just the key. Do not put `Bearer` in front of it; ApexAgent adds that.
+
+<Screenshot
+	src={openrouter}
+	alt="The OpenRouter Credential external credential in Salesforce Setup, with a Principals section listing one principal named Authorization."
+	caption="The Actions menu is at the right-hand end of the Authorization row, under Principals."
+	focus={{ x: 86, y: 57, w: 13.5, h: 42 }}
+/>
+
+## 2. Open the agent
+
+From the App Launcher, open the **ApexAgent Setup Portal** app. Lumen is in the utility bar at the bottom of the screen, and also has a full-page **Lumen Agent** tab.
+
+<Screenshot
+	src={lumenEmpty}
+	alt="The Lumen Agent panel open from the Salesforce utility bar, showing the Lumen logo, a greeting and a message box."
+	caption="Select Lumen Agent in the utility bar, at the bottom right of the screen, to open the panel."
+	max={380}
+	focus={{ x: 70, y: 95, w: 29, h: 4.6 }}
+/>
+
+To put it in another Lightning app, edit that app in App Manager and add the **lumenAgent** component to its utility bar.
+
+## 3. Pick a model
+
+Setup creates two LLM records that both use your OpenRouter key:
+
+| LLM | Model |
+| --- | --- |
+| Gemini 3.7 Flash | `google/gemini-3.7-flash` |
+| Free Model Router | `openrouter/free`, which routes to models OpenRouter offers at no cost |
+
+<Screenshot
+	src={agentRecord}
+	alt="The Lumen agent record, with its LLM field set to Gemini 3.7 Flash."
+	caption="The LLM field on the agent record decides which model Lumen uses."
+	focus={{ x: 5, y: 62, w: 23, h: 30 }}
+/>
+
+Lumen starts on Gemini 3.7 Flash. To change it, open the **Agents** tab in the Setup Portal, open **Lumen** and set its **LLM** field. Both options need your OpenRouter key, including the free one.
+
+To use a model or provider that isn't listed, see [Use a different model](../models/).
+
+## See it work
+
+Once the key is in place, ask Lumen something about your data.
+
+<Animation
+	name="lumen-demo"
+	alt="Lumen answering a question about a customer's open cases, then creating a new case after asking for confirmation."
+	caption="Lumen looks up a customer's open cases, then creates a new one after asking for confirmation."
+	width={360}
+	height={556}
+/>

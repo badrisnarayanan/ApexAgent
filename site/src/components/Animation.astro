@@ -1,0 +1,25 @@
+---
+interface Props {
+	/** File name under public/media, without extension. Expects a .gif and a -still.png beside it. */
+	name: string;
+	alt: string;
+	caption?: string;
+	width: number;
+	height: number;
+}
+
+const { name, alt, caption, width, height } = Astro.props;
+const media = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/media/${name}`;
+---
+
+<figure class="shot not-content">
+	<span class="shot-mat">
+		<span class="shot-frame" style={`max-width:${width}px`}>
+			<picture>
+				<source media="(prefers-reduced-motion: reduce)" srcset={`${media}-still.png`} />
+				<img src={`${media}.gif`} alt={alt} width={width} height={height} loading="lazy" decoding="async" />
+			</picture>
+		</span>
+	</span>
+	{caption && <figcaption>{caption}</figcaption>}
+</figure>

@@ -1,0 +1,33 @@
+---
+import { Image } from 'astro:assets';
+
+interface Props {
+	/** An image imported from src/assets/screens. */
+	src: ImageMetadata;
+	alt: string;
+	caption?: string;
+	/** Widest the image is shown, in CSS pixels. Defaults to half its pixel width, since captures are 2x. */
+	max?: number;
+	/** The one control the reader should look at, as percentages of the image. Everything else is dimmed. */
+	focus?: { x: number; y: number; w: number; h: number };
+}
+
+const { src, alt, caption, max = Math.round(src.width / 2), focus } = Astro.props;
+---
+
+<figure class="shot not-content">
+	<a class="shot-mat" href={src.src} aria-label="Open the full-size image">
+		<span class="shot-frame" style={`max-width:${max}px`}>
+			<Image src={src} alt={alt} widths={[640, 960, src.width]} sizes={`(min-width: 50rem) ${max}px, 92vw`} />
+			{
+				focus && (
+					<span
+						class="shot-focus"
+						style={`left:${focus.x}%;top:${focus.y}%;width:${focus.w}%;height:${focus.h}%`}
+					/>
+				)
+			}
+		</span>
+	</a>
+	{caption && <figcaption>{caption}</figcaption>}
+</figure>

@@ -3,6 +3,11 @@ title: Set up the MCP server
 description: Turn your Salesforce org into an MCP server that Claude, ChatGPT and other clients can connect to.
 ---
 
+import Screenshot from '../../../components/Screenshot.astro';
+import mcpRecord from '../../../assets/screens/mcp-server-record.png';
+import oauthSettings from '../../../assets/screens/oauth-settings.png';
+
+
 [MCP](https://modelcontextprotocol.io) (Model Context Protocol) is an open standard that lets an AI client call tools hosted somewhere else. ApexAgent turns your org into an MCP server. Once a client is connected, the person using it can ask things like "what fields are on Opportunity?" or "show me my open cases", and the client calls the tools in your org to answer.
 
 The AI model belongs to the client. ApexAgent only serves the tools, so **no OpenRouter key is needed**.
@@ -17,9 +22,25 @@ From the App Launcher, open the **ApexAgent Setup Portal** app, go to the **MCP 
 https://<your-domain>.my.salesforce-sites.com/services/apexrest/ApexAgent/mcp/default
 ```
 
+<Screenshot
+	src={mcpRecord}
+	alt="The Default MCP Server record in the ApexAgent Setup Portal, showing its MCP API Name, Active checkbox and Endpoint URL."
+	caption="The Endpoint URL is at the top of the Default MCP Server record."
+	focus={{ x: 57.9, y: 44.4, w: 24.5, h: 44.7 }}
+/>
+
 ## 2. Get the OAuth client ID
 
-In Setup, open **External Client App Manager**, open **ApexAgent MCP**, and copy the **Consumer Key** from its OAuth settings. This is the client ID your MCP client asks for. No client secret is needed: the app uses PKCE.
+In Setup, open **External Client App Manager** and open **ApexAgent MCP**. On its **Settings** tab, expand **OAuth Settings** and select **Consumer Key and Secret**. Salesforce may first ask you to verify your identity with a code it emails you. It then opens a page showing the Consumer Key and the Consumer Secret; copy the **Consumer Key**.
+
+<Screenshot
+	src={oauthSettings}
+	alt="The OAuth Settings section of the ApexAgent MCP external client app, with the Consumer Key and Secret button above the Callback URL list."
+	caption="Consumer Key and Secret is under OAuth Settings, above the Callback URL box."
+	focus={{ x: 6.5, y: 24, w: 46, h: 19 }}
+/>
+
+The Consumer Key is the client ID your MCP client asks for. No client secret is needed: the app uses PKCE.
 
 While you are there, edit the app and change its **Contact Email** from the placeholder `admin@example.com` to your own. It is only the contact shown for the app; sign-in works either way.
 

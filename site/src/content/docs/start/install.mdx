@@ -3,6 +3,10 @@ title: Install
 description: Deploy ApexAgent to your org and run the one-time setup.
 ---
 
+import Screenshot from '../../../components/Screenshot.astro';
+import appLauncher from '../../../assets/screens/app-launcher.png';
+
+
 These steps are the same whichever part you want. Check the [prerequisites](../prerequisites/) first.
 
 ## 1. Get the code and sign in to your org
@@ -42,6 +46,17 @@ Assign the **ApexAgent User** permission set to everyone who will chat with the 
 ```bash
 sf org assign permset --name ApexAgent_User --on-behalf-of someone@example.com
 ```
+
+## 5. Check it worked
+
+Open the App Launcher in Salesforce and search for `ApexAgent`. The **ApexAgent Setup Portal** app should be listed.
+
+<Screenshot
+	src={appLauncher}
+	alt="The Salesforce App Launcher with ApexAgent typed in the search box and the ApexAgent Setup Portal app listed under Apps."
+	caption="The App Launcher lists ApexAgent Setup Portal once the deploy and setup have run."
+	focus={{ x: 2.8, y: 55.7, w: 44.7, h: 11.3 }}
+/>
 
 ## Next
 

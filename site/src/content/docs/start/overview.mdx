@@ -3,6 +3,11 @@ title: What ApexAgent is
 description: An AI agent and an MCP server for Salesforce, built in plain Apex, with no extra Salesforce licensing.
 ---
 
+import Screenshot from '../../../components/Screenshot.astro';
+import claudeAnswer from '../../../assets/screens/claude-answer.png';
+import lumenCases from '../../../assets/screens/lumen-cases.png';
+
+
 ApexAgent is an AI agent and an MCP server for Salesforce, built in plain Apex.
 
 Everything deploys into your org and runs with your users' own permissions. There is no middleware and no external server to host.
@@ -28,6 +33,19 @@ ApexAgent gives you two things. They share the same tools, and you can use eithe
 | **Needs an OpenRouter API key** | **No** | **Yes** |
 | **Needs an External Client App (OAuth)** | **Yes** | No |
 | **Users sign in with** | Their own Salesforce login, from the client | Nothing extra; they are already in Salesforce |
+
+<Screenshot
+	src={claudeAnswer}
+	alt="Claude answering a question about a customer's open cases with a table of four cases, after searching and querying Salesforce through ApexAgent."
+	caption="Through the MCP server, Claude searches and queries your org, then answers."
+/>
+
+<Screenshot
+	src={lumenCases}
+	alt="Lumen, the chat assistant inside Salesforce, answering a question about a customer with a list of four open cases."
+	caption="Lumen answers the same question inside Salesforce, with links to the records."
+	max={400}
+/>
 
 ## What's included
 

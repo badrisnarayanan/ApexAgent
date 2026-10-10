@@ -3,7 +3,18 @@ title: Built-in tools
 description: The ten tools that ship with ApexAgent, and how they respect your users' permissions.
 ---
 
+import Screenshot from '../../../components/Screenshot.astro';
+import toolsList from '../../../assets/screens/tools-list.png';
+import lumenTools from '../../../assets/screens/lumen-tool-executions.png';
+
+
 ApexAgent ships with ten tools.
+
+<Screenshot
+	src={toolsList}
+	alt="The Agent Tools list in the ApexAgent Setup Portal, showing ten tools with their names and Apex class names. Only Upsert Records is ticked as modifying data."
+	caption="Each tool is a record in the Setup Portal that points at an Apex class."
+/>
 
 ## Available to the MCP server and the agent
 
@@ -32,6 +43,15 @@ Two more give MCP clients the context they otherwise lack:
 Every tool runs as the signed-in user. Object permissions, field-level security and sharing rules all apply, so nobody sees or changes anything they couldn't in the Salesforce UI.
 
 The two MCP-only tools are the one exception: they read in system mode, but only the signed-in user's own user record and the org's settings, so they still work for users with minimal permissions.
+
+In the agent, every reply shows which tools ran to produce it.
+
+<Screenshot
+	src={lumenTools}
+	alt="A Lumen reply listing four open cases, with a Tool Executions section above it showing two steps: getting Case object details and querying open cases."
+	caption="Expand Tool Executions on a reply to see the steps Lumen took."
+	max={400}
+/>
 
 ## More tools
 

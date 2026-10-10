@@ -3,6 +3,11 @@ title: Add your own tool
 description: Write an Apex class with one invocable method and give it to an agent, an MCP server, or both.
 ---
 
+import Screenshot from '../../../components/Screenshot.astro';
+import newToolForm from '../../../assets/screens/new-tool-form.png';
+import regenerateSchema from '../../../assets/screens/regenerate-schema.png';
+
+
 A tool is an Apex class with one `@InvocableMethod`. ApexAgent reads the method's labels and descriptions and builds the tool definition from them, so the descriptions are what the AI model reads to decide when and how to call your tool.
 
 ## 1. Write the class
@@ -48,10 +53,26 @@ Conventions the built-in tools follow, and yours should too:
 
 ## 2. Register it
 
-In the Setup Portal, open the **Agent Tools** tab and create a record with **Apex Class Name** set to your class name. Tick **Modifies Salesforce Data?** if it creates, updates or deletes records.
+In the Setup Portal, open the **Agent Tools** tab and select **New**. Give the tool a **Name**, set **Apex Class Name** to your class name, and tick **Modifies Salesforce Data?** if it creates, updates or deletes records. Leave the schema fields empty and select **Save**.
 
-The tool's schema is generated a few seconds after you save. If you change the class later, use the **Regenerate Schema** action on the tool record.
+<Screenshot
+	src={newToolForm}
+	alt="The New Agent Tool form with Get Account Health as the name, ApexAgentGetAccountHealth as the Apex Class Name, and the Modifies Salesforce Data checkbox unticked."
+	caption="Name and Apex Class Name are the only required fields."
+/>
+
+The tool's schema is generated a few seconds after you save. If you change the class later, use **Regenerate Schema** on the tool record.
+
+<Screenshot
+	src={regenerateSchema}
+	alt="The buttons at the top of an Agent Tool record: Edit, Clone, Delete and Regenerate Schema."
+	caption="Regenerate Schema is the last button at the top of the tool record."
+	focus={{ x: 56, y: 12, w: 43, h: 76 }}
+/>
 
 ## 3. Make it available
 
-From the tool's related lists, add it to an **Agent Topic** to give it to an agent, to an **MCP Server** to give it to MCP clients, or both.
+A new tool does nothing until it is given to a topic, an MCP server, or both.
+
+- **To give it to an agent:** open the tool record's **Related** tab and select **New** in **Topics Using This Tool**.
+- **To give it to MCP clients:** open the MCP Server record, go to its **Related** tab and select **New** in **Tools**.

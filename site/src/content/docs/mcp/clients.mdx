@@ -1,0 +1,89 @@
+---
+title: Connect a client
+description: Settings for connecting Claude, ChatGPT, MCP Inspector and other MCP clients to ApexAgent.
+---
+
+import Screenshot from '../../../components/Screenshot.astro';
+import claudeAddMenu from '../../../assets/screens/claude-add-menu.png';
+import claudeForm from '../../../assets/screens/claude-connector-form.png';
+import claudeClientId from '../../../assets/screens/claude-client-id.png';
+import claudeConnected from '../../../assets/screens/claude-connected.png';
+import claudeApproval from '../../../assets/screens/claude-approval.png';
+
+
+Every client needs two values from [Set up the MCP server](../setup/): the **Endpoint URL** and the **client ID** (the External Client App's Consumer Key).
+
+## Claude
+
+1. In Claude, open **Customize**, then **Connectors**. Select **Add**, then **Add custom connector**.
+
+   <Screenshot
+   	src={claudeAddMenu}
+   	alt="The Connectors screen in Claude with the Add menu open, showing one item: Add custom connector."
+   	caption="Add custom connector is the only item in the Add menu."
+   	focus={{ x: 77.5, y: 28.6, w: 20.9, h: 16.3 }}
+   />
+
+2. Enter a name in the first field, such as `Salesforce`, and paste the Endpoint URL into the second field, **MCP server URL**. Select **Continue**.
+
+   <Screenshot
+   	src={claudeForm}
+   	alt="The Add custom connector dialog in Claude, with Salesforce as the name and the ApexAgent endpoint URL in the MCP server URL field."
+   	caption="The name is only a label in Claude. The MCP server URL is your Endpoint URL."
+   />
+
+3. Under **OAuth client**, choose **Use your own OAuth client**. A field labelled **OAuth client ID** appears under it; paste the Consumer Key there and leave the client secret empty. Claude preselects **Register automatically**, which Salesforce does not support, so change it.
+
+   <Screenshot
+   	src={claudeClientId}
+   	alt="The OAuth client options in the Add custom connector dialog, with Use your own OAuth client selected and a client ID entered."
+   	caption="Choose Use your own OAuth client, then paste the Consumer Key as the OAuth client ID."
+   	focus={{ x: 3.3, y: 40.3, w: 92.9, h: 30.1 }}
+   />
+
+4. Scroll to the bottom of the dialog and select **Add**. Sign in with your Salesforce login if Claude asks. If you are already signed in to Salesforce in that browser, it connects straight away. Claude then lists the tools it found.
+
+   <Screenshot
+   	src={claudeConnected}
+   	alt="The Salesforce connector in Claude after connecting, listing nine read-only tools such as Get Current User, Query Records and Search Records."
+   	caption="Once connected, Claude lists the ApexAgent tools. Nine are read-only; the tenth, Upsert Records, is listed below them because it can change data."
+   />
+
+5. Ask Claude something about your org. The first time it wants to use a tool, it asks for permission. Choose **Allow once**, or **Always allow** to stop being asked for that tool.
+
+   <Screenshot
+   	src={claudeApproval}
+   	alt="Claude asking for permission to use the Search Records tool from Salesforce, with Decline, Always allow and Allow once buttons."
+   	caption="Claude shows which tool it wants to run, and with what input, before it runs it."
+   />
+
+Claude's callback URL, `https://claude.ai/api/mcp/auth_callback`, is already allowed in the External Client App.
+
+## ChatGPT
+
+ChatGPT needs Developer Mode to add a custom connector. Create the connector with these settings:
+
+| Setting | Value |
+| --- | --- |
+| Server URL | The Endpoint URL |
+| Registration method | User-Defined OAuth Client |
+| OAuth client ID | The Consumer Key |
+| OAuth client secret | Leave empty |
+| Token endpoint auth method | Leave empty |
+| OIDC enabled | **Unticked** |
+
+Before you connect, copy the **Callback URL** ChatGPT shows on that screen and add it to the External Client App's callback URLs in Salesforce: in Setup, open **External Client App Manager**, edit **ApexAgent MCP**, and add the URL to **Callback URL** under its OAuth settings. ChatGPT gives every connector its own callback URL, so repeat this for each new connector. Salesforce can take a few minutes to apply the change.
+
+If sign-in fails with `invalid_scope`, ChatGPT is asking for scopes the app does not allow. Check that **OIDC enabled** is unticked.
+
+## MCP Inspector
+
+Use the Endpoint URL with the client ID. Its callback URL, `http://localhost:6274/oauth/callback`, is already allowed in the External Client App.
+
+## Another client
+
+The client must let you enter an OAuth client ID. Salesforce does not let clients register themselves.
+
+1. Add the client's callback URL to the External Client App's OAuth settings.
+2. Connect with the Endpoint URL and the client ID.
+3. If the client requests extra scopes, limit them to `api` and `refresh_token`.
