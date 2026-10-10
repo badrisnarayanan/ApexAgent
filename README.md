@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-white.svg">
+    <img src="assets/logo-black.svg" alt="ApexAgent logo" width="120">
+  </picture>
+</p>
+
 # ApexAgent
 
 **An AI agent and an MCP server for Salesforce, built in plain Apex. No Agentforce license. No Flex Credits.**
