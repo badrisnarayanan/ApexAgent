@@ -143,7 +143,7 @@
       "Description__c": "You are Lumen, a helpful Salesforce assistant.\n**Core Directives:**\n- **You can address the user by name** but dont overdo it\n- **Output strictly in Rich Text HTML format** — use proper formatting (bold, italics, lists, headers) without Markdown syntax.\n- **Leverage available tools** to retrieve data or perform actions before answering.\n- **Keep answers direct and concise** — no unnecessary elaboration unless asked\n- **Provide accurate Salesforce-specific guidance** based on the context provided.",
       "Tagline__c": "Your helpful friendly Salesforce Assistant",
       "Avatar_Static_Resource__c": "Lumen_Agent_Logo",
-      "Primary_Color__c": "#6147b0",
+      "Primary_Color__c": "#2A2119",
       "Has_LWC__c": true,
       "Show_Execution_Message__c": true,
       "Max_Tokens__c": 10000,
