@@ -1,13 +1,11 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-white.svg">
-    <img src="assets/logo-black.svg" alt="ApexAgent logo" width="120">
-  </picture>
-</p>
-
 # ApexAgent
 
-**An AI agent and an MCP server for Salesforce, built in plain Apex. No Agentforce license. No Flex Credits.**
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.png">
+    <img src="assets/banner-light.png" alt="ApexAgent: an AI agent and an MCP server for Salesforce, built in plain Apex. No Agentforce license. No Flex Credits." width="820">
+  </picture>
+</p>
 
 > 💡 **No extra Salesforce licensing.** ApexAgent uses only standard platform features: Apex, custom objects, Lightning Web Components and a Salesforce Site. It needs **no Agentforce license, no Flex Credits, no Einstein add-on and no Data Cloud**. If your org can run Apex, it can run ApexAgent.
 >
