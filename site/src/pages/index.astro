@@ -1,0 +1,560 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { Code } from '@astrojs/starlight/components';
+import { Image } from 'astro:assets';
+import ThemeSelect from '@astrojs/starlight/components/ThemeSelect.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const docs = (path: string) => `${base}/${path}/`;
+const repo = 'https://github.com/badrisnarayanan/ApexAgent';
+
+const install = `git clone ${repo}.git
+cd ApexAgent
+sf org login web --alias my-org --set-default
+sf project deploy start --source-dir force-app
+sf apex run --file seed/setup.apex`;
+
+const parts = [
+	{
+		name: 'MCP server',
+		what: 'Lets AI apps like Claude and ChatGPT read and update your Salesforce data. MCP is the open standard they use to call tools hosted elsewhere, here your org.',
+		facts: [
+			['Where the model runs', 'In the client you connect. ApexAgent never calls a model.'],
+			['Who pays for the model', 'Each person, through the Claude or ChatGPT plan they already use.'],
+			['Users sign in with', 'Their own Salesforce login, from the client.'],
+		],
+		link: { text: 'Set up the MCP server', href: docs('mcp/setup') },
+	},
+	{
+		name: 'Agent',
+		what: 'A chat assistant inside Salesforce, in the utility bar. The starter agent is called Lumen, and you can reshape it or add your own.',
+		facts: [
+			['Where the model runs', 'Called from Apex, through OpenRouter, a service that gives one key for many AI models.'],
+			['Who pays for the model', 'You, through your OpenRouter key.'],
+			['Users sign in with', 'Nothing extra. They are already in Salesforce.'],
+		],
+		link: { text: 'Set up the agent', href: docs('agent/setup') },
+	},
+];
+
+const costs = [
+	[
+		'Salesforce licensing',
+		'None. No Agentforce license, no Flex Credits, no Einstein add-on, no Data Cloud. Agentforce is Salesforce’s own paid AI agent product, and Flex Credits are the usage credits it is billed in.',
+	],
+	['Running the MCP server', 'Nothing. The AI model is the one in the app each person already uses.'],
+	['Running the agent', 'Your model provider’s bill, paid directly, for what you use.'],
+];
+
+// Product screenshots. Add an image to src/assets/ and import it here as `image`;
+// the section stays hidden until at least one screenshot has an image.
+const shots: { image?: ImageMetadata; alt: string; caption: string }[] = [
+	{
+		alt: 'Claude answering a question about Salesforce records by calling ApexAgent tools',
+		caption: 'From an MCP client: ask in Claude, and it calls the tools in your org.',
+	},
+	{
+		alt: 'Lumen, the starter agent, open in the Salesforce utility bar',
+		caption: 'From inside Salesforce: Lumen, the starter agent, in the utility bar.',
+	},
+];
+const readyShots = shots.filter((shot) => shot.image);
+---
+
+<StarlightPage
+	frontmatter={{
+		title: 'An AI agent and an MCP server for Salesforce',
+		description:
+			'An AI agent and an MCP server for Salesforce, built in plain Apex. No Agentforce license. No Flex Credits.',
+		template: 'splash',
+		// The browser tab leads with the name, so it survives when the tab is narrow.
+		head: [
+			{ tag: 'title', content: 'ApexAgent: an AI agent and an MCP server for Salesforce' },
+			{
+				tag: 'meta',
+				attrs: {
+					property: 'og:title',
+					content: 'ApexAgent: an AI agent and an MCP server for Salesforce',
+				},
+			},
+		],
+		tableOfContents: false,
+		pagefind: false,
+	}}
+>
+	<div class="aa not-content">
+		<section class="hero">
+			<h1 id="_top">
+				<span>An AI&nbsp;agent and an MCP&nbsp;server for&nbsp;Salesforce.</span>{' '}
+				<span class="hero-cost">
+					<span>No Agentforce license.</span>{' '}
+					<span>No Flex Credits.</span>
+				</span>
+			</h1>
+			<p class="lede">
+				Let Claude or ChatGPT work with your Salesforce data, and give your users a chat assistant
+				inside Salesforce. Open source, built in plain Apex.
+			</p>
+			<div class="actions">
+				<a class="btn btn-solid" href={docs('start/install')}>Install ApexAgent</a>
+				<a class="btn btn-line" href={docs('start/overview')}>Read the docs</a>
+			</div>
+		</section>
+
+		{
+			readyShots.length > 0 && (
+				<section class="shots">
+					{readyShots.map((shot) => (
+						<figure>
+							<div class="shot-frame">
+								<Image
+									src={shot.image!}
+									alt={shot.alt}
+									widths={[640, 1280]}
+									sizes="(min-width: 50rem) 34rem, 100vw"
+								/>
+							</div>
+							<figcaption>{shot.caption}</figcaption>
+						</figure>
+					))}
+				</section>
+			)
+		}
+
+		<section class="block">
+			<h2>Two ways to use it.</h2>
+			<p class="block-lede">
+				Want Claude or ChatGPT to work with Salesforce? Set up the MCP server. Want a chat assistant
+				inside Salesforce? Set up the agent. They share the same tools, and you can use either one
+				without the other.
+			</p>
+			<div class="parts">
+				{
+					parts.map((part) => (
+						<div class="part">
+							<h3>{part.name}</h3>
+							<p>{part.what}</p>
+							<dl>
+								{part.facts.map(([term, detail]) => (
+									<div>
+										<dt>{term}</dt>
+										<dd>{detail}</dd>
+									</div>
+								))}
+							</dl>
+							<a class="text-link" href={part.link.href}>
+								{part.link.text}
+							</a>
+						</div>
+					))
+				}
+			</div>
+		</section>
+
+		<section class="block split">
+			<div>
+				<h2>Deploy it in five commands.</h2>
+				<p class="block-lede">
+					Setup creates a starter configuration with one agent and one MCP server. After that it is
+					a few clicks in Salesforce Setup for the part you want.
+				</p>
+				<p class="block-lede">
+					You need a Developer, Enterprise, Performance or Unlimited Edition org where you are a
+					System Administrator, plus Git and the Salesforce CLI.
+				</p>
+				<a class="text-link" href={docs('start/install')}>Read the full install guide</a>
+			</div>
+			<div class="code">
+				<Code code={install} lang="bash" />
+			</div>
+		</section>
+
+		<section class="block">
+			<h2>What it costs.</h2>
+			<dl class="rows">
+				{
+					costs.map(([term, detail]) => (
+						<div>
+							<dt>{term}</dt>
+							<dd>{detail}</dd>
+						</div>
+					))
+				}
+			</dl>
+		</section>
+
+		<section class="block">
+			<h2>Ten tools included.</h2>
+			<p class="block-lede">
+				Find objects, describe their fields, read and search records, run SOQL queries, and create
+				or update records. Every tool that touches records runs as the signed-in user, so nobody
+				sees or changes anything they couldn’t in the Salesforce UI.
+			</p>
+			<p class="after">
+				<a class="text-link" href={docs('tools/built-in')}>See what each tool does</a>
+				<a class="text-link" href={docs('tools/add-a-tool')}>Add your own tool</a>
+			</p>
+		</section>
+
+		<footer class="foot">
+			<p>
+				ApexAgent is open source under the <a href={`${repo}/blob/main/LICENSE`}>MIT license</a>.
+			</p>
+			<p>
+				Not affiliated with or endorsed by Salesforce. Salesforce and Agentforce are trademarks of
+				Salesforce, Inc.
+			</p>
+			<div class="foot-theme">
+				<ThemeSelect />
+			</div>
+		</footer>
+	</div>
+</StarlightPage>
+
+<style is:global>
+	/* Starlight's title is left out on this page, so its emptied panel and the rule under it go too. */
+	:root:has(.aa) main > .content-panel:first-child {
+		display: none;
+	}
+
+	:root:has(.aa) main > .content-panel {
+		border-top: 0;
+	}
+
+	/* Search is for the docs pages; the landing page has nothing to search. */
+	:root:has(.aa) site-search {
+		display: none;
+	}
+
+	/* The header shares the content's left and right edges, and keeps its links at every width. */
+	:root:has(.aa) header.header {
+		padding-inline: max(var(--sl-nav-pad-x), calc((100% - 67.5rem) / 2));
+	}
+
+	:root:has(.aa) header.header .right-group {
+		display: flex;
+	}
+
+	/* On a phone the theme switch moves to the footer, which leaves room for the name and the links. */
+	@media (max-width: 30rem) {
+		:root:has(.aa) header.header starlight-theme-select {
+			display: none;
+		}
+
+		:root:has(.aa) header.header .social-icons::after {
+			content: none;
+		}
+	}
+</style>
+
+<style>
+	.aa {
+		--ink: var(--sl-color-white);
+		--paper: var(--sl-color-black);
+		--muted: var(--sl-color-gray-3);
+		--rule: var(--sl-color-gray-5);
+		--surface: var(--sl-color-gray-6);
+		color: var(--sl-color-gray-2);
+		font-size: 1.0625rem;
+		line-height: 1.55;
+	}
+
+	.aa h1,
+	.aa h2,
+	.aa h3 {
+		color: var(--ink);
+		margin: 0;
+	}
+
+	.aa p {
+		margin: 0;
+	}
+
+	/* Hero: the headline is the image. */
+	.hero {
+		padding-block: 2.5rem 4rem;
+	}
+
+	.hero h1 {
+		font-size: clamp(2.1rem, 7.6vw, 4.25rem);
+		line-height: 1.05;
+		letter-spacing: -0.028em;
+	}
+
+	.hero h1 > span {
+		display: block;
+		max-width: 17em;
+	}
+
+	/* The cost line is the second statement, so it steps back to grey as it does on the banner. */
+	.hero-cost {
+		margin-top: 0.3em;
+		color: var(--muted);
+	}
+
+	.hero-cost span {
+		display: block;
+	}
+
+	.hero .lede {
+		max-width: 38rem;
+		text-wrap: pretty;
+		margin-top: 1.75rem;
+		font-size: 1.1875rem;
+	}
+
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin-top: 2rem;
+	}
+
+	/* Buttons take the mark's corner cut: one sliced corner at the bars' slant. */
+	.btn {
+		--cut: 0.9rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 3rem;
+		padding: 0 1.5rem 0 1.25rem;
+		font-weight: 600;
+		text-decoration: none;
+		clip-path: polygon(
+			0 0,
+			calc(100% - var(--cut) * var(--aa-slant)) 0,
+			100% var(--cut),
+			100% 100%,
+			0 100%
+		);
+	}
+
+	.btn-solid {
+		background: var(--ink);
+		color: var(--paper);
+	}
+
+	.btn-solid:hover {
+		background: var(--sl-color-gray-2);
+	}
+
+	.btn-line {
+		background: var(--surface);
+		color: var(--ink);
+	}
+
+	.btn-line:hover {
+		background: var(--rule);
+	}
+
+	.btn:focus-visible {
+		clip-path: none;
+	}
+
+	/* Screenshots */
+	.shots {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2rem;
+		padding-bottom: 4rem;
+	}
+
+	.shots figure {
+		margin: 0;
+	}
+
+	.shot-frame {
+		--cut: 3.5rem;
+		background: var(--surface);
+		clip-path: polygon(
+			0 0,
+			calc(100% - var(--cut) * var(--aa-slant)) 0,
+			100% var(--cut),
+			100% 100%,
+			0 100%
+		);
+	}
+
+	.shot-frame :global(img) {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	.shots figcaption {
+		margin-top: 0.875rem;
+		color: var(--muted);
+		font-size: 0.9375rem;
+	}
+
+	/* Content blocks */
+	.block {
+		padding-block: 4rem;
+		border-top: 1px solid var(--rule);
+	}
+
+	.block h2 {
+		font-size: clamp(1.9rem, 3.8vw, 2.75rem);
+		line-height: 1.1;
+		letter-spacing: -0.025em;
+	}
+
+	.block .block-lede {
+		max-width: 38rem;
+		text-wrap: pretty;
+		margin-top: 1rem;
+	}
+
+	.text-link {
+		display: inline-block;
+		margin-top: 1.5rem;
+		color: var(--ink);
+		font-weight: 600;
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.25em;
+	}
+
+	.text-link:hover {
+		text-decoration-thickness: 2px;
+	}
+
+	/* The two parts share row lines, so their facts stay level whatever the copy length. */
+	.parts {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 3rem;
+		margin-top: 3rem;
+	}
+
+	.part {
+		display: grid;
+		grid-template-rows: subgrid;
+		grid-row: span 4;
+		gap: 0;
+		justify-items: start;
+	}
+
+	.part h3 {
+		font-size: 1.5rem;
+		letter-spacing: -0.025em;
+	}
+
+	.part > p {
+		margin-top: 0.625rem;
+		max-width: 31rem;
+	}
+
+	.part dl {
+		width: 100%;
+		margin: 1.5rem 0 0;
+	}
+
+	.part dl > div {
+		padding-block: 0.75rem;
+		border-top: 1px solid var(--rule);
+	}
+
+	.aa dt {
+		color: var(--muted);
+		font-size: 0.9375rem;
+	}
+
+	.aa dd {
+		margin: 0.125rem 0 0;
+		color: var(--ink);
+	}
+
+	.split {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2rem;
+		align-items: start;
+	}
+
+	.code {
+		min-width: 0;
+	}
+
+	.rows {
+		margin: 2.5rem 0 0;
+	}
+
+	.rows > div {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0.25rem;
+		padding-block: 1.125rem;
+		border-top: 1px solid var(--rule);
+	}
+
+	.rows dd {
+		margin: 0;
+		font-size: 1.125rem;
+	}
+
+	.after {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0 2rem;
+	}
+
+	.foot {
+		padding-block: 2rem 1rem;
+		border-top: 1px solid var(--rule);
+		color: var(--muted);
+		font-size: 0.875rem;
+	}
+
+	.foot p + p {
+		margin-top: 0.375rem;
+	}
+
+	.foot a {
+		color: inherit;
+	}
+
+	/* The header has no room for the theme switch on a phone, so it sits here instead. */
+	.foot-theme {
+		display: none;
+		margin-top: 1.25rem;
+	}
+
+	@media (max-width: 30rem) {
+		.btn {
+			width: 100%;
+		}
+
+		.foot-theme {
+			display: block;
+		}
+	}
+
+	@media (max-width: 50rem) {
+		.hero h1 > span {
+			text-wrap: balance;
+		}
+	}
+
+	@media (min-width: 50rem) {
+		.hero {
+			padding-block: 4rem 5rem;
+		}
+
+		.shots,
+		.parts {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.split {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+			gap: 3.5rem;
+		}
+
+		.rows > div {
+			grid-template-columns: 16rem minmax(0, 1fr);
+			gap: 2rem;
+			align-items: baseline;
+		}
+	}
+</style>

@@ -1,0 +1,44 @@
+---
+title: What ApexAgent is
+description: An AI agent and an MCP server for Salesforce, built in plain Apex, with no extra Salesforce licensing.
+---
+
+ApexAgent is an AI agent and an MCP server for Salesforce, built in plain Apex.
+
+Everything deploys into your org and runs with your users' own permissions. There is no middleware and no external server to host.
+
+## No extra Salesforce licensing
+
+ApexAgent uses only standard platform features: Apex, custom objects, Lightning Web Components and a Salesforce Site. It needs **no Agentforce license, no Flex Credits, no Einstein add-on and no Data Cloud**. It runs in Developer, Enterprise, Performance and Unlimited Edition orgs.
+
+The only running cost is the AI model itself, and only for the agent: you pay your model provider directly for what you use. The MCP server costs nothing to run, because the model belongs to the client that connects.
+
+## Two things, one set of tools
+
+ApexAgent gives you two things. They share the same tools, and you can use either one without the other.
+
+[MCP](https://modelcontextprotocol.io) (Model Context Protocol) is an open standard that lets an AI app call tools hosted somewhere else. [OpenRouter](https://openrouter.ai) is a service that gives you one API key for many AI models.
+
+| | MCP server | Agent |
+| --- | --- | --- |
+| **What it is** | An endpoint in your org that lets an outside AI app (Claude, ChatGPT, or any other MCP client) use Salesforce tools | A chat assistant inside Salesforce, in the utility bar |
+| **Where the AI model runs** | In the client you connect. ApexAgent never calls a model. | Called from Apex, through OpenRouter |
+| **Extra Salesforce license** | **None** | **None** |
+| **Who pays for the model** | Whoever runs the client | You, through your OpenRouter key |
+| **Needs an OpenRouter API key** | **No** | **Yes** |
+| **Needs an External Client App (OAuth)** | **Yes** | No |
+| **Users sign in with** | Their own Salesforce login, from the client | Nothing extra; they are already in Salesforce |
+
+## What's included
+
+- **[Ten built-in tools](../../tools/built-in/)** for finding objects, reading records, running queries and saving changes.
+- **ApexAgent Setup Portal**: a Lightning app for managing LLMs, agents, topics, instructions, tools and MCP servers.
+- **Logs** of every conversation, message, tool call and error.
+- **Reports and dashboards** for agent and MCP activity.
+- **A setup script** that creates a working starter configuration, so there is something to use right after install.
+
+## Where to go next
+
+1. Check the [prerequisites](../prerequisites/).
+2. [Install ApexAgent](../install/). The steps are the same whichever part you want.
+3. [Set up the MCP server](../../mcp/setup/), [set up the agent](../../agent/setup/), or both.

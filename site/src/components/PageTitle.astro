@@ -1,0 +1,9 @@
+---
+import Default from '@astrojs/starlight/components/PageTitle.astro';
+
+// The landing page's hero carries its own h1, so Starlight's title is left out there.
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const isLanding = Astro.url.pathname.replace(/\/$/, '') === base;
+---
+
+{!isLanding && <Default />}

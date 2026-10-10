@@ -1,0 +1,23 @@
+---
+import Default from '@astrojs/starlight/components/SocialIcons.astro';
+
+// One plain link into the docs, so the landing page's header leads somewhere.
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<a class="docs-link" href={`${base}/start/overview/`}>Docs</a>
+<Default />
+
+<style>
+	.docs-link {
+		margin-inline-end: 0.25rem;
+		color: var(--sl-color-white);
+		font-weight: 500;
+		text-decoration: none;
+	}
+
+	.docs-link:hover {
+		text-decoration: underline;
+		text-underline-offset: 0.25em;
+	}
+</style>

@@ -1,0 +1,129 @@
+/*
+ * ApexAgent theme: pure black and white, taken from the mark.
+ * Starlight reads these custom properties; dark is the default scheme.
+ */
+:root {
+	--sl-font: 'DM Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--sl-font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+	--sl-color-accent-low: #262626;
+	--sl-color-accent: #ffffff;
+	--sl-color-accent-high: #ffffff;
+	--sl-color-white: #ffffff;
+	--sl-color-gray-1: #ededed;
+	--sl-color-gray-2: #c4c4c4;
+	--sl-color-gray-3: #9a9a9a;
+	--sl-color-gray-4: #5c5c5c;
+	--sl-color-gray-5: #2e2e2e;
+	--sl-color-gray-6: #171717;
+	--sl-color-black: #000000;
+
+	/* The slant of the mark's bars: horizontal run per unit of height. */
+	--aa-slant: 0.52;
+
+	/* Header and sidebar sit on the page colour, divided by a rule, not a tint. */
+	--sl-color-bg-nav: var(--sl-color-black);
+	--sl-color-bg-sidebar: var(--sl-color-black);
+}
+
+:root[data-theme='light'] {
+	--sl-color-accent-low: #e8e8e8;
+	--sl-color-accent: #000000;
+	--sl-color-accent-high: #000000;
+	--sl-color-white: #000000;
+	--sl-color-gray-1: #171717;
+	--sl-color-gray-2: #2e2e2e;
+	--sl-color-gray-3: #5c5c5c;
+	--sl-color-gray-4: #8f8f8f;
+	--sl-color-gray-5: #c4c4c4;
+	--sl-color-gray-6: #ededed;
+	--sl-color-gray-7: #f6f6f6;
+	--sl-color-black: #ffffff;
+}
+
+/* Headings are set at a medium weight with tight tracking; size does the work, not boldness. */
+h1,
+h2,
+h3,
+h4 {
+	font-weight: 500;
+	letter-spacing: -0.022em;
+}
+
+/* The name beside the mark is set bold so the two carry the same visual weight. */
+.site-title {
+	font-size: var(--sl-text-xl);
+	font-weight: 700;
+	letter-spacing: -0.03em;
+}
+
+/* In long-form docs the headings step down so they organise the page without shouting. */
+h1#_top:not(:where(.not-content *)) {
+	font-size: 2.5rem;
+	line-height: 1.1;
+}
+
+.sl-markdown-content h2:not(:where(.not-content *)) {
+	font-size: 1.625rem;
+	line-height: 1.2;
+	font-weight: 600;
+	letter-spacing: -0.025em;
+}
+
+.sl-markdown-content h3:not(:where(.not-content *)) {
+	font-size: 1.1875rem;
+	font-weight: 600;
+	letter-spacing: -0.015em;
+}
+
+.right-sidebar h2 {
+	font-size: 0.875rem;
+	font-weight: 600;
+	letter-spacing: 0;
+}
+
+/* Links are told apart by their underline, since there is no accent colour. */
+.sl-markdown-content a:not(:where(.not-content *)) {
+	font-weight: 600;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.2em;
+}
+.sl-markdown-content a:not(:where(.not-content *)):hover {
+	text-decoration-thickness: 2px;
+}
+
+:focus-visible {
+	outline: 2px solid var(--sl-color-white);
+	outline-offset: 2px;
+}
+
+/* The current page is marked by weight and a bar at the edge, not a filled pill. */
+nav.sidebar a[aria-current='page'],
+nav.sidebar a[aria-current='page']:hover,
+nav.sidebar a[aria-current='page']:focus {
+	background: none;
+	color: var(--sl-color-white);
+	font-weight: 700;
+	border-radius: 0;
+	box-shadow: inset 2px 0 var(--sl-color-white);
+}
+
+site-search button[data-open-modal] {
+	max-width: 14rem;
+	border-radius: 0;
+}
+
+.sl-markdown-content td:last-child,
+.sl-markdown-content th:last-child {
+	padding-inline-end: 0.5rem;
+}
+
+@media (max-width: 50rem) {
+	.sl-markdown-content td:first-child {
+		width: 40%;
+	}
+
+	.sl-markdown-content td:first-child code {
+		overflow-wrap: anywhere;
+	}
+}
