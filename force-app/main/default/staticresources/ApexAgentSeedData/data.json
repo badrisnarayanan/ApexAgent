@@ -25,6 +25,11 @@
   ],
   "tools": [
     {
+      "Name": "Get Current User",
+      "Apex_Class_Name__c": "ApexAgentGetCurrentUser",
+      "Modifies_Salesforce_Data__c": false
+    },
+    {
       "Name": "Get Field Details",
       "Apex_Class_Name__c": "ApexAgentGetFieldDetails",
       "Modifies_Salesforce_Data__c": false
@@ -37,6 +42,11 @@
     {
       "Name": "Get Object Details",
       "Apex_Class_Name__c": "ApexAgentGetObjectDetails",
+      "Modifies_Salesforce_Data__c": false
+    },
+    {
+      "Name": "Get Org Info",
+      "Apex_Class_Name__c": "ApexAgentGetOrgInfo",
       "Modifies_Salesforce_Data__c": false
     },
     {
@@ -154,9 +164,13 @@
     {
       "Name": "Default MCP Server",
       "MCP_API_Name__c": "default",
-      "Description__c": "Default MCP server. Exposes the built-in ApexAgent tools for exploring the org's objects and fields and for searching, querying and saving records.",
+      "Description__c": "Default MCP server. Exposes the built-in ApexAgent tools for identifying the current user and org, exploring the org's objects and fields, and searching, querying and saving records.",
       "Active__c": true,
       "tools": [
+        {
+          "tool": "ApexAgentGetCurrentUser",
+          "Active__c": true
+        },
         {
           "tool": "ApexAgentGetFieldDetails",
           "Active__c": true
@@ -167,6 +181,10 @@
         },
         {
           "tool": "ApexAgentGetObjectDetails",
+          "Active__c": true
+        },
+        {
+          "tool": "ApexAgentGetOrgInfo",
           "Active__c": true
         },
         {

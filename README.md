@@ -39,7 +39,7 @@ If you only want the MCP server, skip every step marked 🤖. If you only want t
 
 ## What's included
 
-**🧰 Eight built-in tools**, available to both the MCP server and the agent:
+**🧰 Ten built-in tools.** Eight are available to both the MCP server and the agent:
 
 | Tool | What it does |
 | --- | --- |
@@ -52,7 +52,14 @@ If you only want the MCP server, skip every step marked 🤖. If you only want t
 | `ApexAgentQueryRecords` | Runs a SOQL query |
 | `ApexAgentUpsertRecords` | Creates or updates records |
 
-Every tool runs as the signed-in user. Object permissions, field-level security and sharing rules all apply, so nobody sees or changes anything they couldn't in the Salesforce UI.
+Two more are on the MCP server only, to give MCP clients the context they otherwise lack:
+
+| Tool | What it does |
+| --- | --- |
+| `ApexAgentGetCurrentUser` | Tells the client who it is acting for: name, email, username, title, profile, role, manager, time zone and locale |
+| `ApexAgentGetOrgInfo` | Gives the org's name, Id, edition and base URLs, plus a record link template so the client links records instead of showing bare IDs |
+
+Every tool runs as the signed-in user. Object permissions, field-level security and sharing rules all apply, so nobody sees or changes anything they couldn't in the Salesforce UI. The two MCP-only tools are the one exception: they read in system mode, but only the signed-in user's own user record and the org's settings, so they still work for users with minimal permissions.
 
 **Also included:**
 
@@ -104,7 +111,7 @@ sf apex run --file seed/setup.apex
 
 Setup prints one line beginning `ApexAgent setup:` that says what it did. On a first run it:
 
-- creates the starter configuration: 2 LLMs, 8 tools, 1 topic with 3 instructions, 1 agent (Lumen) and 1 MCP server
+- creates the starter configuration: 2 LLMs, 10 tools, 1 topic with 3 instructions, 1 agent (Lumen) and 1 MCP server
 - assigns the **ApexAgent Admin** permission set to you
 - assigns the **ApexAgent MCP Guest** permission set to the MCP Site's guest user
 

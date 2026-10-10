@@ -51,6 +51,19 @@ Always prefer the specialized sf-skill over generic approaches — they enforce 
 - Test comprehensively, but keep the number of test methods limited: multiple assertions per method, consolidate cases into fewer methods
 - Run tests synchronously, never async
 
+### Adding a tool and seed data
+
+Seed configuration (tools, topics, instructions, agents, MCP servers and their links) lives in the org. The `ApexAgentSeedData` static resource is generated from it, never written by hand.
+
+1. Write the tool's `@InvocableMethod` class in `classes/ApexAgent/tools/` and its test in `classes/ApexAgent/tests/`, following the Apex and Tests conventions above.
+2. Deploy only the new classes (`sf project deploy start --source-dir <path> ...`) and run their tests synchronously, one class per run (`sf apex run test --class-names <Test> --synchronous --code-coverage`).
+3. Create the configuration records in the org: an `ApexAgent_Tool__c` for the class, plus `ApexAgent_MCP_Tool_Map__c` links to MCP servers and/or `ApexAgent_Topic_Tool_Map__c` links to topics. Change other config records (e.g. an MCP server's `Description__c`) the same way. Use inline anonymous Apex piped to `sf apex run`, or the Setup Portal. Never save one-off `.apex` scripts in the repo.
+4. Wait for the tool's `Schema__c` and `MCP_Schema__c` to populate (the tool trigger regenerates them asynchronously).
+5. Run `npm run export-seed` to regenerate `staticresources/ApexAgentSeedData/` from the org, review the git diff, then redeploy only `StaticResource:ApexAgentSeedData`.
+6. Add the tool to the "What's included" table in README.md, and update the tool counts there (the table heading and the "N tools" line in the setup step).
+
+Never hand-edit `data.json` or the instruction files under `ApexAgentSeedData/`. If something there is wrong, fix the record in the org and export again.
+
 ## LWC Development
 
 - Always invoke both `sf-lwc` and `frontend-design:frontend-design` skills when creating or editing LWC components — `sf-lwc` enforces Salesforce/PICKLES conventions, `frontend-design` ensures design quality.
