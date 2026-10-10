@@ -65,7 +65,7 @@ Seed configuration (tools, topics, instructions, agents, MCP servers and their l
 3. Create the configuration records in the org: an `ApexAgent_Tool__c` for the class, plus `ApexAgent_MCP_Tool_Map__c` links to MCP servers and/or `ApexAgent_Topic_Tool_Map__c` links to topics. Change other config records (e.g. an MCP server's `Description__c`) the same way. Use inline anonymous Apex piped to `sf apex run`, or the Setup Portal. Never save one-off `.apex` scripts in the repo.
 4. Wait for the tool's `Schema__c` and `MCP_Schema__c` to populate (the tool trigger regenerates them asynchronously).
 5. Run `npm run export-seed` to regenerate `staticresources/ApexAgentSeedData/` from the org, review the git diff, then redeploy only `StaticResource:ApexAgentSeedData`.
-6. Add the tool to the "What's included" table in README.md, and update the tool counts there (the table heading and the "N tools" line in the setup step).
+6. Add the tool to the tables in `site/src/content/docs/tools/built-in.md`, and update the tool counts wherever they appear: that page, `site/src/content/docs/start/install.md`, the "Ten tools included" block in `site/src/pages/index.astro`, and the Quick start and What's included sections of README.md.
 
 Never hand-edit `data.json` or the instruction files under `ApexAgentSeedData/`. If something there is wrong, fix the record in the org and export again.
 
