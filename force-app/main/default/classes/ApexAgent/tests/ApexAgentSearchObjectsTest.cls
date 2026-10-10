@@ -43,66 +43,32 @@ private class ApexAgentSearchObjectsTest {
         }
     }
 
-    // ─── Well-known terms return correct top matches ─────────────────────────────
+    // ─── Well-known terms return the matching standard object ────────────────────
+    // Object metadata is not isolated in tests, so an installing org's own or packaged
+    // objects are ranked too and one labelled the same can tie with the standard object.
+    // These tests assert the object is returned, never that it is first.
 
     @IsTest
     static void testKnownTerms() {
-        List<Object> caseResults = search('case');
-        Assert.isTrue(caseResults.size() > 0, '"case" should return results');
-        Assert.areEqual('Case', qualifiedApiName(caseResults[0]), '"case" top result should be Case');
-
-        List<Object> accResults = search('account');
-        Assert.isTrue(accResults.size() > 0, '"account" should return results');
-        Assert.isTrue(qualifiedApiName(accResults[0]).toLowerCase().contains('account'), '"account" top result should contain account');
-
-        List<Object> contactResults = search('contact');
-        Assert.isTrue(contactResults.size() > 0, '"contact" should return results');
-        Assert.isTrue(qualifiedApiName(contactResults[0]).toLowerCase().contains('contact'), '"contact" top result should contain contact');
+        Assert.isNotNull(resultFor(search('case'), 'Case'), '"case" should return Case');
+        Assert.isNotNull(resultFor(search('account'), 'Account'), '"account" should return Account');
+        Assert.isNotNull(resultFor(search('contact'), 'Contact'), '"contact" should return Contact');
     }
 
     // ─── Abbreviation expansion ──────────────────────────────────────────────────
 
     @IsTest
     static void testAbbreviations() {
-        List<Object> accResults = search('acc');
-        Assert.isTrue(accResults.size() > 0, '"acc" should return results');
-        Boolean foundAccount = false;
-        for (Object r : accResults) {
-            if (qualifiedApiName(r).equalsIgnoreCase('Account')) {
-                foundAccount = true;
-                break;
-            }
-        }
-        Assert.isTrue(foundAccount, '"acc" should include Account in results');
-
-        List<Object> woResults = search('wo');
-        Assert.isTrue(woResults.size() > 0, '"wo" should return results');
-        Boolean foundWorkOrder = false;
-        for (Object r : woResults) {
-            if (qualifiedApiName(r).equalsIgnoreCase('WorkOrder')) {
-                foundWorkOrder = true;
-                break;
-            }
-        }
-        Assert.isTrue(foundWorkOrder, '"wo" should include WorkOrder in results');
+        Assert.isNotNull(resultFor(search('acc'), 'Account'), '"acc" should include Account in results');
+        Assert.isNotNull(resultFor(search('wo'), 'WorkOrder'), '"wo" should include WorkOrder in results');
     }
 
     // ─── Multi-word and camelCase terms ──────────────────────────────────────────
 
     @IsTest
     static void testMultiWordAndCamelCase() {
-        List<Object> woResults = search('work order');
-        Assert.isTrue(woResults.size() > 0, '"work order" should return results');
-        String topWo = qualifiedApiName(woResults[0]).toLowerCase();
-        Assert.isTrue(topWo.contains('workorder') || topWo.contains('work'),
-            '"work order" top result should relate to WorkOrder');
-
-        List<Object> ccResults = search('WorkOrder');
-        Assert.isTrue(ccResults.size() > 0, '"WorkOrder" should return results');
-        Assert.isTrue(
-            qualifiedApiName(ccResults[0]).equalsIgnoreCase('WorkOrder'),
-            '"WorkOrder" camelCase top result should be WorkOrder'
-        );
+        Assert.isNotNull(resultFor(search('work order'), 'WorkOrder'), '"work order" should return WorkOrder');
+        Assert.isNotNull(resultFor(search('WorkOrder'), 'WorkOrder'), '"WorkOrder" camelCase should return WorkOrder');
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -118,24 +84,68 @@ private class ApexAgentSearchObjectsTest {
         return (String) ((Map<String, Object>) rawResult).get('qualifiedApiName');
     }
 
+    private static Map<String, Object> resultFor(List<Object> results, String apiName) {
+        for (Object raw : results) {
+            if (qualifiedApiName(raw).equalsIgnoreCase(apiName)) {
+                return (Map<String, Object>) raw;
+            }
+        }
+        return null;
+    }
+
     // ─── Word-overlap scoring and camelCase API names ────────────────────────────
 
     @IsTest
     static void testCamelCaseNamesAndUndilutedScores() {
-        List<Object> lineItem = search('OpportunityLineItem');
-        Assert.areEqual('OpportunityLineItem', qualifiedApiName(lineItem[0]), 'camelCase API name should be the top match');
+        Map<String, Object> lineItem = resultFor(search('OpportunityLineItem'), 'OpportunityLineItem');
+        Assert.isNotNull(lineItem, 'camelCase API name should be found');
 
         // 100 exact + 60 starts-with + 30 contains + 40 word overlap + 20 similarity: the
         // overlap must not be diluted by guessed sub-word fragments
-        Assert.isTrue((Double) ((Map<String, Object>) lineItem[0]).get('score') >= 249.9,
-            'Exact match should earn the full word-overlap points — got: ' + lineItem[0]);
+        Assert.isTrue((Double) lineItem.get('score') >= 249.9,
+            'Exact match should earn the full word-overlap points — got: ' + lineItem);
 
-        List<Object> spaced = search('opportunity line item');
-        Assert.areEqual('OpportunityLineItem', qualifiedApiName(spaced[0]), 'Spaced words should find the camelCase object');
+        Assert.isNotNull(resultFor(search('opportunity line item'), 'OpportunityLineItem'),
+            'Spaced words should find the camelCase object');
 
-        List<Object> account = search('Account');
-        Assert.areEqual('Account', qualifiedApiName(account[0]), 'Account exact match first');
-        Assert.isTrue((Double) ((Map<String, Object>) account[0]).get('score') >= 249.9,
-            'Single-word exact match should be undiluted — got: ' + account[0]);
+        Map<String, Object> account = resultFor(search('Account'), 'Account');
+        Assert.isNotNull(account, 'Account should be found by its exact name');
+        Assert.isTrue((Double) account.get('score') >= 249.9,
+            'Single-word exact match should be undiluted — got: ' + account);
+    }
+
+    // ─── An exact match survives the candidate queries being cut short ───────────
+
+    @IsTest
+    static void testExactMatchSurvivesTruncatedCandidates() {
+        // Far more than one object matches "account", so a limit of 1 cuts both
+        // candidate queries short, as 200 does in an org with enough objects
+        ApexAgentSearchObjects.candidateLimit = 1;
+
+        Map<String, Object> account = resultFor(search('account'), 'Account');
+        Assert.isNotNull(account, 'The object named outright must be found even when the candidates are cut short');
+        Assert.isTrue((Double) account.get('score') >= 249.9, 'It should still score as an exact match — got: ' + account);
+        Assert.isNotNull(resultFor(search('work order'), 'WorkOrder'), 'An exact label match must be found too');
+    }
+
+    // ─── Equal scores are ordered standard, then the org's own, then packaged ────
+
+    @IsTest
+    static void testTiesPreferStandardThenOwnThenPackagedObjects() {
+        // Same label on all four, so every score is identical. Built out of order.
+        Map<String, EntityDefinition> candidates = new Map<String, EntityDefinition>();
+        for (String apiName : new List<String>{ 'pkg__Account__c', 'Account_Record__c', 'Account__c', 'Account' }) {
+            candidates.put(apiName, (EntityDefinition) JSON.deserialize(
+                JSON.serialize(new Map<String, Object>{ 'QualifiedApiName' => apiName, 'Label' => 'Account' }), EntityDefinition.class));
+        }
+
+        List<ApexAgentSearchObjects.ObjectMatch> ranked = ApexAgentSearchObjects.scoreAndRank(candidates, 'account');
+
+        Assert.areEqual(4, ranked.size(), 'Every candidate should be ranked');
+        Assert.areEqual(ranked[0].score, ranked[3].score, 'The candidates are meant to tie — got: ' + ranked);
+        Assert.areEqual('Account', ranked[0].qualifiedApiName, 'The standard object goes first');
+        Assert.areEqual('Account__c', ranked[1].qualifiedApiName, 'The shorter of the org\'s own objects goes next');
+        Assert.areEqual('Account_Record__c', ranked[2].qualifiedApiName, 'The org\'s own objects go before packaged ones');
+        Assert.areEqual('pkg__Account__c', ranked[3].qualifiedApiName, 'Packaged objects go last');
     }
 }

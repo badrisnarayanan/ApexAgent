@@ -334,18 +334,14 @@ private class ApexAgentMcpResourceTest {
 
     @IsTest
     static void testUnexpectedFailuresStayJsonRpc() {
-        User noAccessUser = new User(
-            ProfileId = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce' LIMIT 1].Id,
-            LastName = 'McpNoAccess',
-            Email = 'mcp.noaccess@example.com',
-            Username = 'mcp.noaccess.' + System.currentTimeMillis() + '@example.com',
-            Alias = 'mcpnoacc',
-            TimeZoneSidKey = 'America/Los_Angeles',
-            LocaleSidKey = 'en_US',
-            EmailEncodingKey = 'UTF-8',
-            LanguageLocaleKey = 'en_US'
-        );
-        insert noAccessUser;
+        // Only a profile with no access to the server object can prove this, so
+        // there is no falling back to another profile when it can't be found
+        Id minimumAccessProfileId = ApexAgentTestDataFactory.minimumAccessProfileId();
+        User noAccessUser = ApexAgentTestDataFactory.newUser('McpNoAccess');
+        noAccessUser.ProfileId = minimumAccessProfileId;
+        if (minimumAccessProfileId == null || !ApexAgentTestDataFactory.tryInsert(noAccessUser)) {
+            return;
+        }
 
         // Read access to the server object only, not to the tool mapping, so the
         // server resolves but the tools/list query fails in the dispatcher. View

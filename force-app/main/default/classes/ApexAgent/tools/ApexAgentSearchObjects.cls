@@ -9,6 +9,10 @@ public with sharing class ApexAgentSearchObjects {
 
     private static final Integer MAX_RESULTS = 10;
 
+    // The most rows one EntityDefinition query returns
+    @TestVisible
+    private static Integer candidateLimit = 200;
+
     public class Input {
         @InvocableVariable(required=true label='Search Term' description='The term to fuzzy-match against Salesforce object API names and labels.')
         public String searchTerm;
@@ -208,36 +212,64 @@ public with sharing class ApexAgentSearchObjects {
     private static Map<String, EntityDefinition> queryEntities(Set<String> patterns) {
         Map<String, EntityDefinition> resultMap = new Map<String, EntityDefinition>();
 
+        List<String> exactNames = new List<String>();
         List<String> likePatterns = new List<String>();
         for (String p : patterns) {
+            exactNames.add(p);
+            exactNames.add(p + '__c');
             likePatterns.add('%' + p + '%');
         }
 
-        for (EntityDefinition e : [
+        List<EntityDefinition> byApiName = [
             SELECT QualifiedApiName, Label
             FROM EntityDefinition
             WHERE IsCustomizable = true
             AND QualifiedApiName LIKE :likePatterns
-            LIMIT 200
-        ]) {
-            resultMap.put(e.QualifiedApiName, e);
-        }
-
-        for (EntityDefinition e : [
+            LIMIT :candidateLimit
+        ];
+        List<EntityDefinition> byLabel = [
             SELECT QualifiedApiName, Label
             FROM EntityDefinition
             WHERE IsCustomizable = true
             AND Label LIKE :likePatterns
-            LIMIT 200
-        ]) {
-            if (!resultMap.containsKey(e.QualifiedApiName)) {
-                resultMap.put(e.QualifiedApiName, e);
-            }
+            LIMIT :candidateLimit
+        ];
+        collect(resultMap, byApiName);
+        collect(resultMap, byLabel);
+
+        // A query that came back full was cut short in no particular order, which happens
+        // in orgs with many custom or packaged objects. The object the term names outright
+        // could be among the rows left out, so it is fetched on its own. LIKE with no %
+        // matches the whole name, ignoring case.
+        if (byApiName.size() == candidateLimit) {
+            collect(resultMap, [
+                SELECT QualifiedApiName, Label
+                FROM EntityDefinition
+                WHERE IsCustomizable = true
+                AND QualifiedApiName LIKE :exactNames
+                LIMIT 200
+            ]);
+        }
+        if (byLabel.size() == candidateLimit) {
+            collect(resultMap, [
+                SELECT QualifiedApiName, Label
+                FROM EntityDefinition
+                WHERE IsCustomizable = true
+                AND Label LIKE :exactNames
+                LIMIT 200
+            ]);
         }
 
         return resultMap;
     }
 
+    private static void collect(Map<String, EntityDefinition> resultMap, List<EntityDefinition> entities) {
+        for (EntityDefinition e : entities) {
+            resultMap.put(e.QualifiedApiName, e);
+        }
+    }
+
+    @TestVisible
     private static List<ObjectMatch> scoreAndRank(Map<String, EntityDefinition> resultMap, String searchTerm) {
         String lowerSearch = searchTerm.toLowerCase();
         String searchNoSeparators = lowerSearch.replaceAll('[\\s_]', '');
@@ -325,7 +357,24 @@ public with sharing class ApexAgentSearchObjects {
             // Descending order
             if (this.score > o.score) return -1;
             if (this.score < o.score) return 1;
-            return 0;
+
+            // Equal scores happen when a custom or packaged object is labelled like a
+            // standard one. Standard objects go first, then the org's own, then packaged
+            // ones, then the shorter name, so the order is the same on every call.
+            String name = this.entity.QualifiedApiName;
+            String otherName = o.entity.QualifiedApiName;
+            if (origin(name) != origin(otherName)) {
+                return origin(name) - origin(otherName);
+            }
+            if (name.length() != otherName.length()) {
+                return name.length() - otherName.length();
+            }
+            return name.compareTo(otherName);
+        }
+
+        /** 0 standard (Account), 1 the org's own (Plan__c), 2 packaged (ns__Plan__c). */
+        private Integer origin(String apiName) {
+            return Math.min(apiName.countMatches('__'), 2);
         }
     }
 }

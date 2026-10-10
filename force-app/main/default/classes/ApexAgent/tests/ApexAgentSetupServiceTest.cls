@@ -155,8 +155,11 @@ private class ApexAgentSetupServiceTest {
     static void testUnreadyOrgIsBlockedBeforeAnythingIsCreated() {
         // An org where part of the project was not deployed: the guest permission set is missing.
         String missingPermissionSet = ApexAgentSetupService.GUEST_PERMISSION_SET;
-        delete [SELECT Id FROM PermissionSetAssignment WHERE PermissionSet.Name = :missingPermissionSet];
-        delete [SELECT Id FROM PermissionSet WHERE Name = :missingPermissionSet];
+        List<PermissionSetAssignment> assignments = [SELECT Id FROM PermissionSetAssignment WHERE PermissionSet.Name = :missingPermissionSet];
+        List<PermissionSet> permissionSets = [SELECT Id FROM PermissionSet WHERE Name = :missingPermissionSet];
+        if (!ApexAgentTestDataFactory.tryDelete(assignments) || !ApexAgentTestDataFactory.tryDelete(permissionSets)) {
+            return;
+        }
         ApexAgentSeedArchive archive = archiveOf(validSeed(), new Map<String, String>{ INSTRUCTION_FILE => INSTRUCTION_TEXT });
 
         Test.startTest();

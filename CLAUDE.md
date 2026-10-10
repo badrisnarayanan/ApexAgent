@@ -50,6 +50,11 @@ Always prefer the specialized sf-skill over generic approaches — they enforce 
 ### Tests
 - Test comprehensively, but keep the number of test methods limited: multiple assertions per method, consolidate cases into fewer methods
 - Run tests synchronously, never async
+- Tests run inside installers' orgs on a production deploy, so they must survive that org's customizations:
+  - Never insert or update standard objects (Account, Contact, Case, ...). Use `ApexAgent_*` records from `ApexAgentTestDataFactory`
+  - Where a User is unavoidable (`System.runAs`), build it with the factory and save it with `tryInsert`; skip that part of the test if the org rejects it
+  - Don't depend on org state: no profile lookups by name without a fallback, no assumptions about language, labels or installed features
+  - Object metadata isn't isolated in tests. Assert a standard object is returned, never that it ranks first or is the only match
 
 ### Adding a tool and seed data
 

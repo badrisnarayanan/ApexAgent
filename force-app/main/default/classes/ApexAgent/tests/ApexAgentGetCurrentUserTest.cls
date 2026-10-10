@@ -5,17 +5,23 @@ private class ApexAgentGetCurrentUserTest {
 
     @IsTest
     static void testReturnsRunningUserWithProfileRoleAndManager() {
-        UserRole role = new UserRole(Name = 'ApexAgent Test Role', DeveloperName = 'ApexAgentTestRole' + uniqueSuffix());
-        insert role;
-        User manager = newUser('Manager', null, null);
-        insert manager;
+        UserRole role = new UserRole(Name = 'ApexAgent Test Role',
+            DeveloperName = 'ApexAgentTestRole' + ApexAgentTestDataFactory.uniqueSuffix());
+        User manager = ApexAgentTestDataFactory.newUser('Manager');
+        if (!ApexAgentTestDataFactory.tryInsert(role) || !ApexAgentTestDataFactory.tryInsert(manager)) {
+            return;
+        }
         // A minimum-access user proves the tool still returns profile, role and manager
         // details to someone with almost no permissions
-        User member = newUser('Member', role.Id, manager.Id);
-        member.ProfileId = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce' LIMIT 1].Id;
+        User member = ApexAgentTestDataFactory.newUser('Member');
+        member.ProfileId = ApexAgentTestDataFactory.minimumAccessProfileId() ?? UserInfo.getProfileId();
+        member.UserRoleId = role.Id;
+        member.ManagerId = manager.Id;
         member.Title = 'Solutions Engineer';
         member.Department = 'Engineering';
-        insert member;
+        if (!ApexAgentTestDataFactory.tryInsert(member)) {
+            return;
+        }
 
         List<ApexAgentGetCurrentUser.Output> results;
         System.runAs(member) {
@@ -38,7 +44,7 @@ private class ApexAgentGetCurrentUserTest {
         Assert.areEqual(manager.Id, o.managerId, 'managerId should match');
         Assert.areEqual([SELECT Name FROM User WHERE Id = :manager.Id].Name, o.managerName, 'managerName should come from the manager');
         Assert.areEqual('Standard', o.userType, 'userType should be Standard');
-        Assert.areEqual('Asia/Kolkata', o.timeZone, 'timeZone should match');
+        Assert.areEqual(member.TimeZoneSidKey, o.timeZone, 'timeZone should match');
         Assert.areEqual('en_US', o.locale, 'locale should match');
         Assert.areEqual('en_US', o.language, 'language should match');
         Assert.isNotNull(o.currencyIsoCode, 'currencyIsoCode should always be set');
@@ -66,29 +72,5 @@ private class ApexAgentGetCurrentUserTest {
         Assert.areEqual(UserInfo.getUserEmail(), parsed.get('email'), 'email should match');
         Assert.areEqual(UserInfo.getUserName(), parsed.get('username'), 'username should match');
         Assert.isTrue(parsed.containsKey('profileName'), 'profileName should be returned');
-    }
-
-    // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-    private static User newUser(String lastName, Id roleId, Id managerId) {
-        String suffix = uniqueSuffix();
-        return new User(
-            FirstName         = 'ApexAgent',
-            LastName          = lastName,
-            Alias             = lastName.left(4) + suffix.right(4),
-            Email             = lastName.toLowerCase() + '@apexagent.test',
-            Username          = lastName.toLowerCase() + suffix + '@apexagent.test',
-            ProfileId         = UserInfo.getProfileId(),
-            UserRoleId        = roleId,
-            ManagerId         = managerId,
-            TimeZoneSidKey    = 'Asia/Kolkata',
-            LocaleSidKey      = 'en_US',
-            LanguageLocaleKey = 'en_US',
-            EmailEncodingKey  = 'UTF-8'
-        );
-    }
-
-    private static String uniqueSuffix() {
-        return String.valueOf(Crypto.getRandomInteger()).remove('-');
     }
 }
