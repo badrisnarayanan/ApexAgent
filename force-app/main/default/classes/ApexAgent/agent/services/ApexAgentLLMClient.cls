@@ -1,5 +1,5 @@
 /**
- * Handles HTTP callouts to the OpenRouter chat completions endpoint.
+ * Handles HTTP callouts to an OpenAI-compatible chat completions endpoint.
  * Serializes the request, enforces timeout, and parses the response.
  * Retries up to MAX_RETRIES times on transient errors (network failures, 429, 5xx).
  */
@@ -99,7 +99,7 @@ public with sharing class ApexAgentLLMClient {
         Map<String, Object> body = new Map<String, Object>{
             'model'      => config.modelApiName,
             'messages'   => messages,
-            'max_tokens' => config.maxTokens,
+            'max_completion_tokens' => config.maxTokens,
             'stream'     => false
         };
 
@@ -110,9 +110,7 @@ public with sharing class ApexAgentLLMClient {
 
         if (String.isNotBlank(config.reasoningEffort)
                 && config.reasoningEffort != 'disabled') {
-            body.put('reasoning', new Map<String, Object>{
-                'effort' => config.reasoningEffort
-            });
+            body.put('reasoning_effort', config.reasoningEffort);
         }
 
         return body;
