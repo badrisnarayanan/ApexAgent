@@ -26,8 +26,6 @@ const parts = [
 		icon: mcpIcon,
 		what: 'Lets AI apps like Claude and ChatGPT read and update your Salesforce data. MCP is the open standard they use to call tools hosted elsewhere, here your org.',
 		facts: [
-			['Where the model runs', 'In the client you connect. ApexAgent never calls a model.'],
-			['Who pays for the model', 'Each person, through the Claude or ChatGPT plan they already use.'],
 			['Users sign in with', 'Their own Salesforce login, from the client.'],
 		],
 		link: { text: 'Set up the MCP server', href: docs('mcp/setup') },
@@ -37,11 +35,54 @@ const parts = [
 		icon: agentIcon,
 		what: 'A chat assistant inside Salesforce, in the utility bar. The starter agent is called Lumen, and you can reshape it or add your own.',
 		facts: [
-			['Where the model runs', 'Called from Apex, at any OpenAI-compatible provider. OpenRouter comes preconfigured.'],
-			['Who pays for the model', 'You, through your own account with the model provider.'],
 			['Users sign in with', 'Nothing extra. They are already in Salesforce.'],
 		],
 		link: { text: 'Set up the agent', href: docs('agent/setup') },
+	},
+];
+
+const why = [
+	{
+		name: 'MCP server',
+		icon: 'mcp',
+		points: [
+			[
+				'No Flex Credits',
+				'Salesforce’s own MCP servers are for Flex Credit customers. This one uses your org’s ordinary API requests.',
+			],
+			['Costs nothing to run', 'The model belongs to the app each person already uses, such as Claude or ChatGPT.'],
+			['You choose the tools', 'Each server exposes only the tools you give it, including ones you write.'],
+		],
+		cost: {
+			title: 'Cost to run',
+			bars: [
+				{ label: 'Salesforce MCP', width: 100, value: 'Flex Credits', unknown: true },
+				{ label: 'ApexAgent', width: 0, value: '$0' },
+			],
+			note: 'Salesforce has not yet published its rate for hosted MCP usage.',
+		},
+	link: { text: 'Compare with Salesforce Hosted MCP Servers', href: docs('start/compare/mcp') },
+	},
+	{
+		name: 'Agent',
+		icon: 'agent',
+		points: [
+			['No Agentforce license', 'Agentforce is billed by usage. This agent runs on Apex you deploy.'],
+			[
+				'You pay the model’s price',
+				'You pay your AI provider for what you use. Nothing is added per action.',
+			],
+			['Works with your provider', 'Use the AI provider your company already has, under the data retention agreement already in place.'],
+		],
+		cost: {
+			title: 'Cost of one question',
+			bars: [
+				{ label: 'Agentforce', width: 100, value: '$0.17' },
+				{ label: 'ApexAgent', width: 5.6, value: '$0.009' },
+			],
+			note: 'About 18× less on a low-cost model. ApexAgent: the average of 139 logged questions on Gemini Flash. Agentforce: 20 Flex Credits an action.',
+		},
+		link: { text: 'Compare with Agentforce', href: docs('start/compare/agent') },
 	},
 ];
 
@@ -56,7 +97,7 @@ const security = [
 	],
 	[
 		'Where data goes',
-		'Only to the AI provider you choose, under your agreement with them. ApexAgent has no server of its own.',
+		'Only to the AI provider you choose. Whether they keep it is set by your agreement with them, such as the zero data retention terms most enterprises already have.',
 	],
 	['What an AI can do', 'Only what you allow. You pick the tools each agent and MCP server may use.'],
 ];
@@ -64,23 +105,13 @@ const security = [
 const config = [
 	[
 		'Tools',
-		'Ten included, for finding objects and for reading, searching, querying and saving records. Add your own with one Apex class.',
+		'Ten included, for finding, reading and saving records. Add your own with one Apex class.',
 	],
 	[
 		'Agents',
 		'As many as you need, each with its own name, look, instructions and model.',
 	],
 	['MCP servers', 'More than one, each with its own set of tools. Keep one read-only, for example.'],
-	['Models', 'Any OpenAI-compatible provider. OpenRouter comes preconfigured, and you can switch to your own.'],
-];
-
-const costs = [
-	[
-		'Salesforce licensing',
-		'None. No Agentforce license, no Flex Credits, no Einstein add-on, no Data Cloud. Agentforce is Salesforce’s own paid AI agent product, and Flex Credits are the usage credits it is billed in.',
-	],
-	['Running the MCP server', 'Nothing. The AI model is the one in the app each person already uses.'],
-	['Running the agent', 'Your model provider’s bill, paid directly, for what you use.'],
 ];
 
 ---
@@ -191,6 +222,49 @@ const costs = [
 						</div>
 					))
 				}
+			</div>
+		</section>
+
+		<section class="block">
+			<h2>Why ApexAgent.</h2>
+			<div class="why" style="--why-rows: 6">
+				{
+					why.map((col) => (
+						<div class="why-col">
+							<h3>
+								<span class="part-icon" set:html={col.icon === 'mcp' ? mcpIcon : agentIcon} />
+								{col.name}
+							</h3>
+							<dl>
+								{col.points.map(([term, detail]) => (
+									<div>
+										<dt>{term}</dt>
+										<dd>{detail}</dd>
+									</div>
+								))}
+							</dl>
+							<div class="cost">
+								<p class="cost-title">{col.cost.title}</p>
+								{col.cost.bars.map((bar) => (
+									<div class="cost-row">
+										<span class="cost-label">{bar.label}</span>
+										<span class="cost-track">
+											<span
+												class:list={['cost-bar', { 'cost-bar-unknown': bar.unknown, 'cost-bar-ours': bar.label === 'ApexAgent' }]}
+												style={`width: ${bar.width}%`}
+											/>
+										</span>
+										<span class="cost-value">{bar.value}</span>
+									</div>
+								))}
+								<p class="cost-note">{col.cost.note}</p>
+							</div>
+							<a class="text-link" href={col.link.href}>
+								{col.link.text}
+							</a>
+						</div>
+					))
+				}
 				<figure class="parts-shot">
 					<Image
 						src={lumenCases}
@@ -229,21 +303,11 @@ const costs = [
 		</section>
 
 		<section class="block">
-			<h2>What it costs.</h2>
-			<dl class="rows">
-				{
-					costs.map(([term, detail]) => (
-						<div>
-							<dt>{term}</dt>
-							<dd>{detail}</dd>
-						</div>
-					))
-				}
-			</dl>
-		</section>
-
-		<section class="block">
-			<h2>Your permissions still apply.</h2>
+			<h2>Your data, your rules.</h2>
+			<p class="block-lede">
+				An AI model only ever sees what answers the question, and only data that user may see. It
+				goes to the provider you choose, under the agreement you already have with them.
+			</p>
 			<dl class="rows">
 				{
 					security.map(([term, detail]) => (
@@ -254,7 +318,7 @@ const costs = [
 					))
 				}
 			</dl>
-			<a class="text-link" href={docs('operate/security')}>Read about security and data</a>
+			<a class="text-link" href={docs('operate/security')}>Read how your data is protected</a>
 		</section>
 
 		<section class="block">
@@ -629,7 +693,7 @@ const costs = [
 	.part {
 		display: grid;
 		grid-template-rows: subgrid;
-		grid-row: span 6;
+		grid-row: span 4;
 		gap: 0;
 		justify-items: start;
 	}
@@ -640,6 +704,125 @@ const costs = [
 		gap: 0.625rem;
 		font-size: 1.5rem;
 		letter-spacing: -0.025em;
+	}
+
+	/*
+	 * Two columns, one per product. Each column borrows the parent's rows, so the
+	 * dividers line up across the pair however the text wraps.
+	 */
+	.why {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		column-gap: 3.5rem;
+		row-gap: 0;
+		margin-top: 2.5rem;
+	}
+
+	.why-col {
+		display: grid;
+		grid-template-rows: subgrid;
+		grid-row: span var(--why-rows);
+		align-content: start;
+	}
+
+	.why-col + .why-col {
+		margin-top: 2.5rem;
+	}
+
+	.why-col h3 {
+		display: flex;
+		align-items: center;
+		gap: 0.625rem;
+		padding-bottom: 1.25rem;
+		font-size: 1.5rem;
+		letter-spacing: -0.025em;
+	}
+
+	.why-col dl {
+		display: contents;
+	}
+
+	.why-col dl > div {
+		padding-block: 0.875rem;
+		border-top: 1px solid var(--rule);
+	}
+
+	.why-col dt {
+		font-weight: 600;
+	}
+
+	.why-col dd {
+		margin: 0.25rem 0 0;
+	}
+
+	/* Two bars drawn to scale: the longer one is what the same work costs on Salesforce. */
+	.cost {
+		padding-block: 1rem 0.25rem;
+		border-top: 1px solid var(--rule);
+	}
+
+	.cost-title {
+		color: var(--muted);
+		font-size: 0.875rem;
+	}
+
+	.cost-row {
+		display: grid;
+		grid-template-columns: 7.5rem minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 0.75rem;
+		margin-top: 0.625rem;
+	}
+
+	.cost-label {
+		font-size: 0.9375rem;
+	}
+
+	.cost-track {
+		display: block;
+		height: 0.625rem;
+	}
+
+	.cost-bar {
+		display: block;
+		min-width: 2px;
+		height: 100%;
+		background: var(--sl-color-gray-4);
+	}
+
+	.cost-bar-ours {
+		background: var(--ink);
+	}
+
+	.cost-bar-unknown {
+		background: repeating-linear-gradient(
+			117.5deg,
+			var(--sl-color-gray-4) 0 2px,
+			transparent 2px 6px
+		);
+	}
+
+	.cost-value {
+		min-width: 5.5rem;
+		font-variant-numeric: tabular-nums;
+		font-weight: 600;
+		text-align: end;
+	}
+
+	.cost-note {
+		margin-top: 0.75rem;
+		color: var(--muted);
+		font-size: 0.8125rem;
+		line-height: 1.5;
+	}
+
+	.why-col .text-link {
+		justify-self: start;
+		margin-top: 0.75rem;
+	}
+
+	.why + .block-lede {
+		margin-top: 2rem;
 	}
 
 	.part-icon {
@@ -663,7 +846,7 @@ const costs = [
 	}
 
 	.parts-shot {
-		margin: 0;
+		margin: 2.5rem 0 0;
 		max-width: 24rem;
 	}
 
@@ -802,6 +985,14 @@ const costs = [
 	}
 
 	@media (min-width: 50rem) {
+		.why {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.why-col + .why-col {
+			margin-top: 0;
+		}
+
 		.hero {
 			padding-block: 3rem 3rem;
 		}
@@ -821,6 +1012,7 @@ const costs = [
 
 		.parts-shot {
 			grid-column: 1 / -1;
+			margin-top: 2.5rem;
 		}
 
 		.split {
@@ -835,22 +1027,25 @@ const costs = [
 		}
 	}
 
-	/* On wide screens the Lumen capture stands beside the two columns of text. */
+	/* On wide screens the Lumen capture stands beside the two columns of reasons. */
 	@media (min-width: 72rem) {
 		/* With page margin to spare, the light spreads a little past the windows. */
 		.hero-stage::after {
 			inset-inline: -1.5rem;
 		}
 
-		.parts {
+		/* A spare last row takes the capture's extra height, so the text rows stay tight. */
+		.why:has(.parts-shot) {
 			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 22rem;
+			grid-template-rows: repeat(6, auto) 1fr;
 			column-gap: 2.5rem;
 		}
 
-		.parts .parts-shot {
+		.why .parts-shot {
 			grid-column: 3;
-			grid-row: 1 / span 6;
+			grid-row: 1 / span 7;
 			align-self: start;
+			margin-top: 0;
 		}
 	}
 </style>

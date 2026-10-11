@@ -5,6 +5,14 @@ description: Who can see what through ApexAgent, what is logged, and where your 
 
 ApexAgent adds no new way into your data. It works inside the permissions your users already have, records what it does, and sends data only to the AI provider you choose.
 
+## The short version
+
+- **Who can see what**: every tool that touches records runs as the signed-in user, with sharing rules and field security applied. Nobody sees more through ApexAgent than they can in Salesforce.
+- **What reaches an AI model**: only what answers the user's question, and only data that user may see.
+- **Who the model provider is**: one you choose. ApexAgent has no server and no provider of its own.
+- **Whether the provider keeps your data**: decided by your agreement with them. Most enterprises already have a no-training, no-retention agreement with their AI provider, and ApexAgent works under it.
+- **The record of what happened**: every tool call and conversation, saved in your own org.
+
 ## Every tool runs as the signed-in user
 
 A tool call is made by a person: the user chatting with the agent, or the user who signed in from Claude or ChatGPT. The tool runs as that person.
@@ -70,6 +78,36 @@ What to check:
 - **Claude or ChatGPT.** Use your company's business or enterprise plan, not personal accounts. Confirm that the plan does not train on your data, and what its retention period is. Zero data retention is available on some enterprise agreements.
 - **OpenRouter.** Its privacy settings let you allow only providers that do not train on or retain prompts.
 - **Your own cloud.** The agent can call any OpenAI-compatible endpoint, so you can point it at a model you already have under contract, for example through Azure or Google Vertex AI. See [Use a different provider](/ApexAgent/agent/providers/).
+
+## Compared with the Einstein Trust Layer
+
+The Einstein Trust Layer is what protects data in Salesforce's own AI features. How ApexAgent compares depends on which part you use.
+
+### The MCP server
+
+ApexAgent never calls an AI model on this path. A client such as Claude or ChatGPT asks for data, and ApexAgent returns only what that user may see. What the model does with it is governed by your company's plan with that client, exactly as it is for anything else your people paste into it.
+
+| Concern | ApexAgent MCP server |
+| --- | --- |
+| Users reaching only what they are allowed to | Yes, by Salesforce sharing and field security |
+| An audit trail | Yes, every call saved as a record in your org |
+| The model provider keeping or training on your data | Set by your company's agreement with the client's provider |
+
+### The agent
+
+Here ApexAgent sends data to a model itself, so this is the like-for-like comparison. The Trust Layer does five things. ApexAgent gives you the first three through your own org and your own provider agreement.
+
+| Concern | Einstein Trust Layer | ApexAgent agent |
+| --- | --- | --- |
+| The model provider keeping or training on your data | Salesforce's zero-retention agreement with its providers | Your own agreement with the provider you choose |
+| Users reaching only what they are allowed to | Yes | Yes, by the same Salesforce sharing and field security |
+| An audit trail | Yes, in Data 360 | Yes, as ordinary records in your org |
+| Masking personal data before it reaches the model | Yes | Not built in |
+| Toxicity checks on replies | Yes | Not built in |
+
+On masking: it limits what a provider could keep. Under a zero data retention agreement the provider keeps nothing, which is the protection most enterprises rely on with Claude, ChatGPT or their cloud's AI service. If you have that agreement, it covers ApexAgent too. If your policy requires masking as well, a tool can leave fields out or mask them before returning a result, since each tool is an Apex class you control.
+
+See Salesforce's own description in [Trust and Agentforce](https://help.salesforce.com/s/articleView?id=ai.copilot_trust.htm&type=5).
 
 ## For a security review
 

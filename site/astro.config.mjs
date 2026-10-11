@@ -42,6 +42,13 @@ export default defineConfig({
 						{ label: 'What ApexAgent is', slug: 'start/overview' },
 						{ label: 'Prerequisites', slug: 'start/prerequisites' },
 						{ label: 'Install', slug: 'start/install' },
+						{
+							label: 'How it compares',
+							items: [
+								{ label: 'ApexAgent MCP vs Salesforce MCP', slug: 'start/compare/mcp' },
+								{ label: 'ApexAgent agent vs Agentforce', slug: 'start/compare/agent' },
+							],
+						},
 					],
 				},
 				{

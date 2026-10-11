@@ -55,6 +55,9 @@ Setup creates a starter configuration: 2 LLMs, 10 tools, 1 agent (Lumen) and 1 M
 
 | | |
 | --- | --- |
+| [ApexAgent MCP server vs Salesforce Hosted MCP Servers](https://badrisnarayanan.github.io/ApexAgent/start/compare/mcp/) | What each is, what each costs, when to choose which |
+| [ApexAgent agent vs Agentforce](https://badrisnarayanan.github.io/ApexAgent/start/compare/agent/) | The same comparison for the agent |
+| [Security and data](https://badrisnarayanan.github.io/ApexAgent/operate/security/) | Who sees what, what reaches a model, and where data goes |
 | [Add your own tool](https://badrisnarayanan.github.io/ApexAgent/tools/add-a-tool/) | Write one Apex class and give it to an agent, an MCP server, or both |
 | [Use a different model](https://badrisnarayanan.github.io/ApexAgent/agent/models/) | Switch the agent to another model |
 | [Use a different provider](https://badrisnarayanan.github.io/ApexAgent/agent/providers/) | OpenAI, Azure OpenAI, your AI gateway or any OpenAI-compatible service |
