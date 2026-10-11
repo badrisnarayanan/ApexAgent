@@ -63,6 +63,8 @@ Link a tool to a topic with a **Topic Tool Map** record. The agent can use only 
 
 These are on the Agent record. The defaults suit most agents.
 
+Several are measured in tokens, the units AI models count text in. A token is a word or part of a word; 1,000 tokens is roughly 750 words. Providers charge by the token, for what the agent sends and for what the model writes back.
+
 | Field | What it does | If left blank |
 | --- | --- | --- |
 | **LLM** | The model the agent uses. See [Use a different model](/ApexAgent/agent/models/) | Required |

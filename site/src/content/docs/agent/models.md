@@ -18,7 +18,7 @@ In the Setup Portal, open **LLMs** and select **New**.
 | **Chat Completions Path** | The provider's path. For OpenRouter, `/api/v1/chat/completions` |
 | **Family** | The model's maker, such as OpenAI, Anthropic or Google |
 | **Supports Reasoning?** | Tick if the model can reason before answering |
-| **Token costs** | The provider's prices per million tokens for input, cached input and output. These drive the cost figures in the logs and dashboard |
+| **Token costs** | The provider's prices per million tokens for input, cached input and output. Tokens are the units models count text in; 1,000 is roughly 750 words. These drive the cost figures in the logs and dashboard |
 
 A new model on the provider you already use needs nothing else. It reuses the key you added.
 
