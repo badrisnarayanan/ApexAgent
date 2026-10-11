@@ -29,6 +29,16 @@ ApexAgent ships with ten tools.
 | `ApexAgentQueryRecords` | Runs a SOQL query |
 | `ApexAgentUpsertRecords` | Creates or updates records |
 
+## What it can do out of the box
+
+- **Read**: find objects, describe them, and read, search and query records.
+- **Write**: create and update records, through `ApexAgentUpsertRecords`. This is on for both Lumen and the Default MCP Server.
+- **Delete**: nothing. There is no delete tool.
+
+Lumen is instructed to show what will change and wait for the user to confirm before it updates a record. An MCP client such as Claude asks the user for permission before it runs a tool.
+
+To make an agent or a server read-only, take `ApexAgentUpsertRecords` off it. See [Customise an agent](/ApexAgent/agent/customise/) and [Configure MCP servers](/ApexAgent/mcp/servers/).
+
 ## MCP server only
 
 Two more give MCP clients the context they otherwise lack:
@@ -48,7 +58,7 @@ In the agent, every reply shows which tools ran to produce it.
 
 <Screenshot
 	src={lumenTools}
-	alt="A Lumen reply listing four open cases, with a Tool Executions section above it showing two steps: getting Case object details and querying open cases."
+	alt="A Lumen reply listing four open cases, with a Tool Executions section above it showing the step Lumen took: searching for the Northwind Traders account."
 	caption="Expand Tool Executions on a reply to see the steps Lumen took."
 	max={400}
 />

@@ -17,7 +17,7 @@ A tool with no generated schema is left out. Open the tool record and use **Rege
 
 ## The agent replies with an authentication error
 
-The OpenRouter key is missing or wrong. Recheck step 1 of [Set up the agent](../../agent/setup/), and confirm the user has the **ApexAgent User** permission set.
+The model provider key is missing or wrong. Recheck step 1 of [Set up the agent](../../agent/setup/), and confirm the user has the **ApexAgent User** permission set.
 
 ## An MCP client can't sign in
 

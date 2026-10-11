@@ -10,7 +10,7 @@ import oauthSettings from '../../../assets/screens/oauth-settings.png';
 
 [MCP](https://modelcontextprotocol.io) (Model Context Protocol) is an open standard that lets an AI client call tools hosted somewhere else. ApexAgent turns your org into an MCP server. Once a client is connected, the person using it can ask things like "what fields are on Opportunity?" or "show me my open cases", and the client calls the tools in your org to answer.
 
-The AI model belongs to the client. ApexAgent only serves the tools, so **no OpenRouter key is needed**.
+The AI model belongs to the client. ApexAgent only serves the tools, so **no model provider key is needed**.
 
 [Install ApexAgent](../../start/install/) before you start.
 
@@ -48,7 +48,11 @@ While you are there, edit the app and change its **Contact Email** from the plac
 
 Add a remote MCP server in your client, with the server URL from step 1 and the client ID from step 2. When prompted, sign in with your Salesforce login.
 
-[Connect a client](../clients/) has the settings for Claude, ChatGPT, MCP Inspector and other clients.
+Step-by-step settings for each client:
+
+- [Claude](/ApexAgent/mcp/clients/claude/)
+- [ChatGPT](/ApexAgent/mcp/clients/chatgpt/)
+- [Another client](/ApexAgent/mcp/clients/other/)
 
 ## Who can connect
 
@@ -56,4 +60,4 @@ Only users with the **ApexAgent User** permission set. The app is set to admin-a
 
 ## More than one server
 
-Create more MCP Server records, each with its own API name and its own set of tools. Each gets its own URL, so you can give different clients different tools.
+Create more MCP Server records, each with its own API name and its own set of tools. Each gets its own URL, so you can give different clients different tools. See [Configure MCP servers](/ApexAgent/mcp/servers/).

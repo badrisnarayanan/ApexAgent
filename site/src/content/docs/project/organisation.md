@@ -19,4 +19,10 @@ MCP Server -- has --> Tools                      (what a client can do)
 - **Instruction**: a block of guidance added to the agent's prompt, in order.
 - **LLM**: a model, the named credential used to reach it, and its token prices for cost tracking.
 
+You can have as many agents, topics, tools and MCP servers as you need.
+
+- To change an agent or build a new one, see [Customise an agent](/ApexAgent/agent/customise/).
+- To change what a server exposes or add another, see [Configure MCP servers](/ApexAgent/mcp/servers/).
+- To add a capability, see [Add your own tool](/ApexAgent/tools/add-a-tool/).
+
 The MCP server has no instructions or topics. It exposes tools, and the connected client decides how to use them.

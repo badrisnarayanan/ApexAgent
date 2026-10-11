@@ -22,9 +22,6 @@ export default defineConfig({
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/badrisnarayanan/ApexAgent' },
 			],
-			editLink: {
-				baseUrl: 'https://github.com/badrisnarayanan/ApexAgent/edit/main/site/',
-			},
 			components: {
 				PageTitle: './src/components/PageTitle.astro',
 				SocialIcons: './src/components/SocialIcons.astro',
@@ -51,7 +48,15 @@ export default defineConfig({
 					label: 'MCP server',
 					items: [
 						{ label: 'Set up the MCP server', slug: 'mcp/setup' },
-						{ label: 'Connect a client', slug: 'mcp/clients' },
+						{
+							label: 'Connect a client',
+							items: [
+								{ label: 'Claude', slug: 'mcp/clients/claude' },
+								{ label: 'ChatGPT', slug: 'mcp/clients/chatgpt' },
+								{ label: 'Another client', slug: 'mcp/clients/other' },
+							],
+						},
+						{ label: 'Configure MCP servers', slug: 'mcp/servers' },
 						{ label: 'Limits', slug: 'mcp/limits' },
 					],
 				},
@@ -59,7 +64,10 @@ export default defineConfig({
 					label: 'Agent',
 					items: [
 						{ label: 'Set up the agent', slug: 'agent/setup' },
+						{ label: 'Customise an agent', slug: 'agent/customise' },
 						{ label: 'Use a different model', slug: 'agent/models' },
+						{ label: 'Use a different provider', slug: 'agent/providers' },
+						{ label: 'Limits', slug: 'agent/limits' },
 					],
 				},
 				{
@@ -72,6 +80,7 @@ export default defineConfig({
 				{
 					label: 'Operate',
 					items: [
+						{ label: 'Security and data', slug: 'operate/security' },
 						{ label: 'Logs and dashboards', slug: 'operate/logs' },
 						{ label: 'Troubleshooting', slug: 'operate/troubleshooting' },
 					],

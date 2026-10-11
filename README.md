@@ -15,15 +15,15 @@
 
 Everything deploys into your org and runs with your users' own permissions. There is no middleware and no external server to host.
 
-ApexAgent gives you two things. They share the same tools, and you can use either one without the other.
+ApexAgent gives you two things. They draw on the same set of tools, and you can use either one without the other.
 
 | | 🔌 MCP Server | 🤖 Agent |
 | --- | --- | --- |
 | **What it is** | An endpoint in your org that lets an outside AI client (Claude, ChatGPT, or any MCP client) use Salesforce tools | A chat assistant inside Salesforce, in the utility bar |
-| **Where the AI model runs** | In the client you connect. ApexAgent never calls a model. | Called from Apex, through OpenRouter |
+| **Where the AI model runs** | In the client you connect. ApexAgent never calls a model. | Called from Apex, at any OpenAI-compatible provider |
 | **Extra Salesforce license** | **None** | **None** |
-| **Who pays for the model** | Whoever runs the client | You, through your OpenRouter key |
-| **Needs an OpenRouter API key** | **No** | **Yes** |
+| **Who pays for the model** | Whoever runs the client | You, through your account with the model provider |
+| **Needs a model provider API key** | **No** | **Yes**. OpenRouter comes preconfigured, or use your own |
 | **Needs an External Client App (OAuth)** | **Yes** | No |
 | **Users sign in with** | Their own Salesforce login, from the client | Nothing extra; they are already in Salesforce |
 
@@ -41,7 +41,7 @@ sf apex run --file seed/setup.apex
 
 Setup creates a starter configuration: 2 LLMs, 10 tools, 1 agent (Lumen) and 1 MCP server. Then follow the [install guide](https://badrisnarayanan.github.io/ApexAgent/start/install/) to give your users access and finish the part you want:
 
-- 🔌 [Set up the MCP server](https://badrisnarayanan.github.io/ApexAgent/mcp/setup/) and [connect a client](https://badrisnarayanan.github.io/ApexAgent/mcp/clients/) such as Claude or ChatGPT
+- 🔌 [Set up the MCP server](https://badrisnarayanan.github.io/ApexAgent/mcp/setup/) and [connect a client](https://badrisnarayanan.github.io/ApexAgent/mcp/setup/#3-connect-your-client) such as Claude or ChatGPT
 - 🤖 [Set up the agent](https://badrisnarayanan.github.io/ApexAgent/agent/setup/)
 
 ## What's included
@@ -56,7 +56,8 @@ Setup creates a starter configuration: 2 LLMs, 10 tools, 1 agent (Lumen) and 1 M
 | | |
 | --- | --- |
 | [Add your own tool](https://badrisnarayanan.github.io/ApexAgent/tools/add-a-tool/) | Write one Apex class and give it to an agent, an MCP server, or both |
-| [Use a different model](https://badrisnarayanan.github.io/ApexAgent/agent/models/) | Another OpenRouter model or another provider |
+| [Use a different model](https://badrisnarayanan.github.io/ApexAgent/agent/models/) | Switch the agent to another model |
+| [Use a different provider](https://badrisnarayanan.github.io/ApexAgent/agent/providers/) | OpenAI, Azure OpenAI, your AI gateway or any OpenAI-compatible service |
 | [MCP limits](https://badrisnarayanan.github.io/ApexAgent/mcp/limits/) | The Salesforce limits that apply, and how to watch them |
 | [How it's organised](https://badrisnarayanan.github.io/ApexAgent/project/organisation/) | The records that make up an agent and an MCP server |
 | [Troubleshooting](https://badrisnarayanan.github.io/ApexAgent/operate/troubleshooting/) | Fixes for common setup and sign-in problems |

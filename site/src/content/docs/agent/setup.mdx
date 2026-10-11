@@ -12,11 +12,13 @@ import agentRecord from '../../../assets/screens/agent-record.png';
 
 The agent is a chat assistant that lives in the Salesforce utility bar. The starter agent is called **Lumen**. Users ask it questions in plain language, and it uses the same tools to look things up and make changes in the org.
 
-Here the AI model is called from Apex, so **you need an OpenRouter API key**.
+Here the AI model is called from Apex, so **you need an API key from a model provider**. These steps use [OpenRouter](https://openrouter.ai), which comes preconfigured. To use OpenAI, Azure OpenAI or your company's AI gateway instead, see [Use a different provider](/ApexAgent/agent/providers/).
 
 [Install ApexAgent](../../start/install/) before you start.
 
-## 1. Add your OpenRouter key
+## 1. Add your key
+
+Create a key on OpenRouter's [API keys page](https://openrouter.ai/keys) and copy it.
 
 In Setup, go to **Named Credentials**, open the **External Credentials** tab, and open **OpenRouter Credential**. Under **Principals**, open the **Actions** menu at the end of the **Authorization** row and choose **Edit**. Add an authentication parameter:
 
@@ -42,7 +44,7 @@ From the App Launcher, open the **ApexAgent Setup Portal** app. Lumen is in the 
 	focus={{ x: 70, y: 95, w: 29, h: 4.6 }}
 />
 
-To put it in another Lightning app, edit that app in App Manager and add the **lumenAgent** component to its utility bar.
+To put it in another Lightning app, edit that app in App Manager and add the **lumenAgent** component to its utility bar. For an agent of your own, see [Customise an agent](/ApexAgent/agent/customise/).
 
 ## 3. Pick a model
 

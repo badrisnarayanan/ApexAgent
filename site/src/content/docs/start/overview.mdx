@@ -20,17 +20,17 @@ The only running cost is the AI model itself, and only for the agent: you pay yo
 
 ## Two things, one set of tools
 
-ApexAgent gives you two things. They share the same tools, and you can use either one without the other.
+ApexAgent gives you two things. They draw on the same set of tools, and you can use either one without the other.
 
-[MCP](https://modelcontextprotocol.io) (Model Context Protocol) is an open standard that lets an AI app call tools hosted somewhere else. [OpenRouter](https://openrouter.ai) is a service that gives you one API key for many AI models.
+[MCP](https://modelcontextprotocol.io) (Model Context Protocol) is an open standard that lets an AI app call tools hosted somewhere else. The agent works with any provider that accepts the OpenAI chat completions format, which most do. A connection to [OpenRouter](https://openrouter.ai), a service that gives you one API key for many AI models, comes preconfigured.
 
 | | MCP server | Agent |
 | --- | --- | --- |
 | **What it is** | An endpoint in your org that lets an outside AI app (Claude, ChatGPT, or any other MCP client) use Salesforce tools | A chat assistant inside Salesforce, in the utility bar |
-| **Where the AI model runs** | In the client you connect. ApexAgent never calls a model. | Called from Apex, through OpenRouter |
+| **Where the AI model runs** | In the client you connect. ApexAgent never calls a model. | Called from Apex, at any OpenAI-compatible provider |
 | **Extra Salesforce license** | **None** | **None** |
-| **Who pays for the model** | Whoever runs the client | You, through your OpenRouter key |
-| **Needs an OpenRouter API key** | **No** | **Yes** |
+| **Who pays for the model** | Whoever runs the client | You, through your account with the model provider |
+| **Needs a model provider API key** | **No** | **Yes**. OpenRouter comes preconfigured, or use your own |
 | **Needs an External Client App (OAuth)** | **Yes** | No |
 | **Users sign in with** | Their own Salesforce login, from the client | Nothing extra; they are already in Salesforce |
 
