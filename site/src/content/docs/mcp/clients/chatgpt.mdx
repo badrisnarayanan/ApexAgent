@@ -1,0 +1,147 @@
+---
+title: Connect ChatGPT
+description: Add ApexAgent to ChatGPT as a custom MCP server, step by step.
+---
+
+import Screenshot from '../../../../components/Screenshot.astro';
+import addMenu from '../../../../assets/screens/chatgpt-add-menu.png';
+import form from '../../../../assets/screens/chatgpt-form.png';
+import oauth from '../../../../assets/screens/chatgpt-oauth.png';
+import scopes from '../../../../assets/screens/chatgpt-scopes.png';
+import oidc from '../../../../assets/screens/chatgpt-oidc.png';
+import connect from '../../../../assets/screens/chatgpt-connect.png';
+import connected from '../../../../assets/screens/chatgpt-connected.png';
+import composer from '../../../../assets/screens/chatgpt-composer.png';
+import answer from '../../../../assets/screens/chatgpt-answer.png';
+
+You need two values from [Set up the MCP server](/ApexAgent/mcp/setup/): the **Endpoint URL** and the **client ID** (the External Client App's Consumer Key).
+
+ChatGPT asks for more settings than Claude does. Three of them must be changed from what ChatGPT picks by default, or sign-in fails: the **registration method**, the **token endpoint auth method** and **OIDC**. The steps below call each one out.
+
+## Before you start
+
+Custom MCP servers have to be allowed on your ChatGPT account. In a company workspace, an admin controls this. If you do not see **Add custom MCP server** in step 1, see OpenAI's guide, [Connect from ChatGPT](https://developers.openai.com/apps-sdk/deploy/connect-chatgpt), or ask your workspace admin.
+
+## 1. Open the form
+
+In ChatGPT, open **Plugins** in the sidebar. Select **Add** at the top right, then **Add custom MCP server**.
+
+<Screenshot
+	src={addMenu}
+	alt="The Add menu on ChatGPT's Plugins page, with three items: Create plugin, Upload plugin archive and Add custom MCP server."
+	caption="Add custom MCP server is the last item in the Add menu."
+	focus={{ x: 64.5, y: 71, w: 35, h: 21 }}
+/>
+
+## 2. Enter the name and the URL
+
+- **Name**: something that tells you which org it is, such as `Salesforce Org`. ChatGPT refuses a name another app already uses, plain `Salesforce` included.
+- **Connection**: leave it on **Server URL** and paste the Endpoint URL.
+- **Authentication**: leave it on **OAuth**.
+
+Do not create it yet. ChatGPT reads the server's sign-in details as soon as you paste the URL, and **Advanced OAuth settings** becomes available. Select it.
+
+<Screenshot
+	src={form}
+	alt="The Add custom MCP server form in ChatGPT with Salesforce Org as the name, the ApexAgent endpoint in the Connection field and OAuth as the authentication."
+	caption="Fill in the name and the Endpoint URL, then open Advanced OAuth settings."
+	max={560}
+	focus={{ x: 3, y: 59.5, w: 94, h: 14 }}
+/>
+
+## 3. Use your own OAuth client
+
+The advanced settings open beside the form. Under **Client registration**:
+
+1. Change **Registration method** to **User-Defined OAuth Client**. ChatGPT preselects Dynamic Client Registration, which Salesforce does not support.
+2. Paste the Consumer Key into **OAuth client ID**.
+3. Leave **OAuth client secret** empty.
+4. Change **Token endpoint auth method** to **none**. There is no secret to send.
+
+<Screenshot
+	src={oauth}
+	alt="The form with Advanced OAuth settings open. Registration method is User-Defined OAuth Client, a callback URL is shown, the OAuth client ID is filled in, the client secret is empty and Token endpoint auth method is none."
+	caption="Registration method, OAuth client ID and Token endpoint auth method are the three fields to set here."
+	focus={{ x: 53, y: 22, w: 44, h: 68 }}
+/>
+
+## 4. Allow ChatGPT's callback URL in Salesforce
+
+The same panel shows a **Callback URL**. Salesforce only sends users back to URLs you have allowed, so copy it with the button beside it.
+
+In Salesforce Setup, open **External Client App Manager**, edit **ApexAgent MCP**, and add the URL to **Callback URL** under its OAuth settings, on a line of its own. Save. Salesforce can take a few minutes to apply the change.
+
+You can leave the ChatGPT form open while you do this.
+
+## 5. Check the scopes and turn off OIDC
+
+Scroll down in the advanced settings.
+
+Under **Scopes**, **api** and **refresh_token** should both be ticked. ChatGPT finds these from the server. Leave **Base scopes** empty.
+
+<Screenshot
+	src={scopes}
+	alt="The Scopes section of the advanced settings, with api and refresh_token ticked under Default scopes and the Base scopes box empty."
+	caption="The two default scopes are all ApexAgent needs."
+	max={520}
+/>
+
+Further down, under **OpenID support**, untick **OIDC enabled**. Left on, ChatGPT asks Salesforce for extra scopes the app does not allow, and sign-in fails with `invalid_scope`.
+
+<Screenshot
+	src={oidc}
+	alt="The OpenID support section of the advanced settings with the OIDC enabled box unticked."
+	caption="OIDC enabled must be unticked."
+	max={520}
+	focus={{ x: 2, y: 36, w: 50, h: 16 }}
+/>
+
+## 6. Create it and sign in
+
+Back on the left, tick **I understand and want to continue**, then select **Create as a plugin**.
+
+ChatGPT then offers to connect. Select the **Continue to** button, which carries your connector's name, and sign in with your own Salesforce login. If you are already signed in to Salesforce in that browser, it connects straight away.
+
+<Screenshot
+	src={connect}
+	alt="ChatGPT's Connect dialog for the new connector, with a Continue button that leads to the Salesforce sign-in."
+	caption="Continue takes you to Salesforce to sign in."
+	max={480}
+/>
+
+When it has worked, the plugin's page lists your Salesforce account under **Connected accounts**.
+
+<Screenshot
+	src={connected}
+	alt="The plugin's settings page in ChatGPT, showing a Salesforce account listed under Connected accounts."
+	caption="A connected account means sign-in succeeded."
+/>
+
+## 7. Try it
+
+Start a new chat. Select **+** in the message box and choose your connector, then ask something about your org.
+
+<Screenshot
+	src={composer}
+	alt="The menu behind the plus button in ChatGPT's message box, with the Salesforce connector listed among the tools."
+	caption="Pick the connector from the + menu to use it in a chat."
+	focus={{ x: 1, y: 76.3, w: 98, h: 7.5 }}
+/>
+
+<Screenshot
+	src={answer}
+	alt="ChatGPT's answer to a question about a customer's open cases: four cases, each linked to its record in Salesforce, with priority and status."
+	caption="Asked which cases a customer has open, ChatGPT answers from Salesforce and links each record."
+/>
+
+## If sign-in fails
+
+| What you see | What to check |
+| --- | --- |
+| `invalid_scope` | **OIDC enabled** is still ticked |
+| `redirect_uri_mismatch` | The callback URL is not in the External Client App yet, or the change has not applied. Wait a few minutes and try again |
+| An error about registration | **Registration method** is still Dynamic Client Registration |
+| `invalid_client` | **Token endpoint auth method** is not **none**, or the client ID is not the Consumer Key |
+| Sign-in works, then you are refused | You do not have the **ApexAgent User** permission set |
+
+After you change which tools the server exposes, open the plugin's page in ChatGPT and select **Refresh tools**.

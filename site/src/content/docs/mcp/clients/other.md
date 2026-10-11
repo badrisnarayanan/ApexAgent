@@ -19,7 +19,7 @@ During sign-in, Salesforce sends the user back to a URL the client owns, and onl
 
 In Setup, open **External Client App Manager**, edit **ApexAgent MCP**, and add the URL to **Callback URL** under its OAuth settings, on a line of its own. Salesforce can take a few minutes to apply the change.
 
-Claude's callback URL is already there. Some clients, ChatGPT among them, give every connector its own callback URL, so you add one each time.
+Claude's callback URL is already there. For any other client, ChatGPT included, you add the one it shows you.
 
 ## 2. Fill in the client's settings
 
