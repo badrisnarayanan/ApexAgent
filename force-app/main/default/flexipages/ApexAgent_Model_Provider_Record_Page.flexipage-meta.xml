@@ -110,7 +110,7 @@
             <fieldInstance>
                 <fieldInstanceProperties>
                     <name>uiBehavior</name>
-                    <value>none</value>
+                    <value>required</value>
                 </fieldInstanceProperties>
                 <fieldItem>Record.Apex_Class__c</fieldItem>
                 <identifier>RecordApex_Class_cField</identifier>
