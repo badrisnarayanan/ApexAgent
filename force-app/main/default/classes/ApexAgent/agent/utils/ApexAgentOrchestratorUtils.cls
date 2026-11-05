@@ -4,55 +4,18 @@
  */
 public with sharing class ApexAgentOrchestratorUtils {
 
-    public static final String REASONING_SUMMARY   = 'reasoning.summary';
-    public static final String REASONING_ENCRYPTED = 'reasoning.encrypted';
-
-    /** Extracts the human-readable thought content from an LLM response message. */
-    public static String extractThoughtContent(ApexAgentApiTypes.ResponseMessage msg) {
-        if (String.isNotBlank(msg.reasoning)) {
-            return msg.reasoning;
-        }
-        if (msg.reasoning_details != null) {
-            for (ApexAgentApiTypes.ReasoningDetail d : msg.reasoning_details) {
-                if (REASONING_SUMMARY.equals(d.type) && String.isNotBlank(d.summary)) {
-                    return d.summary;
-                }
-            }
-        }
-        return null;
-    }
-
-    /** Extracts the encrypted thought signature from an LLM response message. */
-    public static String extractThoughtSignature(ApexAgentApiTypes.ResponseMessage msg) {
-        if (msg.reasoning_details == null) {
-            return null;
-        }
-        for (ApexAgentApiTypes.ReasoningDetail d : msg.reasoning_details) {
-            if (REASONING_ENCRYPTED.equals(d.type) && String.isNotBlank(d.data)) {
-                return d.data;
-            }
-        }
-        return null;
-    }
-
     /**
-     * Builds the assistant ChatMessage turn that carries tool_calls and,
-     * optionally, the encrypted reasoning signature for continuity.
+     * Builds the assistant turn that carries this response's tool calls back to
+     * the provider, with the provider's continuity token attached.
      */
     public static ApexAgentApiTypes.ChatMessage buildAssistantTurn(
-        ApexAgentApiTypes.ResponseMessage msg,
-        String signature
+        ApexAgentLLMTypes.LLMResult result,
+        ApexAgentLLMProvider provider
     ) {
         ApexAgentApiTypes.ChatMessage turn = new ApexAgentApiTypes.ChatMessage();
         turn.role       = 'assistant';
-        turn.tool_calls = msg.tool_calls;
-
-        if (String.isNotBlank(signature)) {
-            ApexAgentApiTypes.ReasoningDetail rd = new ApexAgentApiTypes.ReasoningDetail();
-            rd.type = REASONING_ENCRYPTED;
-            rd.data = signature;
-            turn.reasoning_details = new List<ApexAgentApiTypes.ReasoningDetail>{ rd };
-        }
+        turn.tool_calls = result.toolCalls;
+        provider.attachContinuity(turn, result.continuityToken);
         return turn;
     }
 
@@ -95,24 +58,24 @@ public with sharing class ApexAgentOrchestratorUtils {
         return entry;
     }
 
-    /** Calculates the estimated cost of an LLM call from token counts and per-million rates. */
-    public static Decimal calculateCost(
-        Integer promptTokens,
-        Integer completionTokens,
-        Integer cachedTokens,
-        ApexAgentConfigTypes.AgentConfig cfg
-    ) {
+    /**
+     * The cost of one LLM call: what the provider reported when it reports a
+     * cost, otherwise the tokens priced at the LLM record's per-million rates.
+     */
+    public static Decimal callCost(ApexAgentLLMTypes.LLMUsage usage, ApexAgentConfigTypes.AgentConfig cfg) {
+        if (usage.providerCost != null) {
+            return usage.providerCost;
+        }
         Decimal cost     = 0;
-        Integer uncached = (promptTokens != null ? promptTokens : 0)
-                         - (cachedTokens != null ? cachedTokens : 0);
+        Integer uncached = usage.inputTokens - usage.cachedInputTokens;
         if (cfg.uncachedInputCostPerM != null && uncached > 0) {
             cost += (Decimal) uncached * cfg.uncachedInputCostPerM / 1000000;
         }
-        if (cfg.cachedInputCostPerM != null && cachedTokens != null && cachedTokens > 0) {
-            cost += (Decimal) cachedTokens * cfg.cachedInputCostPerM / 1000000;
+        if (cfg.cachedInputCostPerM != null && usage.cachedInputTokens > 0) {
+            cost += (Decimal) usage.cachedInputTokens * cfg.cachedInputCostPerM / 1000000;
         }
-        if (cfg.outputCostPerM != null && completionTokens != null && completionTokens > 0) {
-            cost += (Decimal) completionTokens * cfg.outputCostPerM / 1000000;
+        if (cfg.outputCostPerM != null && usage.outputTokens > 0) {
+            cost += (Decimal) usage.outputTokens * cfg.outputCostPerM / 1000000;
         }
         return cost;
     }

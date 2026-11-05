@@ -77,7 +77,7 @@ What to check:
 
 - **Claude or ChatGPT.** Use your company's business or enterprise plan, not personal accounts. Confirm that the plan does not train on your data, and what its retention period is. Zero data retention is available on some enterprise agreements.
 - **OpenRouter.** Its privacy settings let you allow only providers that do not train on or retain prompts.
-- **Your own cloud.** The agent can call any OpenAI-compatible endpoint, so you can point it at a model you already have under contract, for example through Azure or Google Vertex AI. See [Use a different provider](/ApexAgent/agent/providers/).
+- **Your own cloud.** The agent can call any OpenAI-compatible endpoint, so you can point it at a model you already have under contract, for example through Azure OpenAI, or Google Vertex AI via OpenRouter with your own Vertex credentials. See [Built-in providers](/ApexAgent/agent/providers/) and [Connect a gateway](/ApexAgent/agent/gateway/).
 
 ## Compared with the Einstein Trust Layer
 

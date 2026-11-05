@@ -6,7 +6,7 @@ description: The records that make up an agent and an MCP server, and how they r
 Everything is configured with records, in the Setup Portal. No code change is needed to reshape an agent or an MCP server.
 
 ```
-Agent --uses--> LLM
+Agent --uses--> LLM --uses--> Model Provider
   |
   +-- has --> Topic --+-- has --> Instructions   (what the agent is told)
                       +-- has --> Tools          (what the agent can do)
@@ -17,7 +17,8 @@ MCP Server -- has --> Tools                      (what a client can do)
 - **Tool**: points at an Apex class. The same tool can be given to topics and to MCP servers.
 - **Topic**: a bundle of instructions and tools. An agent can have several.
 - **Instruction**: a block of guidance added to the agent's prompt, in order.
-- **LLM**: a model, the named credential used to reach it, and its token prices for cost tracking.
+- **LLM**: a model, the provider it runs on, and its token prices for cost tracking.
+- **Model Provider**: a connection to an AI provider: the named credential that holds its key, the API path, and the provider type. Several LLMs can share one.
 
 You can have as many agents, topics, tools and MCP servers as you need.
 

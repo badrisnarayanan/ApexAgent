@@ -7,7 +7,7 @@
         <shouldOverrideOrgTheme>false</shouldOverrideOrgTheme>
     </brand>
     <defaultLandingTab>ApexAgent_LLM__c</defaultLandingTab>
-    <description>ApexAgent Setup Portal — configure LLMs, agents, topics, instructions, and tools for the ApexAgent framework.</description>
+    <description>ApexAgent Setup Portal — configure model providers, LLMs, agents, topics, instructions, and tools for the ApexAgent framework.</description>
     <formFactors>Small</formFactors>
     <formFactors>Large</formFactors>
     <isNavAutoTempTabsDisabled>false</isNavAutoTempTabsDisabled>
@@ -16,6 +16,7 @@
     <isOmniPinnedViewEnabled>false</isOmniPinnedViewEnabled>
     <label>ApexAgent Setup Portal</label>
     <navType>Console</navType>
+    <tabs>ApexAgent_Model_Provider__c</tabs>
     <tabs>ApexAgent_LLM__c</tabs>
     <tabs>ApexAgent_Agent__c</tabs>
     <tabs>ApexAgent_MCP__c</tabs>
@@ -46,6 +47,9 @@
         </mappings>
         <mappings>
             <tab>ApexAgent_LLM__c</tab>
+        </mappings>
+        <mappings>
+            <tab>ApexAgent_Model_Provider__c</tab>
         </mappings>
         <mappings>
             <tab>ApexAgent_MCP_Dashboard</tab>

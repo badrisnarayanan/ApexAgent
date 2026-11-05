@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CompactLayout xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Model_Provider_Compact</fullName>
+    <fields>Name</fields>
+    <fields>Provider_Type__c</fields>
+    <fields>Named_Credential__c</fields>
+    <fields>Chat_Completions_Path__c</fields>
+    <label>Model Provider Compact Layout</label>
+</CompactLayout>

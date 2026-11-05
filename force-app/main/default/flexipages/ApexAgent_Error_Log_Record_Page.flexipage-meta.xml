@@ -84,6 +84,16 @@
     <flexiPageRegions>
         <itemInstances>
             <fieldInstance>
+                <fieldInstanceProperties>
+                    <name>uiBehavior</name>
+                    <value>readonly</value>
+                </fieldInstanceProperties>
+                <fieldItem>Record.Severity__c</fieldItem>
+                <identifier>RecordSeverity_cField</identifier>
+            </fieldInstance>
+        </itemInstances>
+        <itemInstances>
+            <fieldInstance>
                 <fieldItem>Record.Error__c</fieldItem>
                 <identifier>RecordError_cField</identifier>
             </fieldInstance>

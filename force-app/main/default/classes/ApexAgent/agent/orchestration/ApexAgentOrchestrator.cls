@@ -6,7 +6,6 @@
 public with sharing class ApexAgentOrchestrator {
 
     private static final Integer MAX_TOOL_ITERATIONS = 10;
-    private static final String  FINISH_TOOL_CALLS   = 'tool_calls';
 
     // ─────────────────────────────────────────────────────────────────
     // Public return type
@@ -62,18 +61,21 @@ public with sharing class ApexAgentOrchestrator {
         Integer accumCached     = 0;
         Integer accumReasoning  = 0;
         Integer accumTotal      = 0;
+        Decimal accumCost       = 0;
 
         List<ApexAgentLogger.ToolLogEntry> toolEntries = new List<ApexAgentLogger.ToolLogEntry>();
         String lastSignature = null;
         String lastThought   = null;
 
-        // Declared outside try so the logging block can access it without a second query
+        // Declared outside try so the logging block can access them without a second query
         ApexAgentConfigTypes.AgentConfig config = null;
+        ApexAgentLLMProvider provider = null;
 
         try {
             // ── 1. Load agent config, topics, tools ──────────────────
             ApexAgentConfigTypes.LoadResult loaded = ApexAgentTopicLoader.load(agentName);
             config = loaded.config;
+            provider = ApexAgentLLMProviderFactory.create(config);
             List<Map<String, Object>> toolDefs =
                 ApexAgentToolSchemaBuilder.buildToolDefinitionsFromSchema(loaded.toolsByName, config.showExecutionMessage);
 
@@ -86,7 +88,7 @@ public with sharing class ApexAgentOrchestrator {
                     threadUUID,
                     config.conversationDepth,
                     config.toolLogDepth,
-                    config.modelFamily
+                    provider
                 ));
             }
 
@@ -129,47 +131,33 @@ public with sharing class ApexAgentOrchestrator {
                 List<Object> wireMessages = messages.clone();
                 wireMessages.add(contextMsg);
 
-                ApexAgentApiTypes.ChatCompletionResponse resp =
-                    ApexAgentLLMClient.call(config, wireMessages, currentTools);
+                ApexAgentLLMTypes.LLMResult llmResult =
+                    ApexAgentLLMClient.call(provider, wireMessages, currentTools);
 
-                if (resp.choices == null || resp.choices.isEmpty()) {
-                    throw new IllegalArgumentException(
-                        'LLM response contained no choices.'
-                        + (resp.error != null ? ' Error: ' + JSON.serialize(resp.error) : '')
-                    );
-                }
+                ApexAgentLLMTypes.LLMUsage usage = llmResult.usage;
+                accumPrompt     += usage.inputTokens;
+                accumCompletion += usage.outputTokens;
+                accumCached     += usage.cachedInputTokens;
+                accumReasoning  += usage.reasoningTokens;
+                accumTotal      += usage.totalTokens;
+                accumCost       += ApexAgentOrchestratorUtils.callCost(usage, config);
 
-                if (resp.usage != null) {
-                    accumPrompt     += resp.usage.prompt_tokens     != null ? resp.usage.prompt_tokens     : 0;
-                    accumCompletion += resp.usage.completion_tokens  != null ? resp.usage.completion_tokens  : 0;
-                    accumTotal      += resp.usage.total_tokens       != null ? resp.usage.total_tokens       : 0;
-                    if (resp.usage.prompt_tokens_details != null) {
-                        accumCached += resp.usage.prompt_tokens_details.cached_tokens != null
-                            ? resp.usage.prompt_tokens_details.cached_tokens : 0;
-                    }
-                    if (resp.usage.completion_tokens_details != null) {
-                        accumReasoning += resp.usage.completion_tokens_details.reasoning_tokens != null
-                            ? resp.usage.completion_tokens_details.reasoning_tokens : 0;
-                    }
-                }
+                lastThought   = llmResult.thought;
+                lastSignature = llmResult.continuityToken;
 
-                ApexAgentApiTypes.ResponseMessage assistantMsg = resp.choices[0].message;
-                lastThought   = ApexAgentOrchestratorUtils.extractThoughtContent(assistantMsg);
-                lastSignature = ApexAgentOrchestratorUtils.extractThoughtSignature(assistantMsg);
+                // Tool calls are acted on whatever finish_reason says (some providers
+                // report "stop" on a response that carries tool calls), except when the
+                // response was cut off or filtered: its tool arguments may be incomplete.
+                Boolean cutOff = 'length'.equals(llmResult.finishReason)
+                    || 'content_filter'.equals(llmResult.finishReason);
+                if (llmResult.hasToolCalls() && !cutOff && iteration < MAX_TOOL_ITERATIONS) {
 
-                String finishReason = resp.choices[0].finish_reason;
-
-                if (FINISH_TOOL_CALLS.equals(finishReason)
-                        && assistantMsg.tool_calls != null
-                        && !assistantMsg.tool_calls.isEmpty()
-                        && iteration < MAX_TOOL_ITERATIONS) {
-
-                    messages.add(ApexAgentOrchestratorUtils.buildAssistantTurn(assistantMsg, lastSignature));
+                    messages.add(ApexAgentOrchestratorUtils.buildAssistantTurn(llmResult, provider));
 
                     // Extract execution_message from each tool call's arguments (strips param
                     // before the tool executor sees the inputs) and publish in-progress PEs in bulk.
                     Map<String, String> execMsgByToolCallId = new Map<String, String>();
-                    for (ApexAgentApiTypes.ToolCall tc : assistantMsg.tool_calls) {
+                    for (ApexAgentApiTypes.ToolCall tc : llmResult.toolCalls) {
                         String execMsg;
                         try {
                             execMsg = ApexAgentOrchestratorUtils.extractAndStripExecutionMessage(tc);
@@ -184,11 +172,11 @@ public with sharing class ApexAgentOrchestrator {
                     }
                     if (config.showExecutionMessage == true) {
                         ApexAgentExecutionMessageHandler.publishInProgress(
-                            resolvedUUID, assistantMsg.tool_calls, execMsgByToolCallId
+                            resolvedUUID, llmResult.toolCalls, execMsgByToolCallId
                         );
                     }
 
-                    for (ApexAgentApiTypes.ToolCall tc : assistantMsg.tool_calls) {
+                    for (ApexAgentApiTypes.ToolCall tc : llmResult.toolCalls) {
                         Datetime toolStart = Datetime.now();
                         ApexAgentExecTypes.ToolResult result =
                             ApexAgentToolExecutor.execute(loaded.toolsByName, tc);
@@ -222,8 +210,8 @@ public with sharing class ApexAgentOrchestrator {
                     iteration++;
 
                 } else {
-                    lastContent = assistantMsg.content;
-                    if ('length'.equals(finishReason) && String.isBlank(lastContent)) {
+                    lastContent = llmResult.content;
+                    if ('length'.equals(llmResult.finishReason) && String.isBlank(lastContent)) {
                         errorMsg = 'Response was cut off before any content was generated '
                             + '(max tokens reached). Try increasing Max Tokens on the agent.';
                         errorMsgIsSafeForClient = true;
@@ -257,12 +245,11 @@ public with sharing class ApexAgentOrchestrator {
             payload.cachedTokens     = accumCached;
             payload.reasoningTokens  = accumReasoning;
             payload.totalTokens      = accumTotal;
-            payload.cost             = config != null
-                ? ApexAgentOrchestratorUtils.calculateCost(accumPrompt, accumCompletion, accumCached, config)
-                : null;
+            payload.cost             = config != null ? accumCost : null;
             payload.toolLogs         = toolEntries;
             payload.errorMessage     = errorMsg;
             payload.errorStackTrace  = errorStack;
+            payload.warnings         = provider != null ? provider.getWarnings() : null;
 
             ApexAgentLogger.insertLogs(payload);
         } catch (Exception logEx) {

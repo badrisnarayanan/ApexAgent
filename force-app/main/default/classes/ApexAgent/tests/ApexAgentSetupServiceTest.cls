@@ -24,6 +24,7 @@ private class ApexAgentSetupServiceTest {
 
         Assert.isFalse(first.blocked, 'A ready org should not be blocked: ' + first.message);
         Assert.isFalse(first.alreadySetUp, 'An org with no configuration should be set up');
+        Assert.areEqual(1, first.createdCounts.get('model providers'), 'Model provider count');
         Assert.areEqual(1, first.createdCounts.get('LLMs'), 'LLM count');
         Assert.areEqual(2, first.createdCounts.get('tools'), 'Tool count');
         Assert.areEqual(1, first.createdCounts.get('topics'), 'Topic count');
@@ -31,11 +32,17 @@ private class ApexAgentSetupServiceTest {
         Assert.areEqual(1, first.createdCounts.get('agents'), 'Agent count');
         Assert.areEqual(1, first.createdCounts.get('MCP servers'), 'MCP server count');
         Assert.areEqual(4, first.createdCounts.get('links'), 'Two topic-tool links, one agent-topic link, one MCP-tool link');
-        Assert.isTrue(first.message.contains('Created 1 LLMs'), 'The message should summarise what was created: ' + first.message);
+        Assert.isTrue(first.message.contains('Created 1 model providers, 1 LLMs'), 'The message should summarise what was created: ' + first.message);
         Assert.isTrue(first.message.contains(ApexAgentSetupService.ADMIN_PERMISSION_SET), 'The message should name the admin permission set');
         Assert.isTrue(jobsAfterFirstRun >= 2, 'Setup should enqueue the tool schema job and at least the admin permission set job');
 
-        ApexAgent_LLM__c llm = [SELECT Name, Output_Token_Cost_M__c, Cached_Input_Token_Cost_M__c, Supports_Reasoning__c FROM ApexAgent_LLM__c];
+        ApexAgent_LLM__c llm = [
+            SELECT Name, Output_Token_Cost_M__c, Cached_Input_Token_Cost_M__c, Supports_Reasoning__c,
+                   Model_Provider__r.Name, Model_Provider__r.Provider_Type__c
+            FROM ApexAgent_LLM__c
+        ];
+        Assert.areEqual('Test Provider', llm.Model_Provider__r.Name, 'The LLM should point at the provider it names');
+        Assert.areEqual('OpenRouter', llm.Model_Provider__r.Provider_Type__c, 'Provider fields should be copied');
         Assert.areEqual(1.875, llm.Output_Token_Cost_M__c, 'A decimal JSON number should be saved to a currency field');
         Assert.areEqual(0, llm.Cached_Input_Token_Cost_M__c, 'A whole JSON number should be saved to a currency field');
         Assert.isTrue(llm.Supports_Reasoning__c, 'Checkbox value should be copied');
@@ -109,6 +116,10 @@ private class ApexAgentSetupServiceTest {
         Map<String, Object> unknownLlm = validSeed();
         firstEntry(unknownLlm, 'agents').put('llm', 'No Such LLM');
         assertSetupFails(archiveOf(unknownLlm, files), 'refers to LLM "No Such LLM"');
+
+        Map<String, Object> unknownProvider = validSeed();
+        firstEntry(unknownProvider, 'llms').put('provider', 'No Such Provider');
+        assertSetupFails(archiveOf(unknownProvider, files), 'refers to model provider "No Such Provider"');
 
         Map<String, Object> unknownTool = validSeed();
         firstEntry(unknownTool, 'mcps').put('tools', new List<Object>{ new Map<String, Object>{ 'tool' => 'NoSuchTool', 'Active__c' => true } });
@@ -199,9 +210,13 @@ private class ApexAgentSetupServiceTest {
 
     private static Map<String, Object> validSeed() {
         return new Map<String, Object>{
+            'providers' => new List<Object>{ new Map<String, Object>{
+                'Name' => 'Test Provider', 'Provider_Type__c' => 'OpenRouter',
+                'Named_Credential__c' => 'TestCredential', 'Chat_Completions_Path__c' => '/api/v1/chat/completions'
+            } },
             'llms' => new List<Object>{ new Map<String, Object>{
-                'Name' => 'Test LLM', 'Model_API_Name__c' => 'test/model', 'Family__c' => 'Test',
-                'Named_Credential__c' => 'TestCredential', 'Supports_Reasoning__c' => true,
+                'Name' => 'Test LLM', 'Model_API_Name__c' => 'test/model',
+                'provider' => 'Test Provider', 'Supports_Reasoning__c' => true,
                 'Output_Token_Cost_M__c' => 1.875, 'Cached_Input_Token_Cost_M__c' => 0
             } },
             'tools' => new List<Object>{

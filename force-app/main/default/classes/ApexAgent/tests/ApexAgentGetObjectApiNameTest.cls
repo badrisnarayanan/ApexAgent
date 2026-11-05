@@ -32,7 +32,7 @@ private class ApexAgentGetObjectApiNameTest {
     @IsTest
     static void testHappyPathDirectCall() {
         // The running user's Id covers a standard object without inserting one
-        ApexAgent_LLM__c llm = ApexAgentTestDataFactory.newLlm('Test LLM');
+        ApexAgent_LLM__c llm = ApexAgentTestDataFactory.newLlm('Test LLM', ApexAgentTestDataFactory.insertModelProvider());
         insert llm;
 
         List<ApexAgentGetObjectApiName.Output> userResults = ApexAgentGetObjectApiName.run(

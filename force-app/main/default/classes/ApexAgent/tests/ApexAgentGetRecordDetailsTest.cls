@@ -42,7 +42,7 @@ private class ApexAgentGetRecordDetailsTest {
     static void testMultipleRecordsAcrossObjectTypes() {
         ApexAgent_Topic__c topic = ApexAgentTestDataFactory.newTopic('Bulk Test Topic', 'bulk_test_topic');
         insert topic;
-        ApexAgent_LLM__c llm = ApexAgentTestDataFactory.newLlm('Bulk Test LLM');
+        ApexAgent_LLM__c llm = ApexAgentTestDataFactory.newLlm('Bulk Test LLM', ApexAgentTestDataFactory.insertModelProvider());
         insert llm;
 
         List<ApexAgentGetRecordDetails.Input> inputs = new List<ApexAgentGetRecordDetails.Input>{
@@ -96,12 +96,7 @@ private class ApexAgentGetRecordDetailsTest {
     static void testLookupEnrichment() {
         // ApexAgent_LLM__c has a Name field; ApexAgent_Agent__c has LLM__c (custom lookup)
         // LLM__c doesn't end with 'Id' so getRelationshipName() = 'LLM__r' gets enriched
-        ApexAgent_LLM__c llm = new ApexAgent_LLM__c(
-            Name              = 'Test LLM',
-            Model_API_Name__c = 'test-model-1',
-            Family__c         = 'Anthropic',
-            Named_Credential__c = 'TestCredential'
-        );
+        ApexAgent_LLM__c llm = ApexAgentTestDataFactory.newLlm('Test LLM', ApexAgentTestDataFactory.insertModelProvider());
         insert llm;
 
         ApexAgent_Agent__c agent = new ApexAgent_Agent__c(

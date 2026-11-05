@@ -72,8 +72,15 @@ export default defineConfig({
 					items: [
 						{ label: 'Set up the agent', slug: 'agent/setup' },
 						{ label: 'Customise an agent', slug: 'agent/customise' },
-						{ label: 'Use a different model', slug: 'agent/models' },
-						{ label: 'Use a different provider', slug: 'agent/providers' },
+						{
+							label: 'Models and providers',
+							items: [
+								{ label: 'Change the model', slug: 'agent/models' },
+								{ label: 'Built-in providers', slug: 'agent/providers' },
+								{ label: 'Connect a gateway', slug: 'agent/gateway' },
+								{ label: 'Write a provider adapter', slug: 'agent/adapter' },
+							],
+						},
 						{ label: 'Limits', slug: 'agent/limits' },
 					],
 				},

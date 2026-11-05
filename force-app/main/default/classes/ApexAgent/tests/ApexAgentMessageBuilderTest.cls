@@ -30,13 +30,18 @@ private class ApexAgentMessageBuilderTest {
             ),
             new ApexAgent_Tool_Log__c(
                 Message_Log__c = msg.Id, Tool_Call_Id__c = 'call-blank', Tool_Name__c = 'ApexAgentGetObjectApiName',
-                Input__c = '{}', Status__c = 'Success',
+                Input__c = '{}', Status__c = 'Success', Agent_Thought_Signature__c = 'google:sig-earlier',
                 Started_At__c = firstStart
             )
         };
 
         List<ApexAgentApiTypes.ChatMessage> history = ApexAgentMessageBuilder.buildThreadHistory(
-            'thread-history-test', 5, 5, 'Anthropic'
+            'thread-history-test', 5, 5,
+            ApexAgentLLMProviderFactory.create(ApexAgentTestDataFactory.newAgentConfig('Google_AI_Studio'))
+        );
+        List<ApexAgentApiTypes.ChatMessage> onOpenRouter = ApexAgentMessageBuilder.buildThreadHistory(
+            'thread-history-test', 5, 5,
+            ApexAgentLLMProviderFactory.create(ApexAgentTestDataFactory.newAgentConfig('OpenRouter'))
         );
 
         Map<String, String> contentByToolCallId = new Map<String, String>();
@@ -61,5 +66,12 @@ private class ApexAgentMessageBuilderTest {
         Assert.areEqual('recordId is not a valid Salesforce ID: not-an-id', contentByToolCallId.get('call-failed'),
             'A failed call should replay its error message');
         Assert.areEqual('', contentByToolCallId.get('call-blank'), 'A call with neither output nor error should replay as empty');
+
+        ApexAgentApiTypes.ChatMessage toolTurn = history[1];
+        Assert.areEqual('{"google":{"thought_signature":"sig-earlier"}}', JSON.serialize(toolTurn.tool_calls[0].extra_content),
+            'The logged signature should go back on the first replayed call, through the provider');
+        Assert.isNull(toolTurn.tool_calls[1].extra_content, 'Only the first call carries a signature');
+        Assert.isNull(onOpenRouter[1].reasoning_details, 'Another provider\'s logged token should not be replayed');
+        Assert.isNull(onOpenRouter[1].tool_calls[0].extra_content, 'OpenRouter adds no Gemini extras');
     }
 }

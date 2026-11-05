@@ -6,14 +6,9 @@
 private class ApexAgentJunctionKeyServiceTest {
 
     private static ApexAgent_LLM__c buildLlm(Boolean supportsReasoning) {
-        return new ApexAgent_LLM__c(
-            Name                     = 'Test LLM',
-            Model_API_Name__c        = 'test-model',
-            Family__c                = 'Anthropic',
-            Named_Credential__c      = 'TestCred',
-            Chat_Completions_Path__c = '/v1/messages',
-            Supports_Reasoning__c    = supportsReasoning
-        );
+        ApexAgent_LLM__c llm = ApexAgentTestDataFactory.newLlm('Test LLM', ApexAgentTestDataFactory.insertModelProvider());
+        llm.Supports_Reasoning__c = supportsReasoning;
+        return llm;
     }
 
     private static ApexAgent_Tool__c buildTool(String className) {
@@ -144,13 +139,20 @@ private class ApexAgentJunctionKeyServiceTest {
         negativeCost.Output_Token_Cost_M__c = -1;
         Assert.isTrue(firstError(Database.insert(negativeCost, false)).contains('cannot be negative'),
             'Negative token cost should be rejected');
-        ApexAgent_LLM__c badPath = buildLlm(false);
-        badPath.Chat_Completions_Path__c = 'v1/messages';
+
+        // Model Provider rules
+        ApexAgent_Model_Provider__c badPath = ApexAgentTestDataFactory.newModelProvider('Bad Path');
+        badPath.Chat_Completions_Path__c = 'v1/chat/completions';
         Assert.isTrue(firstError(Database.insert(badPath, false)).contains('must start with /'),
             'A path without a leading slash should be rejected');
-        ApexAgent_LLM__c blankPath = buildLlm(false);
-        blankPath.Chat_Completions_Path__c = null;
+        ApexAgent_Model_Provider__c blankPath = ApexAgentTestDataFactory.newModelProvider('Blank Path');
         Assert.isTrue(Database.insert(blankPath, false).isSuccess(), 'A blank path should be allowed');
+        ApexAgent_Model_Provider__c customWithoutClass = ApexAgentTestDataFactory.newModelProvider('Custom');
+        customWithoutClass.Provider_Type__c = 'Custom';
+        Assert.isFalse(Database.insert(customWithoutClass, false).isSuccess(),
+            'A Custom provider without an Apex class should be rejected');
+        customWithoutClass.Apex_Class__c = 'ApexAgentCustomLLMProviderMock';
+        Assert.isTrue(Database.insert(customWithoutClass, false).isSuccess(), 'A Custom provider with a class should be allowed');
 
         // Topic, Instruction and Topic Map rules
         ApexAgent_Topic__c topic = new ApexAgent_Topic__c(Name = 'T', Topic_API_Name__c = 'validation_topic');

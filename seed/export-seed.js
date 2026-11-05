@@ -26,9 +26,11 @@ const RESOURCE_DIR = path.join(
 );
 const INSTRUCTIONS_DIR = 'instructions';
 
+const PROVIDER_FIELDS = [
+    'Name', 'Provider_Type__c', 'Apex_Class__c', 'Named_Credential__c', 'Chat_Completions_Path__c'
+];
 const LLM_FIELDS = [
-    'Name', 'Model_API_Name__c', 'Family__c', 'Named_Credential__c', 'Chat_Completions_Path__c',
-    'Supports_Reasoning__c', 'Uncached_Input_Token_Cost_M__c', 'Cached_Input_Token_Cost_M__c',
+    'Name', 'Model_API_Name__c', 'Supports_Reasoning__c', 'Uncached_Input_Token_Cost_M__c', 'Cached_Input_Token_Cost_M__c',
     'Output_Token_Cost_M__c'
 ];
 const TOOL_FIELDS = ['Name', 'Apex_Class_Name__c', 'Modifies_Salesforce_Data__c'];
@@ -122,7 +124,8 @@ function byKey(key) {
 }
 
 function main() {
-    const llms = query(`SELECT ${LLM_FIELDS.join(', ')} FROM ApexAgent_LLM__c`);
+    const providers = query(`SELECT ${PROVIDER_FIELDS.join(', ')} FROM ApexAgent_Model_Provider__c`);
+    const llms = query(`SELECT Model_Provider__r.Name, ${LLM_FIELDS.join(', ')} FROM ApexAgent_LLM__c`);
     const tools = query(`SELECT ${TOOL_FIELDS.join(', ')} FROM ApexAgent_Tool__c`);
     const topics = query(`SELECT Id, ${TOPIC_FIELDS.join(', ')} FROM ApexAgent_Topic__c`);
     const instructions = query(
@@ -142,12 +145,16 @@ function main() {
         'SELECT MCP__c, Tool__r.Apex_Class_Name__c, Active__c FROM ApexAgent_MCP_Tool_Map__c'
     );
 
+    assertUnique(providers, 'Name', 'model provider');
     assertUnique(llms, 'Name', 'LLM');
     assertUnique(agents, 'Name', 'agent');
 
     const instructionFiles = new Map();
     const seed = {
-        llms: llms.map((llm) => pick(llm, LLM_FIELDS)).sort(byKey('Name')),
+        providers: providers.map((provider) => pick(provider, PROVIDER_FIELDS)).sort(byKey('Name')),
+        llms: llms
+            .map((llm) => ({ ...pick(llm, LLM_FIELDS), provider: llm.Model_Provider__r.Name }))
+            .sort(byKey('Name')),
         tools: tools.map((tool) => pick(tool, TOOL_FIELDS)).sort(byKey('Apex_Class_Name__c')),
         topics: topics
             .map((topic) => ({
@@ -203,7 +210,7 @@ function main() {
     fs.writeFileSync(path.join(RESOURCE_DIR, 'data.json'), JSON.stringify(seed, null, 2) + '\n');
 
     console.log(
-        `Exported ${seed.llms.length} LLMs, ${seed.tools.length} tools, ${seed.topics.length} topics, ` +
+        `Exported ${seed.providers.length} model providers, ${seed.llms.length} LLMs, ${seed.tools.length} tools, ${seed.topics.length} topics, ` +
         `${instructionFiles.size} instructions, ${seed.agents.length} agents, ${seed.mcps.length} MCP servers ` +
         `to ${path.relative(process.cwd(), RESOURCE_DIR)}`
     );

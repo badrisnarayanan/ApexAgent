@@ -4,10 +4,6 @@
  */
 public with sharing class ApexAgentMessageBuilder {
 
-    private static final String GEMINI_FAMILY               = 'Google';
-    private static final String DUMMY_THOUGHT_SIGNATURE     = 'skip_thought_signature_validator';
-    private static final String REASONING_ENCRYPTED_TYPE    = 'reasoning.encrypted';
-
     // ─────────────────────────────────────────────────────────────────
     // System prompt
     // ─────────────────────────────────────────────────────────────────
@@ -63,11 +59,16 @@ public with sharing class ApexAgentMessageBuilder {
     // Thread history reconstruction
     // ─────────────────────────────────────────────────────────────────
 
+    /**
+     * Rebuilds earlier turns of the thread. Each replayed tool-call turn gets the
+     * continuity token logged with it, through the provider, which ignores tokens
+     * another provider wrote: only the turn in progress must carry one.
+     */
     public static List<ApexAgentApiTypes.ChatMessage> buildThreadHistory(
         String threadUUID,
         Integer convDepth,
         Integer toolLogDepth,
-        String modelFamily
+        ApexAgentLLMProvider provider
     ) {
         List<ApexAgentApiTypes.ChatMessage> messages = new List<ApexAgentApiTypes.ChatMessage>();
         if (String.isBlank(threadUUID) || convDepth == null || convDepth <= 0) {
@@ -145,24 +146,6 @@ public with sharing class ApexAgentMessageBuilder {
                 assistantWithTools.content = null;
                 assistantWithTools.tool_calls = new List<ApexAgentApiTypes.ToolCall>();
 
-                // Use the signature stored at tool-call time (from the intermediate LLM
-                // response that triggered these tool calls), falling back to the message-level
-                // signature if the tool log doesn't have one.
-                String signature = msgToolLogs[0].Agent_Thought_Signature__c;
-                if (String.isBlank(signature)) {
-                    signature = msg.Agent_Thought_Signature__c;
-                }
-                if (String.isBlank(signature) && GEMINI_FAMILY.equalsIgnoreCase(modelFamily)) {
-                    signature = DUMMY_THOUGHT_SIGNATURE;
-                }
-                if (String.isNotBlank(signature)) {
-                    ApexAgentApiTypes.ReasoningDetail rd = new ApexAgentApiTypes.ReasoningDetail();
-                    rd.type = REASONING_ENCRYPTED_TYPE;
-                    rd.data = signature;
-                    assistantWithTools.reasoning_details =
-                        new List<ApexAgentApiTypes.ReasoningDetail>{ rd };
-                }
-
                 for (ApexAgent_Tool_Log__c tl : msgToolLogs) {
                     ApexAgentApiTypes.ToolCall tc = new ApexAgentApiTypes.ToolCall();
                     tc.id   = tl.Tool_Call_Id__c;
@@ -173,6 +156,13 @@ public with sharing class ApexAgentMessageBuilder {
                     tc.function  = fn;
                     assistantWithTools.tool_calls.add(tc);
                 }
+                // The token stored at tool-call time (from the response that made these
+                // calls), falling back to the message-level one.
+                String token = msgToolLogs[0].Agent_Thought_Signature__c;
+                if (String.isBlank(token)) {
+                    token = msg.Agent_Thought_Signature__c;
+                }
+                provider.attachContinuity(assistantWithTools, token);
                 messages.add(assistantWithTools);
 
                 // Tool result turns

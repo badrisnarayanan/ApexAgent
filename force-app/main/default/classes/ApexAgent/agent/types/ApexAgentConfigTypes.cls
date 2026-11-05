@@ -13,11 +13,17 @@ public with sharing class ApexAgentConfigTypes {
         public Integer toolLogDepth;
         /** Values: low / medium / high / xhigh / minimal / none / disabled */
         public String reasoningEffort;
-        public String modelFamily; // Anthropic / OpenAI / Google
-        // LLM callout fields
+        // Model Provider: the connection, and which adapter speaks to it
+        public Id providerId;
+        public String providerName;
+        /** ApexAgent_Model_Provider__c.Provider_Type__c API value, e.g. OpenAI, Google_AI_Studio, Custom. */
+        public String providerType;
+        /** The adapter class when providerType is Custom. */
+        public String providerApexClass;
         public String namedCredential;
-        public String modelApiName;
         public String chatCompletionsPath;
+        // LLM
+        public String modelApiName;
         public Boolean supportsReasoning;
         public Boolean showExecutionMessage;
         // Cost per million tokens

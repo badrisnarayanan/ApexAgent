@@ -39,7 +39,7 @@ sf project deploy start --source-dir force-app
 sf apex run --file seed/setup.apex
 ```
 
-Setup creates a starter configuration: 2 LLMs, 10 tools, 1 agent (Lumen) and 1 MCP server. Then follow the [install guide](https://badrisnarayanan.github.io/ApexAgent/start/install/) to give your users access and finish the part you want:
+Setup creates a starter configuration: 4 model providers, 5 LLMs, 10 tools, 1 agent (Lumen) and 1 MCP server. Then follow the [install guide](https://badrisnarayanan.github.io/ApexAgent/start/install/) to give your users access and finish the part you want:
 
 - 🔌 [Set up the MCP server](https://badrisnarayanan.github.io/ApexAgent/mcp/setup/) and [connect a client](https://badrisnarayanan.github.io/ApexAgent/mcp/setup/#3-connect-your-client) such as Claude or ChatGPT
 - 🤖 [Set up the agent](https://badrisnarayanan.github.io/ApexAgent/agent/setup/)
@@ -59,8 +59,9 @@ Setup creates a starter configuration: 2 LLMs, 10 tools, 1 agent (Lumen) and 1 M
 | [ApexAgent agent vs Agentforce](https://badrisnarayanan.github.io/ApexAgent/start/compare/agent/) | The same comparison for the agent |
 | [Security and data](https://badrisnarayanan.github.io/ApexAgent/operate/security/) | Who sees what, what reaches a model, and where data goes |
 | [Add your own tool](https://badrisnarayanan.github.io/ApexAgent/tools/add-a-tool/) | Write one Apex class and give it to an agent, an MCP server, or both |
-| [Use a different model](https://badrisnarayanan.github.io/ApexAgent/agent/models/) | Switch the agent to another model |
-| [Use a different provider](https://badrisnarayanan.github.io/ApexAgent/agent/providers/) | OpenAI, Azure OpenAI, your AI gateway or any OpenAI-compatible service |
+| [Change the model](https://badrisnarayanan.github.io/ApexAgent/agent/models/) | Switch the agent to another model |
+| [Built-in providers](https://badrisnarayanan.github.io/ApexAgent/agent/providers/) | OpenRouter, OpenAI, Azure OpenAI and Google AI Studio |
+| [Connect a gateway](https://badrisnarayanan.github.io/ApexAgent/agent/gateway/) | Your company's AI gateway or any OpenAI-compatible service |
 | [MCP limits](https://badrisnarayanan.github.io/ApexAgent/mcp/limits/) | The Salesforce limits that apply, and how to watch them |
 | [How it's organised](https://badrisnarayanan.github.io/ApexAgent/project/organisation/) | The records that make up an agent and an MCP server |
 | [Troubleshooting](https://badrisnarayanan.github.io/ApexAgent/operate/troubleshooting/) | Fixes for common setup and sign-in problems |

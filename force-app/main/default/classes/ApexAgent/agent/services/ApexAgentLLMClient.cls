@@ -1,44 +1,42 @@
 /**
- * Handles HTTP callouts to an OpenAI-compatible chat completions endpoint.
- * Serializes the request, enforces timeout, and parses the response.
- * Retries up to MAX_RETRIES times on transient errors (network failures, 429, 5xx).
+ * Sends a chat completion request through a provider adapter and retries
+ * transient failures. Everything provider-specific (request body, response
+ * parsing, which failures to retry) is decided by the adapter.
+ *
+ * Retries up to MAX_RETRIES times on network errors and on failures the
+ * adapter calls retryable. Apex can't pause between attempts, so a provider
+ * that asks to wait longer than MAX_RETRY_AFTER_SECONDS fails the call instead
+ * of being hit again straight away.
  */
 public with sharing class ApexAgentLLMClient {
 
     private static final Integer TIMEOUT_MS = 120000;
     private static final Integer MAX_RETRIES = 3;
-    private static final Set<Integer> RETRYABLE_STATUS_CODES = new Set<Integer>{ 429, 500, 502, 503, 504 };
+    private static final Integer MAX_RETRY_AFTER_SECONDS = 5;
 
-    /**
-     * Sends a chat completion request to the configured LLM endpoint.
-     * Retries on network errors and retryable HTTP status codes.
-     * Throws a CalloutException if all attempts fail or a non-retryable error occurs.
-     */
-    public static ApexAgentApiTypes.ChatCompletionResponse call(
-        ApexAgentConfigTypes.AgentConfig config,
+    public static ApexAgentLLMTypes.LLMResult call(
+        ApexAgentLLMProvider provider,
         List<Object> messages,
         List<Map<String, Object>> toolDefs
     ) {
-        Map<String, Object> body = buildRequestBody(config, messages, toolDefs);
+        Map<String, Object> body = provider.buildRequestBody(messages, toolDefs);
 
         HttpRequest req = new HttpRequest();
-        req.setEndpoint('callout:' + config.namedCredential + (config.chatCompletionsPath ?? ''));
+        req.setEndpoint(provider.endpoint());
         req.setMethod('POST');
         req.setHeader('Content-Type', 'application/json');
-        String serializedBody = JSON.serialize(body, true);
-        System.debug(LoggingLevel.DEBUG, 'Request Body: ' + serializedBody);
-        req.setBody(serializedBody);
         req.setTimeout(TIMEOUT_MS);
 
         Http http = new Http();
         Integer attempt = 0;
+        Boolean resentAfterRejection = false;
+        req.setBody(JSON.serialize(body, true));
 
         while (true) {
             attempt++;
 
             // Network-level failures (timeout, DNS, connection reset) are always
-            // transient and retryable — scoped to just the send() call so that
-            // non-retryable HTTP status codes below never pass through this catch.
+            // transient, so only send() is inside this catch.
             HttpResponse resp;
             try {
                 resp = http.send(req);
@@ -48,71 +46,45 @@ public with sharing class ApexAgentLLMClient {
                         'LLM callout failed after ' + attempt + ' attempt(s): ' + e.getMessage()
                     );
                 }
-                System.debug(LoggingLevel.WARN,
-                    'LLM callout attempt ' + attempt + ' threw exception: ' + e.getMessage() + '. Retrying...'
-                );
                 continue;
             }
 
             Integer statusCode = resp.getStatusCode();
-
+            String responseBody = resp.getBody();
             if (statusCode >= 200 && statusCode < 300) {
-                return (ApexAgentApiTypes.ChatCompletionResponse) JSON.deserialize(
-                    resp.getBody(),
-                    ApexAgentApiTypes.ChatCompletionResponse.class
-                );
+                return provider.parseResponse(responseBody);
             }
 
-            if (!RETRYABLE_STATUS_CODES.contains(statusCode)) {
-                // Non-retryable status (e.g. 400) — fail immediately, do not retry.
+            if (!resentAfterRejection) {
+                Map<String, Object> corrected = provider.retryBodyAfterRejection(statusCode, responseBody, body);
+                if (corrected != null) {
+                    body = corrected;
+                    req.setBody(JSON.serialize(body, true));
+                    resentAfterRejection = true;
+                    continue;
+                }
+            }
+
+            if (!provider.isRetryable(statusCode, responseBody)) {
                 throw new CalloutException(
-                    'LLM callout failed with non-retryable status.'
-                    + ' Status: ' + statusCode
-                    + ' Body: ' + resp.getBody()
+                    'LLM callout failed with non-retryable status. Status: ' + statusCode + ' Body: ' + responseBody
                 );
             }
-
             if (attempt > MAX_RETRIES) {
-                throw new CalloutException(
-                    'LLM callout failed after ' + attempt + ' attempt(s).'
-                    + ' Status: ' + statusCode
-                    + ' Body: ' + resp.getBody()
-                );
+                throw new CalloutException('LLM callout failed after ' + attempt + ' attempt(s). Status: '
+                    + statusCode + ' Body: ' + responseBody);
             }
-
-            System.debug(LoggingLevel.WARN,
-                'LLM callout attempt ' + attempt + ' returned ' + statusCode + '. Retrying...'
-            );
+            Integer retryAfter = retryAfterSeconds(resp.getHeader('Retry-After'));
+            if (retryAfter != null && retryAfter > MAX_RETRY_AFTER_SECONDS) {
+                throw new CalloutException('LLM provider asked to wait ' + retryAfter
+                    + ' seconds before retrying. Status: ' + statusCode + ' Body: ' + responseBody);
+            }
         }
-        return null; // unreachable — while(true) always returns or throws, but Apex compiler requires this
+        return null; // unreachable: the loop always returns or throws, but the compiler requires it
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    // Private helpers
-    // ─────────────────────────────────────────────────────────────────
-
-    private static Map<String, Object> buildRequestBody(
-        ApexAgentConfigTypes.AgentConfig config,
-        List<Object> messages,
-        List<Map<String, Object>> toolDefs
-    ) {
-        Map<String, Object> body = new Map<String, Object>{
-            'model'      => config.modelApiName,
-            'messages'   => messages,
-            'max_completion_tokens' => config.maxTokens,
-            'stream'     => false
-        };
-
-        if (!toolDefs.isEmpty()) {
-            body.put('tools', toolDefs);
-            body.put('tool_choice', 'auto');
-        }
-
-        if (String.isNotBlank(config.reasoningEffort)
-                && config.reasoningEffort != 'disabled') {
-            body.put('reasoning_effort', config.reasoningEffort);
-        }
-
-        return body;
+    /** Retry-After in seconds, or null when absent or given as an HTTP date. */
+    private static Integer retryAfterSeconds(String header) {
+        return String.isNotBlank(header) && header.trim().isNumeric() ? Integer.valueOf(header.trim()) : null;
     }
 }

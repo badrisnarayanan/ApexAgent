@@ -2,7 +2,7 @@
 //
 //     sf apex run --file seed/setup.apex
 //
-// Checks the org is ready, creates the starter LLMs, tools, topics, instructions,
+// Checks the org is ready, creates the starter model providers, LLMs, tools, topics, instructions,
 // agent and MCP server, and assigns the ApexAgent permission sets. Read the
 // message it prints: it says what was done and anything left for you to fix.
 //

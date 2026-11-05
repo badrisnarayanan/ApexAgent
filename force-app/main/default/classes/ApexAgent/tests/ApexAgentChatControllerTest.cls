@@ -10,15 +10,9 @@ private class ApexAgentChatControllerTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     private static ApexAgent_LLM__c buildLlm() {
-        ApexAgent_LLM__c llm = new ApexAgent_LLM__c(
-            Name                      = 'TestLLM',
-            Model_API_Name__c         = 'test-model',
-            Family__c                 = 'Anthropic',
-            Named_Credential__c       = 'TestCred',
-            Chat_Completions_Path__c  = '/v1/messages',
-            Uncached_Input_Token_Cost_M__c = 0,
-            Output_Token_Cost_M__c    = 0
-        );
+        ApexAgent_LLM__c llm = ApexAgentTestDataFactory.newLlm('TestLLM', ApexAgentTestDataFactory.insertModelProvider());
+        llm.Uncached_Input_Token_Cost_M__c = 0;
+        llm.Output_Token_Cost_M__c         = 0;
         insert llm;
         return llm;
     }
@@ -422,6 +416,27 @@ private class ApexAgentChatControllerTest {
             response.errorMessage,
             'finish_reason=length with blank content should surface this specific, safe message'
         );
+    }
+
+    @IsTest
+    static void testCutOffToolCallIsNotExecuted() {
+        ApexAgent_LLM__c llm = buildLlm();
+        buildAgent(llm.Id);
+        // A tool call cut off at the token limit may have incomplete arguments, so it must not run.
+        String cutOffToolCall = ApexAgentLLMCalloutMock.toolCallResponse(
+            'call-cut-1', 'ApexAgentGetRecordDetails', '{"recordId":"001'
+        ).replace('"finish_reason":"tool_calls"', '"finish_reason":"length"');
+        Test.setMock(HttpCalloutMock.class, new ApexAgentLLMCalloutMock(200, cutOffToolCall));
+
+        Test.startTest();
+        ApexAgentOrchestrator.AgentResponse response = ApexAgentChatController.sendMessage(
+            'TestAgent', 'Show that account', null, 'msg-cut-' + UUID.randomUUID().toString(), null
+        );
+        Test.stopTest();
+
+        Assert.isTrue(response.errorMessage?.startsWith('Response was cut off'),
+            'A cut-off tool call should end the turn with the cut-off message: ' + response.errorMessage);
+        Assert.areEqual(0, [SELECT COUNT() FROM ApexAgent_Tool_Log__c], 'A cut-off tool call should not be executed');
     }
 
     @IsTest

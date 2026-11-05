@@ -1,26 +1,75 @@
 {
+  "providers": [
+    {
+      "Name": "Azure OpenAI",
+      "Provider_Type__c": "Azure_OpenAI",
+      "Named_Credential__c": "ApexAgent_Azure_OpenAI",
+      "Chat_Completions_Path__c": "/openai/v1/chat/completions"
+    },
+    {
+      "Name": "Google AI Studio",
+      "Provider_Type__c": "Google_AI_Studio",
+      "Named_Credential__c": "ApexAgent_Google_AI_Studio",
+      "Chat_Completions_Path__c": "/v1beta/openai/chat/completions"
+    },
+    {
+      "Name": "OpenAI",
+      "Provider_Type__c": "OpenAI",
+      "Named_Credential__c": "ApexAgent_OpenAI",
+      "Chat_Completions_Path__c": "/v1/chat/completions"
+    },
+    {
+      "Name": "OpenRouter",
+      "Provider_Type__c": "OpenRouter",
+      "Named_Credential__c": "ApexAgent_OpenRouter",
+      "Chat_Completions_Path__c": "/api/v1/chat/completions"
+    }
+  ],
   "llms": [
     {
       "Name": "Free Model Router",
       "Model_API_Name__c": "openrouter/free",
-      "Family__c": "free",
-      "Named_Credential__c": "OpenRouter",
-      "Chat_Completions_Path__c": "/api/v1/chat/completions",
       "Supports_Reasoning__c": true,
       "Uncached_Input_Token_Cost_M__c": 0,
       "Cached_Input_Token_Cost_M__c": 0,
-      "Output_Token_Cost_M__c": 0
+      "Output_Token_Cost_M__c": 0,
+      "provider": "OpenRouter"
     },
     {
-      "Name": "Gemini 3.7 Flash",
-      "Model_API_Name__c": "google/gemini-3.7-flash",
-      "Family__c": "Google",
-      "Named_Credential__c": "OpenRouter",
-      "Chat_Completions_Path__c": "/api/v1/chat/completions",
+      "Name": "Gemini 3.8 Flash",
+      "Model_API_Name__c": "google/gemini-3.8-flash",
       "Supports_Reasoning__c": true,
-      "Uncached_Input_Token_Cost_M__c": 0.375,
-      "Cached_Input_Token_Cost_M__c": 0.0375,
-      "Output_Token_Cost_M__c": 1.875
+      "Uncached_Input_Token_Cost_M__c": 0.75,
+      "Cached_Input_Token_Cost_M__c": 0.075,
+      "Output_Token_Cost_M__c": 3.75,
+      "provider": "OpenRouter"
+    },
+    {
+      "Name": "Gemini 3.8 Flash (AI Studio)",
+      "Model_API_Name__c": "gemini-3.8-flash",
+      "Supports_Reasoning__c": true,
+      "Uncached_Input_Token_Cost_M__c": 0.75,
+      "Cached_Input_Token_Cost_M__c": 0.075,
+      "Output_Token_Cost_M__c": 3.75,
+      "provider": "Google AI Studio"
+    },
+    {
+      "Name": "GPT-5 Mini (Azure)",
+      "Model_API_Name__c": "gpt-5-mini",
+      "Supports_Reasoning__c": true,
+      "Uncached_Input_Token_Cost_M__c": 0.25,
+      "Cached_Input_Token_Cost_M__c": 0.025,
+      "Output_Token_Cost_M__c": 2,
+      "provider": "Azure OpenAI"
+    },
+    {
+      "Name": "GPT-5.4 Nano (OpenAI)",
+      "Model_API_Name__c": "gpt-5.4-nano",
+      "Supports_Reasoning__c": false,
+      "Uncached_Input_Token_Cost_M__c": 0.2,
+      "Cached_Input_Token_Cost_M__c": 0.02,
+      "Output_Token_Cost_M__c": 1.25,
+      "provider": "OpenAI"
     }
   ],
   "tools": [
@@ -150,7 +199,7 @@
       "Conversation_Depth__c": 15,
       "Tool_Log_Depth__c": 5,
       "Reasoning_Effort__c": "medium",
-      "llm": "Gemini 3.7 Flash",
+      "llm": "Gemini 3.8 Flash",
       "topics": [
         {
           "topic": "Core Operations",

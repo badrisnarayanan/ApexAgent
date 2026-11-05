@@ -13,7 +13,7 @@ A typical answer takes a few seconds. You are only likely to reach 120 seconds w
 
 If you do see it:
 
-- Choose a faster model. See [Use a different model](/ApexAgent/agent/models/).
+- Choose a faster model. See [Change the model](/ApexAgent/agent/models/).
 - Lower **Reasoning Effort** on the Agent record. See [Customise an agent](/ApexAgent/agent/customise/).
 - Ask for less in one message. Two smaller questions finish where one large one may not.
 

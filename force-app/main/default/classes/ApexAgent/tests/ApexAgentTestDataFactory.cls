@@ -14,13 +14,49 @@
 @IsTest
 public class ApexAgentTestDataFactory {
 
-    public static ApexAgent_LLM__c newLlm(String name) {
-        return new ApexAgent_LLM__c(
+    /** An OpenRouter-type provider: the adapter whose responses the LLM callout mock imitates. */
+    public static ApexAgent_Model_Provider__c newModelProvider(String name) {
+        return new ApexAgent_Model_Provider__c(
             Name                = name,
-            Model_API_Name__c   = 'test-model',
-            Family__c           = 'Anthropic',
+            Provider_Type__c    = 'OpenRouter',
             Named_Credential__c = 'TestCredential'
         );
+    }
+
+    /** Inserts a provider and returns its Id, for tests that only need an LLM to point at one. */
+    public static Id insertModelProvider() {
+        ApexAgent_Model_Provider__c provider = newModelProvider('Test Provider');
+        insert provider;
+        return provider.Id;
+    }
+
+    public static ApexAgent_LLM__c newLlm(String name, Id modelProviderId) {
+        return new ApexAgent_LLM__c(
+            Name              = name,
+            Model_API_Name__c = 'test-model',
+            Model_Provider__c = modelProviderId
+        );
+    }
+
+    /** An in-memory agent config for adapter tests, with no records behind it. */
+    public static ApexAgentConfigTypes.AgentConfig newAgentConfig(String providerType) {
+        ApexAgentConfigTypes.AgentConfig cfg = new ApexAgentConfigTypes.AgentConfig();
+        cfg.agentName           = 'Test Agent';
+        cfg.providerId          = fakeId(ApexAgent_Model_Provider__c.SObjectType);
+        cfg.providerName        = 'Test Provider';
+        cfg.providerType        = providerType;
+        cfg.namedCredential     = 'TestCredential';
+        cfg.chatCompletionsPath = '/v1/chat/completions';
+        cfg.modelApiName        = 'test-model';
+        cfg.maxTokens           = 1000;
+        cfg.supportsReasoning   = true;
+        cfg.reasoningEffort     = 'low';
+        return cfg;
+    }
+
+    /** A well-formed Id of the given object that matches no record. */
+    public static Id fakeId(SObjectType objectType) {
+        return objectType.getDescribe().getKeyPrefix() + '0'.repeat(12);
     }
 
     public static ApexAgent_Agent__c newAgent(String name, Id llmId) {

@@ -1,6 +1,6 @@
 /**
  * Setup for a newly installed org. Creates the starter configuration shipped
- * in the ApexAgentSeedData static resource (LLMs, tools, topics, instructions,
+ * in the ApexAgentSeedData static resource (model providers, LLMs, tools, topics, instructions,
  * agents, MCP servers and the links between them) and assigns the permission
  * sets the product needs.
  *
@@ -84,7 +84,8 @@ public with sharing class ApexAgentSetupService {
     // Setup runs before the installer has any ApexAgent permission set, and must
     // see records owned by other users, so it reads and writes in system mode.
     private static Boolean hasExistingConfiguration() {
-        return ![SELECT Id FROM ApexAgent_LLM__c WITH SYSTEM_MODE LIMIT 1].isEmpty()
+        return ![SELECT Id FROM ApexAgent_Model_Provider__c WITH SYSTEM_MODE LIMIT 1].isEmpty()
+            || ![SELECT Id FROM ApexAgent_LLM__c WITH SYSTEM_MODE LIMIT 1].isEmpty()
             || ![SELECT Id FROM ApexAgent_Tool__c WITH SYSTEM_MODE LIMIT 1].isEmpty()
             || ![SELECT Id FROM ApexAgent_Topic__c WITH SYSTEM_MODE LIMIT 1].isEmpty()
             || ![SELECT Id FROM ApexAgent_Agent__c WITH SYSTEM_MODE LIMIT 1].isEmpty()
@@ -135,8 +136,20 @@ public with sharing class ApexAgentSetupService {
         List<Object> agentEntries = listOf(data, 'agents');
         List<Object> mcpEntries = listOf(data, 'mcps');
 
+        List<Object> llmEntries = listOf(data, 'llms');
+
         // Parents first: every list below is saved before anything that points at it.
-        Map<String, SObject> llmsByName = buildByKey(ApexAgent_LLM__c.SObjectType, listOf(data, 'llms'), 'Name');
+        Map<String, SObject> providersByName =
+            buildByKey(ApexAgent_Model_Provider__c.SObjectType, listOf(data, 'providers'), 'Name');
+        insert as system providersByName.values();
+
+        Map<String, SObject> llmsByName = buildByKey(ApexAgent_LLM__c.SObjectType, llmEntries, 'Name');
+        for (Object entry : llmEntries) {
+            Map<String, Object> llmEntry = (Map<String, Object>) entry;
+            String llmName = (String) llmEntry.get('Name');
+            llmsByName.get(llmName.toLowerCase()).put('Model_Provider__c',
+                resolve(providersByName, (String) llmEntry.get('provider'), 'model provider', 'LLM ' + llmName));
+        }
         Map<String, SObject> toolsByClass = buildByKey(ApexAgent_Tool__c.SObjectType, listOf(data, 'tools'), 'Apex_Class_Name__c');
         Map<String, SObject> topicsByApiName = buildByKey(ApexAgent_Topic__c.SObjectType, topicEntries, 'Topic_API_Name__c');
         Map<String, SObject> mcpsByApiName = buildByKey(ApexAgent_MCP__c.SObjectType, mcpEntries, 'MCP_API_Name__c');
@@ -211,6 +224,7 @@ public with sharing class ApexAgentSetupService {
         insert as system mcpTools;
 
         return new Map<String, Integer>{
+            'model providers' => providersByName.size(),
             'LLMs' => llmsByName.size(),
             'tools' => toolsByClass.size(),
             'topics' => topicsByApiName.size(),

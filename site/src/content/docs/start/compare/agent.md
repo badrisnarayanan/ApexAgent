@@ -27,7 +27,7 @@ There are two ways to put an AI agent inside Salesforce. Salesforce offers its o
 
 **Agentforce** is priced per action when you pay with Flex Credits. Reported pricing is $500 for 100,000 credits, with a standard action using 20 credits, so about **$0.10 per action**. A single question often takes several actions. These figures are as reported by third parties and can change; see Salesforce's [Agentforce rate card](https://www.salesforce.com/agentforce/rates/) for current prices.
 
-**ApexAgent's agent** has no Salesforce charge. You pay your model provider for the tokens used, at their price, with nothing added per action. In our own tests on Gemini 3.7 Flash, a question that took three or four tool calls cost **$0.006 to $0.02**. Your cost depends on the model you choose and how much you ask of it.
+**ApexAgent's agent** has no Salesforce charge. You pay your model provider for the tokens used, at their price, with nothing added per action. On Gemini 3.8 Flash, the starter model, an average question costs about **$0.016**. Your cost depends on the model you choose and how much you ask of it.
 
 ## How it works without a license
 
@@ -42,21 +42,21 @@ What Salesforce charges for with Agentforce is its own model access and the serv
 
 ## A worked example
 
-These figures come from 139 questions logged in our own org between April and October 2026, on Gemini Flash, and from Salesforce's [Flex Credits rate card](https://www.salesforce.com/agentforce/rates/).
+These figures come from 149 questions logged in our own org between April and October 2026 on Gemini Flash models, priced at Gemini 3.8 Flash rates ($0.75 per million input tokens, $0.075 cached, $3.75 output), and from Salesforce's [Flex Credits rate card](https://www.salesforce.com/agentforce/rates/).
 
 | | ApexAgent | Agentforce |
 | --- | --- | --- |
-| One average question (1.7 tool calls) | $0.009 | $0.17 |
-| One question that uses 3 tools | about $0.01 | $0.30 |
-| 100 people, 20 questions each working day, for a month | about $410 | about $7,300 |
+| One average question (1.7 tool calls) | $0.016 | $0.17 |
+| One question that uses 3 tools | about $0.02 | $0.30 |
+| 100 people, 20 questions each working day, for a month (22 days) | about $720 | about $7,500 |
 
-That is about **18 times less** per question.
+That is about **10 times less** per question.
 
 How the Agentforce column is worked out: Salesforce's rate card charges 20 Flex Credits for each agent action, and Flex Credits are reported at $0.005 each. We count each tool call as one action, so 1.7 actions is 34 credits, or $0.17.
 
 Two things to keep in mind:
 
-- **The model matters.** Our figures are on a low-cost model. An average question sends about 30,000 tokens to the model, so on a premium model priced near $3 per million input tokens the same question costs about $0.10. That is still less than Agentforce, but nearer 2 times less than 18.
+- **The model matters.** Our figures are on a low-cost model. An average question sends about 30,000 tokens to the model, so on a premium model priced near $3 per million input tokens the same question costs about $0.10. That is still less than Agentforce, but nearer 2 times less than 10.
 - **Counting actions.** We assume one tool call is one Agentforce action. Salesforce may count a multi-step question differently, and it sells other pricing models too, such as per conversation and per user.
 
 ## When to choose which

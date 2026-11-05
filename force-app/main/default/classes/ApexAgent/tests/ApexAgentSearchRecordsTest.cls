@@ -5,7 +5,7 @@ private class ApexAgentSearchRecordsTest {
 
     @testSetup
     static void setup() {
-        ApexAgent_LLM__c llm = ApexAgentTestDataFactory.newLlm('ApexAgentSearchRecordsTest LLM');
+        ApexAgent_LLM__c llm = ApexAgentTestDataFactory.newLlm('ApexAgentSearchRecordsTest LLM', ApexAgentTestDataFactory.insertModelProvider());
         insert llm;
         // Company-style and person-style names on one searchable package object, so the
         // subscriber org's own automation on standard objects can't affect the setup

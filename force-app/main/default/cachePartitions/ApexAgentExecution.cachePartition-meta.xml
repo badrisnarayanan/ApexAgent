@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <PlatformCachePartition xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>Stores real-time tool execution status for in-flight agent messages. Keyed by message UUID. TTL is 300 seconds.</description>
+    <description>Org cache for the agent: real-time tool execution status for in-flight messages (keyed by message UUID, 300 second TTL), and reasoning_effort corrections the OpenAI adapter remembers per provider and model (24 hour TTL).</description>
     <isDefaultPartition>false</isDefaultPartition>
     <masterLabel>ApexAgentExecution</masterLabel>
     <platformCachePartitionTypes>

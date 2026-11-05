@@ -51,9 +51,12 @@ public with sharing class ApexAgentTopicLoader {
             SELECT Id, Name, Description__c, Max_Tokens__c,
                    Conversation_Depth__c, Reasoning_Effort__c, Tool_Log_Depth__c,
                    Show_Execution_Message__c,
-                   LLM__r.Named_Credential__c, LLM__r.Model_API_Name__c,
-                   LLM__r.Family__c, LLM__r.Chat_Completions_Path__c,
-                   LLM__r.Supports_Reasoning__c,
+                   LLM__r.Model_API_Name__c, LLM__r.Supports_Reasoning__c,
+                   LLM__r.Model_Provider__c, LLM__r.Model_Provider__r.Name,
+                   LLM__r.Model_Provider__r.Provider_Type__c,
+                   LLM__r.Model_Provider__r.Apex_Class__c,
+                   LLM__r.Model_Provider__r.Named_Credential__c,
+                   LLM__r.Model_Provider__r.Chat_Completions_Path__c,
                    LLM__r.Uncached_Input_Token_Cost_M__c,
                    LLM__r.Cached_Input_Token_Cost_M__c,
                    LLM__r.Output_Token_Cost_M__c
@@ -78,12 +81,16 @@ public with sharing class ApexAgentTopicLoader {
         cfg.conversationDepth     = rec.Conversation_Depth__c != null ? Integer.valueOf(rec.Conversation_Depth__c) : 15; // default to 15 if not set
         cfg.toolLogDepth          = rec.Tool_Log_Depth__c != null ? Integer.valueOf(rec.Tool_Log_Depth__c) : 5; // default to 5 if not set
         cfg.reasoningEffort       = rec.Reasoning_Effort__c;
-        cfg.namedCredential       = rec.LLM__r.Named_Credential__c;
         cfg.modelApiName          = rec.LLM__r.Model_API_Name__c;
-        cfg.chatCompletionsPath   = rec.LLM__r.Chat_Completions_Path__c;
         cfg.supportsReasoning     = rec.LLM__r.Supports_Reasoning__c;
         cfg.showExecutionMessage  = rec.Show_Execution_Message__c == true;
-        cfg.modelFamily           = rec.LLM__r.Family__c;
+        ApexAgent_Model_Provider__c provider = rec.LLM__r.Model_Provider__r;
+        cfg.providerId            = rec.LLM__r.Model_Provider__c;
+        cfg.providerName          = provider?.Name;
+        cfg.providerType          = provider?.Provider_Type__c;
+        cfg.providerApexClass     = provider?.Apex_Class__c;
+        cfg.namedCredential       = provider?.Named_Credential__c;
+        cfg.chatCompletionsPath   = provider?.Chat_Completions_Path__c;
         cfg.uncachedInputCostPerM = rec.LLM__r.Uncached_Input_Token_Cost_M__c;
         cfg.cachedInputCostPerM   = rec.LLM__r.Cached_Input_Token_Cost_M__c;
         cfg.outputCostPerM        = rec.LLM__r.Output_Token_Cost_M__c;

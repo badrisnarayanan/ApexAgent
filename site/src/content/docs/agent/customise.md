@@ -67,7 +67,7 @@ Several are measured in tokens, the units AI models count text in. A token is a 
 
 | Field | What it does | If left blank |
 | --- | --- | --- |
-| **LLM** | The model the agent uses. See [Use a different model](/ApexAgent/agent/models/) | Required |
+| **LLM** | The model the agent uses. See [Change the model](/ApexAgent/agent/models/) | Required |
 | **Reasoning Effort** | How much the model thinks before it answers: low, medium, high or disabled. Higher is more accurate, slower and costs more. Use disabled for a model that does not support reasoning | The model's own default |
 | **Max Tokens** | The longest reply the model may write. Lower it to cap cost | Required. Lumen is set to 10,000 |
 | **Conversation Depth** | How many earlier exchanges in the conversation are sent with each new message. More gives the agent a longer memory and uses more tokens. Set it to 0 for an agent that treats every message as new | 15 |

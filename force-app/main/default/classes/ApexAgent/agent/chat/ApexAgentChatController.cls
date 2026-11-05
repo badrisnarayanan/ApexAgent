@@ -138,7 +138,8 @@ public with sharing class ApexAgentChatController {
                    (SELECT Execution_Message__c, Status__c
                     FROM Tool_Logs__r ORDER BY Started_At__c ASC),
                    (SELECT Error__c, Stack_Trace__c
-                    FROM Error_Logs__r ORDER BY CreatedDate ASC)
+                    FROM Error_Logs__r WHERE Severity__c != :ApexAgentLogger.SEVERITY_WARNING
+                    ORDER BY CreatedDate ASC)
             FROM ApexAgent_Message_Log__c
             WHERE Thread__r.Agent_Thread_UUID__c = :threadUUID
             WITH USER_MODE

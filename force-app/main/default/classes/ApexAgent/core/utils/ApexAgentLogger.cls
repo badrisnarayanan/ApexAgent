@@ -10,6 +10,10 @@ public with sharing class ApexAgentLogger {
     public static final String TOOL_STATUS_SUCCESS = 'Success';
     public static final String TOOL_STATUS_ERROR   = 'Error';
 
+    /** Values of ApexAgent_Error_Log__c.Severity__c. Warnings are for admins, not shown in chat. */
+    public static final String SEVERITY_ERROR   = 'Error';
+    public static final String SEVERITY_WARNING = 'Warning';
+
     /** Maps a tool execution outcome to the Status__c value stored on its Tool Log. */
     public static String toolLogStatus(ApexAgentExecTypes.ToolResult result) {
         return result.isError() ? TOOL_STATUS_ERROR : TOOL_STATUS_SUCCESS;
@@ -40,6 +44,8 @@ public with sharing class ApexAgentLogger {
         public List<ToolLogEntry> toolLogs;
         public String errorMessage;
         public String errorStackTrace;
+        /** Problems an admin should fix that didn't stop the turn. */
+        public List<String> warnings;
     }
 
     public class ToolLogEntry {
@@ -73,9 +79,7 @@ public with sharing class ApexAgentLogger {
             return;
         }
         insertToolLogs(p.toolLogs, messageLogId);
-        if (String.isNotBlank(p.errorMessage)) {
-            insertErrorLog(p.errorMessage, p.errorStackTrace, messageLogId);
-        }
+        insertErrorLogs(p, messageLogId);
     }
 
     /**
@@ -216,30 +220,52 @@ public with sharing class ApexAgentLogger {
         }
 
         List<Database.SaveResult> results = Database.insert(records, false); // NOPMD
+        List<ApexAgent_Error_Log__c> failures = new List<ApexAgent_Error_Log__c>();
         for (Integer i = 0; i < results.size(); i++) {
             if (!results[i].isSuccess()) {
                 String errorDetail = 'Tool log insert failed for ' + records[i].Tool_Name__c
                     + ': ' + formatErrors(results[i].getErrors());
                 System.debug(LoggingLevel.ERROR, 'ApexAgentLogger: ' + errorDetail);
-                insertErrorLog(errorDetail, null, messageLogId);
+                failures.add(newErrorLog(messageLogId, SEVERITY_ERROR, errorDetail, null));
             }
         }
+        insertErrorLogs(failures);
     }
 
     // ─────────────────────────────────────────────────────────────────
     // Private: error log insert
     // ─────────────────────────────────────────────────────────────────
 
-    private static void insertErrorLog(String errorMsg, String stackTrace, Id messageLogId) {
-        Database.SaveResult result = Database.insert(new ApexAgent_Error_Log__c( // NOPMD
+    private static void insertErrorLogs(LogPayload p, Id messageLogId) {
+        List<ApexAgent_Error_Log__c> logs = new List<ApexAgent_Error_Log__c>();
+        if (String.isNotBlank(p.errorMessage)) {
+            logs.add(newErrorLog(messageLogId, SEVERITY_ERROR, p.errorMessage, p.errorStackTrace));
+        }
+        for (String warning : p.warnings ?? new List<String>()) {
+            logs.add(newErrorLog(messageLogId, SEVERITY_WARNING, warning, null));
+        }
+        insertErrorLogs(logs);
+    }
+
+    private static ApexAgent_Error_Log__c newErrorLog(Id messageLogId, String severity, String message, String stackTrace) {
+        return new ApexAgent_Error_Log__c(
             Message_Log__c = messageLogId,
-            Error__c       = truncate(errorMsg),
+            Severity__c    = severity,
+            Error__c       = truncate(message),
             Stack_Trace__c = truncate(stackTrace)
-        ), false);
-        if (!result.isSuccess()) {
-            System.debug(LoggingLevel.ERROR,
-                'ApexAgentLogger: error log insert failed: ' + formatErrors(result.getErrors())
-            );
+        );
+    }
+
+    private static void insertErrorLogs(List<ApexAgent_Error_Log__c> logs) {
+        if (logs.isEmpty()) {
+            return;
+        }
+        for (Database.SaveResult result : Database.insert(logs, false)) { // NOPMD
+            if (!result.isSuccess()) {
+                System.debug(LoggingLevel.ERROR,
+                    'ApexAgentLogger: error log insert failed: ' + formatErrors(result.getErrors())
+                );
+            }
         }
     }
 

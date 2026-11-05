@@ -1,98 +1,37 @@
 ---
-title: Use a different provider
-description: The agent works with any OpenAI-compatible provider. Connect OpenAI, Azure OpenAI, your company's AI gateway or another service.
+title: Built-in providers
+description: The four model providers that come set up, what each needs, and what ApexAgent handles for each.
 ---
 
-The agent talks to AI models in the OpenAI chat completions format, the format most providers and AI gateways accept. ApexAgent comes with a connection to [OpenRouter](https://openrouter.ai) already set up, so you can start with one key. You can switch to your own provider at any time.
+The agent reaches AI models through **Model Provider** records. Each one is a connection: the named credential that holds the key, the API path, and the provider type, which tells ApexAgent how that provider differs from plain OpenAI. Each [LLM record](/ApexAgent/agent/models/) points at one provider.
 
-To change model without changing provider, see [Use a different model](/ApexAgent/agent/models/).
+Setup creates four providers, already wired to named credentials. To use one, you only add its key.
 
-## Which providers work
-
-| Provider | Status |
-| --- | --- |
-| OpenRouter | Preconfigured and tested |
-| OpenAI, Azure OpenAI | Use the same format. Follow [Connect your own provider](#connect-your-own-provider) |
-| A company AI gateway, or another OpenAI-compatible service | Follow the same steps |
-| Google Vertex AI | Not tested by us. Uses the same format, but signs in with a short-lived token instead of a fixed key, so its credential in Salesforce is set up for OAuth rather than a pasted key |
-| Google Gemini, directly | Has an OpenAI-compatible endpoint. Not tested by us; if a field differs, it is the same small code change as below |
-| A provider with its own format | A small code change. See [A provider with a different format](#a-provider-with-a-different-format) |
-
-OpenRouter is the one we test. Other OpenAI-compatible providers should work the same way for chat, tool calls, token counts, cost tracking and logs; [What to check on a new provider](#what-to-check-on-a-new-provider) lists what is most likely to differ.
-
-## Connect your own provider
-
-You need the provider's base URL, its chat completions path, and an API key. Three examples:
-
-| Provider | URL | Chat Completions Path | Key is sent as |
+| Provider | Named credential | Key is sent as | Before you use it |
 | --- | --- | --- | --- |
-| OpenAI | `https://api.openai.com` | `/v1/chat/completions` | `Authorization: Bearer <key>` |
-| Azure OpenAI | `https://<your-resource>.openai.azure.com` | `/openai/v1/chat/completions` | `api-key: <key>` |
-| OpenRouter | `https://openrouter.ai` | `/api/v1/chat/completions` | `Authorization: Bearer <key>` |
+| OpenRouter | `ApexAgent_OpenRouter` | `Authorization: Bearer <key>` | Nothing |
+| OpenAI | `ApexAgent_OpenAI` | `Authorization: Bearer <key>` | Nothing |
+| Azure OpenAI | `ApexAgent_Azure_OpenAI` | `api-key: <key>` | Set the named credential's URL to your resource, and the LLM's **Model API Name** to your deployment name |
+| Google AI Studio | `ApexAgent_Google_AI_Studio` | `Authorization: Bearer <key>` | Nothing |
 
-### 1. Store the key
+To add a key, follow step 1 of [Set up the agent](/ApexAgent/agent/setup/#1-add-your-key) and pick your provider's tab. For a company AI gateway or any other OpenAI-compatible service, see [Connect a gateway](/ApexAgent/agent/gateway/). For a provider with its own format, see [Write a provider adapter](/ApexAgent/agent/adapter/).
 
-In Setup, open **Named Credentials** and go to the **External Credentials** tab. Select **New**.
+## What ApexAgent handles for each provider
 
-- **Label** and **Name**: for example `My Provider Credential`
-- **Authentication Protocol**: **Custom**
+All four use the OpenAI chat completions format. Where a provider differs, ApexAgent adjusts for you:
 
-Save it. Under **Principals**, select **New**, name the principal, and add an authentication parameter:
-
-- **Name**: `ApiKey`
-- **Value**: your API key
-
-Under **Custom Headers**, select **New** and add the header your provider expects. Use the names you chose above in place of `My_Provider_Credential`:
-
-- For `Authorization: Bearer <key>`: name `Authorization`, value `{!'Bearer ' & $Credential.My_Provider_Credential.ApiKey}`
-- For `api-key: <key>`: name `api-key`, value `{!$Credential.My_Provider_Credential.ApiKey}`
-
-### 2. Create the named credential
-
-On the **Named Credentials** tab, select **New**.
-
-- **Label** and **Name**: for example `MyProvider`. You enter this name on the LLM record
-- **URL**: the provider's base URL
-- **External Credential**: the one you just created
-- Turn on **Allow Formulas in HTTP Header**, and turn off **Generate Authorization Header**
-
-### 3. Let your users use it
-
-Open the **ApexAgent User** permission set, go to **External Credential Principal Access**, and add the principal you created. Do the same on **ApexAgent Admin**. Without this, the agent fails with a credential error for that user.
-
-### 4. Create the LLM record
-
-In the Setup Portal, open **LLMs** and select **New**. [Use a different model](/ApexAgent/agent/models/) explains every field.
-
-| Field | What to enter |
+| Provider | What ApexAgent adjusts |
 | --- | --- |
-| **Model API Name** | The model's name exactly as the provider gives it. On Azure, your deployment name |
-| **Named Credential** | The name from step 2 |
-| **Chat Completions Path** | The provider's path, from the table above |
-| **Family** | The model's maker, such as OpenAI, Anthropic or Google |
-| **Supports Reasoning?** | Tick if the model can reason before answering |
-| **Token costs** | The provider's prices per million tokens. These drive the cost figures in the logs and dashboard |
+| OpenAI, Azure OpenAI | Some models can't use tools and reasoning together, and models that don't reason reject the reasoning setting. If the provider rejects it, ApexAgent resends the request once with it corrected, remembers that for the model until you change its reasoning settings, and logs a warning saying which setting to change |
+| OpenRouter | Uses the cost OpenRouter reports for each call instead of your token prices, including the upstream cost when you use your own provider key there (BYOK) |
+| Google AI Studio | Sends Gemini's thought signature back on tool calls, which Gemini 3 requires. Counts the reasoning tokens Gemini leaves out of its token totals, so cost is right |
 
-### 5. Use it
+On every provider, ApexAgent retries a failed call up to three times when the failure is temporary: a network error, a rate limit, or a server error. An exhausted balance (`insufficient_quota`) is not retried. If the provider asks to wait more than five seconds, the call fails straight away instead of holding the user.
 
-Open your Agent record, set **LLM** to the new record, and send a message.
+Warnings like the one above are saved in **Agent Error Logs** with **Severity** set to **Warning**. Users don't see them in the chat window.
 
-If it fails, open **Agent Error Logs**. The provider's own error message is saved there, and it usually names the setting it did not accept.
+## Google Vertex AI
 
-## What to check on a new provider
+Vertex AI isn't built in. Its OpenAI-compatible endpoint only accepts short-lived Google OAuth tokens, not API keys, and Salesforce's own OAuth credential can't complete Google's token exchange.
 
-Two settings on the Agent record depend on the model, on any provider:
-
-- **Reasoning Effort** is sent as `reasoning_effort`. Set it to **disabled** for a model that does not support reasoning.
-- **Max Tokens** is sent as `max_completion_tokens`.
-
-The logs keep the reasoning token count for every provider that reports it. The model's reasoning text itself is not saved.
-
-## A provider with a different format
-
-If your provider or gateway does not use the OpenAI format, or names a field differently, the change is small and stays in two classes:
-
-- `ApexAgentLLMClient`: builds the request and reads the response
-- `ApexAgentApiTypes`: the request and response shapes
-
-Give those two files and your provider's API reference to a coding agent and ask it to adapt them. Nothing else in ApexAgent needs to change: tools, logs, the chat window and the MCP server are unaffected.
+To use models hosted on Vertex, go through OpenRouter: add your Vertex credentials to OpenRouter as your own provider key (BYOK), and use the OpenRouter provider in ApexAgent.

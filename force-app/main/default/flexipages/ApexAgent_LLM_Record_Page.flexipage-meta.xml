@@ -21,8 +21,8 @@
                     <name>uiBehavior</name>
                     <value>none</value>
                 </fieldInstanceProperties>
-                <fieldItem>Record.Family__c</fieldItem>
-                <identifier>RecordFamily_cField</identifier>
+                <fieldItem>Record.Model_Provider__c</fieldItem>
+                <identifier>RecordModel_Provider_cField</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
@@ -33,16 +33,6 @@
                 </fieldInstanceProperties>
                 <fieldItem>Record.Model_API_Name__c</fieldItem>
                 <identifier>RecordModel_API_Name_cField</identifier>
-            </fieldInstance>
-        </itemInstances>
-        <itemInstances>
-            <fieldInstance>
-                <fieldInstanceProperties>
-                    <name>uiBehavior</name>
-                    <value>none</value>
-                </fieldInstanceProperties>
-                <fieldItem>Record.Named_Credential__c</fieldItem>
-                <identifier>RecordNamed_Credential_cField</identifier>
             </fieldInstance>
         </itemInstances>
         <itemInstances>
@@ -110,20 +100,10 @@
             <fieldInstance>
                 <fieldInstanceProperties>
                     <name>uiBehavior</name>
-                    <value>none</value>
+                    <value>required</value>
                 </fieldInstanceProperties>
-                <fieldItem>Record.Family__c</fieldItem>
-                <identifier>RecordFamily_cField2</identifier>
-            </fieldInstance>
-        </itemInstances>
-        <itemInstances>
-            <fieldInstance>
-                <fieldInstanceProperties>
-                    <name>uiBehavior</name>
-                    <value>none</value>
-                </fieldInstanceProperties>
-                <fieldItem>Record.Named_Credential__c</fieldItem>
-                <identifier>RecordNamed_Credential_cField2</identifier>
+                <fieldItem>Record.Model_Provider__c</fieldItem>
+                <identifier>RecordModel_Provider_cField2</identifier>
             </fieldInstance>
         </itemInstances>
         <name>Facet-l1000003-b2c3-4d5e-a6f7-890123456003</name>
@@ -148,16 +128,6 @@
                 </fieldInstanceProperties>
                 <fieldItem>Record.Supports_Reasoning__c</fieldItem>
                 <identifier>RecordSupports_Reasoning_cField2</identifier>
-            </fieldInstance>
-        </itemInstances>
-        <itemInstances>
-            <fieldInstance>
-                <fieldInstanceProperties>
-                    <name>uiBehavior</name>
-                    <value>none</value>
-                </fieldInstanceProperties>
-                <fieldItem>Record.Chat_Completions_Path__c</fieldItem>
-                <identifier>RecordChat_Completions_Path_cField</identifier>
             </fieldInstance>
         </itemInstances>
         <name>Facet-l1000004-b2c3-4d5e-a6f7-890123456004</name>

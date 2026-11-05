@@ -1,5 +1,6 @@
 /**
- * OpenAI / OpenRouter API request and response wrapper types for the ApexAgent framework.
+ * OpenAI chat completions message types for the ApexAgent framework. Responses
+ * are parsed untyped by the provider adapters; these types build requests.
  */
 public with sharing class ApexAgentApiTypes {
 
@@ -12,6 +13,11 @@ public with sharing class ApexAgentApiTypes {
         public String id;
         public String type;
         public ToolCallFunction function;
+        /**
+         * Provider extras on the call that must go back unchanged, such as
+         * Gemini's extra_content.google.thought_signature. Null for most providers.
+         */
+        public Map<String, Object> extra_content;
     }
 
     /** The function details within a tool call. */
@@ -67,58 +73,5 @@ public with sharing class ApexAgentApiTypes {
          * from a prior LLM response (required by some reasoning models).
          */
         public List<ReasoningDetail> reasoning_details;
-    }
-
-    // ─────────────────────────────────────────────────────────────────
-    // Response types
-    // ─────────────────────────────────────────────────────────────────
-
-    /** Top-level chat completion response from OpenRouter. */
-    public class ChatCompletionResponse {
-        public String id;
-        public List<Choice> choices;
-        public Usage usage;
-        /** Present instead of `choices` on some 200-status provider failure modes. */
-        public Object error;
-    }
-
-    /** A single choice in the response choices array. */
-    public class Choice {
-        public Integer index;
-        public ResponseMessage message;
-        /** stop / tool_calls / length / content_filter / error */
-        public String finish_reason;
-    }
-
-    /** The assistant message returned inside a Choice. */
-    public class ResponseMessage {
-        public String role;
-        public String content;
-        public List<ToolCall> tool_calls;
-        /** Direct reasoning string (nullable); present when model returns a flat thought. */
-        public String reasoning;
-        /** Structured reasoning details array; present for extended-thinking models. */
-        public List<ReasoningDetail> reasoning_details;
-    }
-
-    // ─────────────────────────────────────────────────────────────────
-    // Usage types (per OpenRouter spec)
-    // ─────────────────────────────────────────────────────────────────
-
-    public class Usage {
-        public Integer prompt_tokens;
-        public Integer completion_tokens;
-        public Integer total_tokens;
-        public PromptTokensDetails prompt_tokens_details;
-        public CompletionTokensDetails completion_tokens_details;
-    }
-
-    public class PromptTokensDetails {
-        public Integer cached_tokens;
-        public Integer cache_write_tokens;
-    }
-
-    public class CompletionTokensDetails {
-        public Integer reasoning_tokens;
     }
 }

@@ -18,4 +18,4 @@ If you are trying ApexAgent for the first time, use a sandbox or a free [Develop
 
 ## Only for the agent
 
-- An API key from an AI model provider. [OpenRouter](https://openrouter.ai) is the quickest, because its connection is already set up. Any OpenAI-compatible provider works; see [Use a different provider](/ApexAgent/agent/providers/)
+- An API key from an AI model provider. [OpenRouter](https://openrouter.ai) is the quickest, because its connection is already set up. OpenAI, Azure OpenAI and Google AI Studio are set up too, and any OpenAI-compatible gateway works; see [Built-in providers](/ApexAgent/agent/providers/)

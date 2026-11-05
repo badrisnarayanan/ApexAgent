@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Apex_Class_Required_For_Custom</fullName>
+    <active>true</active>
+    <description>A Custom provider needs the name of the Apex class that implements it.</description>
+    <errorConditionFormula>AND(ISPICKVAL(Provider_Type__c, &quot;Custom&quot;), ISBLANK(Apex_Class__c))</errorConditionFormula>
+    <errorDisplayField>Apex_Class__c</errorDisplayField>
+    <errorMessage>Enter the Apex class that extends ApexAgentLLMProvider when Provider Type is Custom.</errorMessage>
+</ValidationRule>

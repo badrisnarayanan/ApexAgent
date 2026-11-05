@@ -31,7 +31,19 @@
     <description>Full admin access to all ApexAgent objects, fields, tabs, and the ApexAgent Setup Portal app.</description>
     <externalCredentialPrincipalAccesses>
         <enabled>true</enabled>
-        <externalCredentialPrincipal>OpenRouter_Credential-Authorization</externalCredentialPrincipal>
+        <externalCredentialPrincipal>ApexAgent_Azure_OpenAI_Credential-Authorization</externalCredentialPrincipal>
+    </externalCredentialPrincipalAccesses>
+    <externalCredentialPrincipalAccesses>
+        <enabled>true</enabled>
+        <externalCredentialPrincipal>ApexAgent_Google_AI_Studio_Credential-Authorization</externalCredentialPrincipal>
+    </externalCredentialPrincipalAccesses>
+    <externalCredentialPrincipalAccesses>
+        <enabled>true</enabled>
+        <externalCredentialPrincipal>ApexAgent_OpenAI_Credential-Authorization</externalCredentialPrincipal>
+    </externalCredentialPrincipalAccesses>
+    <externalCredentialPrincipalAccesses>
+        <enabled>true</enabled>
+        <externalCredentialPrincipal>ApexAgent_OpenRouter_Credential-Authorization</externalCredentialPrincipal>
     </externalCredentialPrincipalAccesses>
     <fieldPermissions>
         <editable>true</editable>
@@ -111,11 +123,6 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>ApexAgent_LLM__c.Cached_Input_Token_Cost_M__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>ApexAgent_LLM__c.Chat_Completions_Path__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -236,6 +243,16 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>ApexAgent_Message_Log__c.User_Input__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>ApexAgent_Model_Provider__c.Apex_Class__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>ApexAgent_Model_Provider__c.Chat_Completions_Path__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -446,6 +463,16 @@
         <allowEdit>true</allowEdit>
         <allowRead>true</allowRead>
         <modifyAllRecords>true</modifyAllRecords>
+        <object>ApexAgent_Model_Provider__c</object>
+        <viewAllFields>true</viewAllFields>
+        <viewAllRecords>true</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>true</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>true</modifyAllRecords>
         <object>ApexAgent_Thread_Log__c</object>
         <viewAllFields>true</viewAllFields>
         <viewAllRecords>true</viewAllRecords>
@@ -530,6 +557,10 @@
     </tabSettings>
     <tabSettings>
         <tab>ApexAgent_Message_Log__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>ApexAgent_Model_Provider__c</tab>
         <visibility>Visible</visibility>
     </tabSettings>
     <tabSettings>
