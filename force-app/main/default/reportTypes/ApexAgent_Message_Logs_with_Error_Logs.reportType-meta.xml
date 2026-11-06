@@ -145,6 +145,11 @@
         </columns>
         <columns>
             <checkedByDefault>false</checkedByDefault>
+            <field>Severity__c</field>
+            <table>ApexAgent_Message_Log__c.Error_Logs__r</table>
+        </columns>
+        <columns>
+            <checkedByDefault>false</checkedByDefault>
             <field>Stack_Trace__c</field>
             <table>ApexAgent_Message_Log__c.Error_Logs__r</table>
         </columns>

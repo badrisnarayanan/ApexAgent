@@ -4,6 +4,15 @@
         <field>ApexAgent_Message_Log__c.Error_Logs__r$Name</field>
     </columns>
     <description>Number of agent errors per agent.</description>
+    <filter>
+        <criteriaItems>
+            <column>ApexAgent_Message_Log__c.Error_Logs__r$Severity__c</column>
+            <columnToColumn>false</columnToColumn>
+            <isUnlocked>true</isUnlocked>
+            <operator>equals</operator>
+            <value>Error</value>
+        </criteriaItems>
+    </filter>
     <format>Summary</format>
     <groupingsDown>
         <aggregateType>RowCount</aggregateType>

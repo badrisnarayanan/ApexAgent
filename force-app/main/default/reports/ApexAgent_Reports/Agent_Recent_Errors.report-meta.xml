@@ -13,6 +13,15 @@
         <field>ApexAgent_Message_Log__c$Name</field>
     </columns>
     <description>The 20 most recent agent errors.</description>
+    <filter>
+        <criteriaItems>
+            <column>ApexAgent_Message_Log__c.Error_Logs__r$Severity__c</column>
+            <columnToColumn>false</columnToColumn>
+            <isUnlocked>true</isUnlocked>
+            <operator>equals</operator>
+            <value>Error</value>
+        </criteriaItems>
+    </filter>
     <format>Tabular</format>
     <name>Agent Recent Errors</name>
     <params>
