@@ -1,17 +1,15 @@
 ---
 title: ApexAgent MCP server vs Salesforce Hosted MCP Servers
-description: ApexAgent's MCP server next to the MCP servers Salesforce hosts. What each is, what each costs and when to choose which.
+description: ApexAgent's MCP server next to the MCP servers Salesforce hosts. What each is, what Salesforce has said about billing, and when to choose which.
 ---
 
-There are two ways to give AI apps such as Claude and ChatGPT an MCP server for your org. Salesforce offers its own, called **Hosted MCP Servers**. ApexAgent gives you one you deploy yourself. Both come with ready-made tools, and both let you add your own. The main difference is how you pay: Salesforce's are for customers with Flex Credits, and ApexAgent's uses none.
+There are two ways to give AI apps such as Claude and ChatGPT an MCP server for your org. Salesforce offers its own, called **Hosted MCP Servers**. ApexAgent gives you one you deploy yourself. Both come with ready-made tools, and both let you add your own. The main differences are which kinds of tool you can add, and whether you can read and change the ready-made ones.
 
 ## At a glance
 
 | | ApexAgent MCP server | Salesforce Hosted MCP Servers |
 | --- | --- | --- |
 | **What it is** | An MCP endpoint you deploy as Apex, reached through a Salesforce Site | MCP servers Salesforce runs for your org |
-| **Salesforce charge** | None | For customers with Flex Credits; usage may be billed |
-| **What a tool call uses** | One ordinary API request | Flex Credits |
 | **Who brings the AI model** | The client, such as Claude or ChatGPT | The client, such as Claude or ChatGPT |
 | **Runs as the signed-in user** | Yes | Yes |
 | **Sign-in** | OAuth with PKCE, through an External Client App | OAuth with PKCE, through an External Client App |
@@ -23,42 +21,32 @@ There are two ways to give AI apps such as Claude and ChatGPT an MCP server for 
 | **Support** | Community, open source | Salesforce |
 | **Source code** | Yours to read and change | Closed |
 
-## What it costs
+## What Salesforce has said about billing
 
-**Salesforce Hosted MCP Servers** are, in Salesforce's words, "intended only for customers with Flex Credits and you may be billed for server usage." See its [Hosted MCP Servers overview](https://developer.salesforce.com/docs/platform/hosted-mcp-servers/guide/hosted-mcp-servers-overview.html) and the [rate card](https://www.salesforce.com/agentforce/rates/) for current prices.
+Salesforce has [announced](https://help.salesforce.com/s/articleView?language=en_US&id=005360285&type=1) that every successful call a registered AI agent makes to Salesforce, over MCP or the API, will be metered as a Headless Platform Interaction and billed in Flex Credits. Agents that use Salesforce APIs will need to be registered. The rate is still marked TBA, metering has not started, and Salesforce says it will give 30 days' notice. Sandboxes, scratch orgs and Developer Edition orgs are not metered.
 
-**ApexAgent's MCP server** costs nothing to run. Each request from a client uses one of your org's ordinary daily API requests, and the model belongs to the app each person already uses. See [Limits](/ApexAgent/mcp/limits/) for how far that allowance goes.
+That applies to an AI client calling either server, so cost is not a reason to choose one over the other. Today, each request to ApexAgent's MCP server uses one of your org's ordinary daily API requests. See [Limits](/ApexAgent/mcp/limits/) for how far that allowance goes.
 
-## How it works without Flex Credits
+Salesforce describes its Hosted MCP Servers as "intended only for customers with Flex Credits." See its [Hosted MCP Servers overview](https://developer.salesforce.com/docs/platform/hosted-mcp-servers/guide/hosted-mcp-servers-overview.html) and the [rate card](https://www.salesforce.com/agentforce/rates/) for current terms.
 
-Nothing here is a workaround. The MCP server is built from features your org already has:
+## How it is built
+
+The MCP server is built from features your org already has:
 
 - **An Apex REST class** answers the client's requests.
 - **A Salesforce Site** gives it a public URL.
 - **An External Client App** signs each user in with their own Salesforce login.
 - **Custom objects** hold the server's configuration and the log of every call.
 
-## A worked example
-
-Take 100 people, each asking 20 questions a working day through Claude or ChatGPT, with about three tool calls a question. That is roughly 132,000 tool calls a month.
-
-| | ApexAgent MCP server | Salesforce Hosted MCP Servers |
-| --- | --- | --- |
-| Salesforce charge for the month | $0 | Billed in Flex Credits |
-| What it uses instead | About 6,000 of your org's API requests a day. An Enterprise org with 100 users has 200,000 a day | Flex Credits from your balance |
-
-We cannot put a dollar figure in the right-hand column. Salesforce's [Flex Credits rate card](https://www.salesforce.com/agentforce/rates/) lists hosted MCP usage as "Headless Platform Interaction" with the rate still marked TBA. When Salesforce publishes it, we will add the comparison here.
-
 ## When to choose which
 
-Both let you write your own tools in Apex and decide which tools each server exposes. The main reason to choose ApexAgent is cost. The other differences are how many kinds of tool you can add, and whether you can see inside the ready-made ones.
+Both let you write your own tools in Apex and decide which tools each server exposes.
 
 Choose **ApexAgent's MCP server** if you want:
 
-- The most affordable way to run an MCP server for Salesforce: it costs nothing
-- To connect Claude or ChatGPT without buying Flex Credits
 - Ready-made tools whose source you can read, audit and change
 - A log of every call as records in your org that you can report on
+- The same tools your users get from ApexAgent's agent inside Salesforce
 
 Choose **Salesforce Hosted MCP Servers** if you need:
 

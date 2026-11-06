@@ -3,14 +3,14 @@ title: ApexAgent agent vs Agentforce
 description: ApexAgent's agent next to Agentforce. What each is, what each costs and when to choose which.
 ---
 
-There are two ways to put an AI agent inside Salesforce. Salesforce offers its own, called **Agentforce**, billed by usage. ApexAgent gives you one you deploy yourself as Apex. Both come with a ready-made agent, and both let you build your own. With ApexAgent there is no Salesforce charge: you pay only your AI provider, which makes it far cheaper to run.
+There are two ways to put an AI agent inside Salesforce. Salesforce offers its own, called **Agentforce**, sold per user or per action. ApexAgent gives you one you deploy yourself as Apex. Both come with a ready-made agent, and both let you build your own. ApexAgent needs no Agentforce license and adds no charge of its own: you pay your AI provider for what you use, which makes it far cheaper to run.
 
 ## At a glance
 
 | | ApexAgent agent | Agentforce |
 | --- | --- | --- |
 | **What it is** | A chat assistant in the utility bar, deployed as Apex | Salesforce's AI agent product suite, which covers far more than a chat assistant |
-| **Salesforce charge** | None | Flex Credits, per conversation, or a per-user add-on |
+| **Salesforce license** | None needed | Flex Credits, per conversation, or a per-user add-on |
 | **Model cost** | Your model provider's bill | Included in the Salesforce charge |
 | **Choice of model** | Any OpenAI-compatible provider | Salesforce's model options, or bring your own |
 | **Runs as the signed-in user** | Yes | Yes |
@@ -27,7 +27,7 @@ There are two ways to put an AI agent inside Salesforce. Salesforce offers its o
 
 **Agentforce** is priced per action when you pay with Flex Credits. Reported pricing is $500 for 100,000 credits, with a standard action using 20 credits, so about **$0.10 per action**. A single question often takes several actions. These figures are as reported by third parties and can change; see Salesforce's [Agentforce rate card](https://www.salesforce.com/agentforce/rates/) for current prices.
 
-**ApexAgent's agent** has no Salesforce charge. You pay your model provider for the tokens used, at their price, with nothing added per action. On Gemini 3.8 Flash, the starter model, an average question costs about **$0.016**. Your cost depends on the model you choose and how much you ask of it.
+**ApexAgent's agent** needs no Agentforce license, and ApexAgent adds no charge of its own. You pay your model provider for the tokens used, at their price, with nothing added per action. On Gemini 3.8 Flash, the starter model, an average question costs about **$0.016**. Your cost depends on the model you choose and how much you ask of it.
 
 ## How it works without a license
 

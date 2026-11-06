@@ -16,7 +16,7 @@ const { src, alt, caption, max = Math.round(src.width / 2), focus } = Astro.prop
 ---
 
 <figure class="shot not-content">
-	<a class="shot-mat" href={src.src} aria-label="Open the full-size image">
+	<a class="shot-mat" href={src.src} data-zoom aria-label="Open the full-size image">
 		<span class="shot-frame" style={`max-width:${max}px`}>
 			<Image src={src} alt={alt} widths={[640, 960, src.width]} sizes={`(min-width: 50rem) ${max}px, 92vw`} />
 			{
@@ -31,3 +31,7 @@ const { src, alt, caption, max = Math.round(src.width / 2), focus } = Astro.prop
 	</a>
 	{caption && <figcaption>{caption}</figcaption>}
 </figure>
+
+<script>
+	import '../scripts/zoom.ts';
+</script>

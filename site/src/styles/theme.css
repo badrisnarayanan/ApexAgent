@@ -195,3 +195,60 @@ li .shot {
 	font-size: var(--sl-text-sm);
 	line-height: 1.5;
 }
+
+/* The screenshot zoom (src/scripts/zoom.ts): the image as large as the window allows, on a dimmed page. */
+dialog.zoom {
+	max-width: none;
+	max-height: none;
+	width: 100vw;
+	height: 100dvh;
+	margin: 0;
+	padding: 1.5rem;
+	border: 0;
+	background: transparent;
+	display: grid;
+	place-items: center;
+	cursor: zoom-out;
+}
+
+dialog.zoom:not([open]) {
+	display: none;
+}
+
+dialog.zoom::backdrop {
+	background: rgb(0 0 0 / 0.82);
+}
+
+dialog.zoom img {
+	max-width: 100%;
+	max-height: calc(100dvh - 3rem);
+	border-radius: 0.5rem;
+	cursor: default;
+}
+
+.zoom-close {
+	position: fixed;
+	top: 0.75rem;
+	right: 1rem;
+	width: 2.5rem;
+	height: 2.5rem;
+	border: 0;
+	border-radius: 50%;
+	background: rgb(255 255 255 / 0.12);
+	color: #fff;
+	font-size: 1.5rem;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.zoom-close:hover {
+	background: rgb(255 255 255 / 0.24);
+}
+
+:root.zoom-open {
+	overflow: hidden;
+}
+
+a[data-zoom] {
+	cursor: zoom-in;
+}

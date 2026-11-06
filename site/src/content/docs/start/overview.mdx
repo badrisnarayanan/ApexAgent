@@ -14,11 +14,11 @@ Everything deploys into your org and runs with your users' own permissions. Ther
 
 ## No extra Salesforce licensing
 
-ApexAgent uses only standard platform features: Apex, custom objects, Lightning Web Components and a Salesforce Site. It needs **no Agentforce license, no Flex Credits, no Einstein add-on and no Data Cloud**. It runs in Developer, Enterprise, Performance and Unlimited Edition orgs.
+ApexAgent uses only standard platform features: Apex, custom objects, Lightning Web Components and a Salesforce Site. It needs **no Agentforce license, no Einstein add-on and no Data Cloud**. It runs in Developer, Enterprise, Performance and Unlimited Edition orgs.
 
-The only running cost is the AI model itself, and only for the agent: you pay your model provider directly for what you use. The MCP server costs nothing to run, because the model belongs to the client that connects.
+The agent's running cost is the AI model: you pay your model provider directly for what you use, and ApexAgent adds nothing. The MCP server brings no model of its own; the model belongs to the client that connects. Each request uses one of your org's ordinary API requests today. Salesforce has [announced](https://help.salesforce.com/s/articleView?language=en_US&id=005360285&type=1) that calls from AI agents, over MCP or the API, will be billed in Flex Credits once it sets a rate, and that would apply here too.
 
-To see how this differs from Agentforce and Salesforce's own MCP servers, read [ApexAgent MCP server vs Salesforce Hosted MCP Servers](/ApexAgent/start/compare/mcp/) and [ApexAgent agent vs Agentforce](/ApexAgent/start/compare/agent/). For how your data is protected, read [Security and data](/ApexAgent/operate/security/).
+To see how this differs from Agentforce and Salesforce's own MCP servers, read [ApexAgent agent vs Agentforce](/ApexAgent/start/compare/agent/) and [ApexAgent MCP server vs Salesforce Hosted MCP Servers](/ApexAgent/start/compare/mcp/). For how your data is protected, read [Security and data](/ApexAgent/operate/security/).
 
 ## Two things, one set of tools
 

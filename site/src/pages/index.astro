@@ -3,8 +3,8 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import { Image } from 'astro:assets';
 import ThemeSelect from '@astrojs/starlight/components/ThemeSelect.astro';
 import claudeAnswer from '../assets/screens/claude-answer.png';
-import sfCases from '../assets/screens/sf-cases.png';
-import lumenCases from '../assets/screens/lumen-cases.png';
+import heroSfLumen from '../assets/screens/hero-sf-lumen.png';
+import heroLumen from '../assets/screens/hero-lumen.png';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const docs = (path: string) => `${base}/${path}/`;
@@ -12,79 +12,90 @@ const repo = 'https://github.com/badrisnarayanan/ApexAgent';
 
 const steps = [
 	['Deploy', 'From a terminal or VS Code, into an org where you are an admin.'],
-	['Run setup', 'One script creates the starter agent, Lumen, the MCP server and the ten tools.'],
-	['Connect', 'Add Claude or ChatGPT as an MCP client, or add a model provider key for the agent.'],
+	['Run setup', 'One script creates the starter agent, Lumen, the ten tools and the MCP server.'],
+	['Connect', 'Add a model provider key for the agent. Add Claude or ChatGPT as MCP clients if you want them.'],
 ];
 
 // The Model Context Protocol's own mark, and Lucide's bot for the agent.
 const mcpIcon = `<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M13.85 0a4.16 4.16 0 0 0-2.95 1.217L1.456 10.66a.835.835 0 0 0 0 1.18.835.835 0 0 0 1.18 0l9.442-9.442a2.49 2.49 0 0 1 3.541 0 2.49 2.49 0 0 1 0 3.541L8.59 12.97l-.1.1a.835.835 0 0 0 0 1.18.835.835 0 0 0 1.18 0l.1-.098 7.03-7.034a2.49 2.49 0 0 1 3.542 0l.049.05a2.49 2.49 0 0 1 0 3.54l-8.54 8.54a1.96 1.96 0 0 0 0 2.755l1.753 1.753a.835.835 0 0 0 1.18 0 .835.835 0 0 0 0-1.18l-1.753-1.753a.266.266 0 0 1 0-.394l8.54-8.54a4.185 4.185 0 0 0 0-5.9l-.05-.05a4.16 4.16 0 0 0-2.95-1.218c-.2 0-.401.02-.6.048a4.17 4.17 0 0 0-1.17-3.552A4.16 4.16 0 0 0 13.85 0m0 3.333a.84.84 0 0 0-.59.245L6.275 10.56a4.186 4.186 0 0 0 0 5.902 4.186 4.186 0 0 0 5.902 0L19.16 9.48a.835.835 0 0 0 0-1.18.835.835 0 0 0-1.18 0l-6.985 6.984a2.49 2.49 0 0 1-3.54 0 2.49 2.49 0 0 1 0-3.54l6.983-6.985a.835.835 0 0 0 0-1.18.84.84 0 0 0-.59-.245"/></svg>`;
 const agentIcon = `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>`;
 
+// Product marks, used unaltered and only to name what ApexAgent connects to, drawn in the text colour.
+// Claude and OpenRouter from Simple Icons (CC0); OpenAI, Azure and Google AI Studio from Lobe Icons (MIT).
+const mark = (paths: string) => `<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" fill-rule="evenodd">${paths}</svg>`;
+const marks = {
+	claude: mark('<path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z"/>'),
+	openai: mark('<path d="M9.205 8.658v-2.26c0-.19.072-.333.238-.428l4.543-2.616c.619-.357 1.356-.523 2.117-.523 2.854 0 4.662 2.212 4.662 4.566 0 .167 0 .357-.024.547l-4.71-2.759a.797.797 0 00-.856 0l-5.97 3.473zm10.609 8.8V12.06c0-.333-.143-.57-.429-.737l-5.97-3.473 1.95-1.118a.433.433 0 01.476 0l4.543 2.617c1.309.76 2.189 2.378 2.189 3.948 0 1.808-1.07 3.473-2.76 4.163zM7.802 12.703l-1.95-1.142c-.167-.095-.239-.238-.239-.428V5.899c0-2.545 1.95-4.472 4.591-4.472 1 0 1.927.333 2.712.928L8.23 5.067c-.285.166-.428.404-.428.737v6.898zM12 15.128l-2.795-1.57v-3.33L12 8.658l2.795 1.57v3.33L12 15.128zm1.796 7.23c-1 0-1.927-.332-2.712-.927l4.686-2.712c.285-.166.428-.404.428-.737v-6.898l1.974 1.142c.167.095.238.238.238.428v5.233c0 2.545-1.974 4.472-4.614 4.472zm-5.637-5.303l-4.544-2.617c-1.308-.761-2.188-2.378-2.188-3.948A4.482 4.482 0 014.21 6.327v5.423c0 .333.143.571.428.738l5.947 3.449-1.95 1.118a.432.432 0 01-.476 0zm-.262 3.9c-2.688 0-4.662-2.021-4.662-4.519 0-.19.024-.38.047-.57l4.686 2.71c.286.167.571.167.856 0l5.97-3.448v2.26c0 .19-.07.333-.237.428l-4.543 2.616c-.619.357-1.356.523-2.117.523zm5.899 2.83a5.947 5.947 0 005.827-4.756C22.287 18.339 24 15.84 24 13.296c0-1.665-.713-3.282-1.998-4.448.119-.5.19-.999.19-1.498 0-3.401-2.759-5.947-5.946-5.947-.642 0-1.26.095-1.88.31A5.962 5.962 0 0010.205 0a5.947 5.947 0 00-5.827 4.757C1.713 5.447 0 7.945 0 10.49c0 1.666.713 3.283 1.998 4.448-.119.5-.19 1-.19 1.499 0 3.401 2.759 5.946 5.946 5.946.642 0 1.26-.095 1.88-.309a5.96 5.96 0 004.162 1.713z"/>'),
+	openrouter: mark('<path d="M16.778 1.844v1.919q-.569-.026-1.138-.032-.708-.008-1.415.037c-1.93.126-4.023.728-6.149 2.237-2.911 2.066-2.731 1.95-4.14 2.75-.396.223-1.342.574-2.185.798-.841.225-1.753.333-1.751.333v4.229s.768.108 1.61.333c.842.224 1.789.575 2.185.799 1.41.798 1.228.683 4.14 2.75 2.126 1.509 4.22 2.11 6.148 2.236.88.058 1.716.041 2.555.005v1.918l7.222-4.168-7.222-4.17v2.176c-.86.038-1.611.065-2.278.021-1.364-.09-2.417-.357-3.979-1.465-2.244-1.593-2.866-2.027-3.68-2.508.889-.518 1.449-.906 3.822-2.59 1.56-1.109 2.614-1.377 3.978-1.466.667-.044 1.418-.017 2.278.02v2.176L24 6.014Z"/>'),
+	azure: mark('<path d="M18.397 15.296H7.4a.51.51 0 00-.347.882l7.066 6.595c.206.192.477.298.758.298h6.226l-2.706-7.775z" fill-opacity=".75"/><path d="M8.295.857c-.477 0-.9.304-1.053.756L.495 21.605a1.11 1.11 0 001.052 1.466h5.43c.477 0 .9-.304 1.053-.755l1.341-3.975-2.318-2.163a.51.51 0 01.347-.882h3L15.271.857H8.295z" fill-opacity=".5"/><path d="M17.193 1.613a1.11 1.11 0 00-1.052-.756h-7.81.035c.477 0 .9.304 1.052.756l6.748 19.992a1.11 1.11 0 01-1.052 1.466h-.12 7.895a1.11 1.11 0 001.052-1.466L17.193 1.613z"/>'),
+	aistudio: mark('<path d="M9.921 4.196H6.328A2.705 2.705 0 003.623 6.9v11.362a2.705 2.705 0 002.705 2.705h11.363a2.705 2.705 0 002.705-2.705v-4.756l1.623-1.113v5.87a4.329 4.329 0 01-4.328 4.328H6.328A4.329 4.329 0 012 18.263V6.901a4.328 4.328 0 014.328-4.329h4.545l-.952 1.624z"/><path d="M17.82 0c.145 0 .268.104.299.246a7 7 0 001.9 3.484 7 7 0 003.485 1.901c.142.031.246.154.246.3a.308.308 0 01-.246.298A7 7 0 0020.02 8.13a7 7 0 00-1.912 3.535.297.297 0 01-.288.238.297.297 0 01-.288-.238A7 7 0 0015.62 8.13a7 7 0 00-3.535-1.912.297.297 0 01-.238-.288c0-.14.1-.26.238-.288A7 7 0 0015.62 3.73 7.001 7.001 0 0017.521.246.308.308 0 0117.82 0z"/>'),
+};
+
+// Lucide's plug, for a provider you bring yourself.
+const plugIcon = `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></svg>`;
+
+// Each provider opens step 1 of the agent setup on its own tab.
+const keyStep = `${docs('agent/setup')}#1-add-your-key`;
+
 const parts = [
-	{
-		name: 'MCP server',
-		icon: mcpIcon,
-		what: 'Lets AI apps like Claude and ChatGPT read and update your Salesforce data. MCP is the open standard they use to call tools hosted elsewhere, here your org.',
-		facts: [
-			['Users sign in with', 'Their own Salesforce login, from the client.'],
-		],
-		link: { text: 'Set up the MCP server', href: docs('mcp/setup') },
-	},
 	{
 		name: 'Agent',
 		icon: agentIcon,
-		what: 'A chat assistant inside Salesforce, in the utility bar. The starter agent is called Lumen, and you can reshape it or add your own.',
+		what: 'A chat assistant in the Salesforce utility bar. It starts as Lumen. Rename it, change its instructions, or add more agents.',
 		facts: [
 			['Users sign in with', 'Nothing extra. They are already in Salesforce.'],
 		],
+		works: {
+			term: 'Models from',
+			items: [
+				{ name: 'OpenRouter', icon: marks.openrouter, href: keyStep, tab: 'OpenRouter' },
+				{ name: 'OpenAI', icon: marks.openai, href: keyStep, tab: 'OpenAI' },
+				{ name: 'Azure OpenAI', icon: marks.azure, href: keyStep, tab: 'Azure OpenAI' },
+				{ name: 'Google AI Studio', icon: marks.aistudio, href: keyStep, tab: 'Google AI Studio' },
+				{ name: 'Bring your own', icon: plugIcon, href: docs('agent/providers') },
+			],
+		},
 		link: { text: 'Set up the agent', href: docs('agent/setup') },
+	},
+	{
+		name: 'MCP server',
+		icon: mcpIcon,
+		what: 'Lets Claude, ChatGPT and other MCP apps find, read and update your Salesforce records, through tools that run in your org. MCP is the open standard those apps use to call tools.',
+		facts: [
+			['Users sign in with', 'Their own Salesforce login, from the client.'],
+		],
+		works: {
+			term: 'Works with',
+			items: [
+				{ name: 'Claude', icon: marks.claude, href: docs('mcp/clients/claude') },
+				{ name: 'ChatGPT', icon: marks.openai, href: docs('mcp/clients/chatgpt') },
+				{ name: 'Any MCP client', icon: mcpIcon, href: docs('mcp/clients/other') },
+			],
+		},
+		link: { text: 'Set up the MCP server', href: docs('mcp/setup') },
 	},
 ];
 
-const why = [
-	{
-		name: 'MCP server',
-		icon: 'mcp',
-		points: [
-			[
-				'No Flex Credits',
-				'Salesforce’s own MCP servers are for Flex Credit customers. This one uses your org’s ordinary API requests.',
-			],
-			['Costs nothing to run', 'The model belongs to the app each person already uses, such as Claude or ChatGPT.'],
-			['You choose the tools', 'Each server exposes only the tools you give it, including ones you write.'],
+// Salesforce's own notice that agent calls over MCP or the API will be metered in Flex Credits.
+const kbHpi = 'https://help.salesforce.com/s/articleView?language=en_US&id=005360285&type=1';
+
+const cost = {
+	points: [
+		['No Agentforce license', 'Agentforce is sold per user or per action. This agent is Apex you deploy in your own org.'],
+		['You pay your model provider', 'For the tokens the agent uses, at their price. ApexAgent adds nothing per action.'],
+		[
+			'Use the provider you have',
+			'OpenRouter, OpenAI, Azure OpenAI, Google AI Studio or your company’s gateway, under the data terms you already have.',
 		],
-		cost: {
-			title: 'Cost to run',
-			bars: [
-				{ label: 'Salesforce MCP', width: 100, value: 'Flex Credits', unknown: true },
-				{ label: 'ApexAgent', width: 0, value: '$0' },
-			],
-			note: 'Salesforce has not yet published its rate for hosted MCP usage.',
-		},
-	link: { text: 'Compare with Salesforce Hosted MCP Servers', href: docs('start/compare/mcp') },
-	},
-	{
-		name: 'Agent',
-		icon: 'agent',
-		points: [
-			['No Agentforce license', 'Agentforce is billed by usage. This agent runs on Apex you deploy.'],
-			[
-				'You pay the model’s price',
-				'You pay your AI provider for what you use. Nothing is added per action.',
-			],
-			['Works with your provider', 'Use the AI provider your company already has, under the data retention agreement already in place.'],
-		],
-		cost: {
-			title: 'Cost of one question',
-			bars: [
-				{ label: 'Agentforce', width: 100, value: '$0.17' },
-				{ label: 'ApexAgent', width: 9.4, value: '$0.016' },
-			],
-			note: 'About 10× less on a low-cost model. ApexAgent: the average of 149 logged questions, priced at Gemini 3.8 Flash rates. Agentforce: 20 Flex Credits an action.',
-		},
-		link: { text: 'Compare with Agentforce', href: docs('start/compare/agent') },
-	},
-];
+	],
+	title: 'Cost of one question (estimate)',
+	bars: [
+		{ label: 'Agentforce', width: 100, value: '$0.17' },
+		{ label: 'ApexAgent', width: 9.4, value: '$0.016' },
+	],
+	note: 'ApexAgent: the average of 149 logged questions, priced at Gemini 3.8 Flash rates. Agentforce: 20 Flex Credits an action at list price. Your cost depends on the model you pick. Every conversation logs its tokens and cost, so you can check this in your own org.',
+	link: { text: 'Compare with Agentforce', href: docs('start/compare/agent') },
+};
 
 const security = [
 	[
@@ -104,12 +115,12 @@ const security = [
 
 const config = [
 	[
-		'Tools',
-		'Ten included, for finding, reading and saving records. Add your own with one Apex class.',
-	],
-	[
 		'Agents',
 		'As many as you need, each with its own name, look, instructions and model.',
+	],
+	[
+		'Tools',
+		'Ten included, for finding, reading and saving records. Add your own with one Apex class.',
 	],
 	['MCP servers', 'More than one, each with its own set of tools. Keep one read-only, for example.'],
 ];
@@ -120,7 +131,7 @@ const config = [
 	frontmatter={{
 		title: 'An AI agent and an MCP server for Salesforce',
 		description:
-			'An AI agent and an MCP server for Salesforce, built in plain Apex. No Agentforce license. No Flex Credits.',
+			'An AI agent and an MCP server for Salesforce, built in plain Apex. No Agentforce license. Open source.',
 		template: 'splash',
 		// The browser tab leads with the name, so it survives when the tab is narrow.
 		head: [
@@ -143,12 +154,12 @@ const config = [
 				<span>An AI&nbsp;agent and an MCP&nbsp;server for&nbsp;Salesforce.</span>{' '}
 				<span class="hero-cost">
 					<span>No Agentforce license.</span>{' '}
-					<span>No Flex Credits.</span>
+					<span>Built in plain Apex.</span>
 				</span>
 			</h1>
 			<p class="lede">
-				Let Claude or ChatGPT work with your Salesforce data, and give your users a chat assistant
-				inside Salesforce. Open source, built in plain Apex.
+				Give your users an AI agent inside Salesforce, on the AI provider you already use. The same
+				tools work from Claude, ChatGPT and other MCP apps. Open source.
 			</p>
 			<div class="actions">
 				<a class="btn btn-solid" href={docs('start/install')}>Install ApexAgent</a>
@@ -159,45 +170,62 @@ const config = [
 
 		<figure class="hero-shot">
 			<div class="hero-stage">
-				<div class="hero-win">
-					<div class="hero-win-bar">Claude</div>
-					<Image
-						src={claudeAnswer}
-						alt="Claude answering “What open cases does Northwind Traders have in Salesforce?” with a table of four cases, after searching and querying Salesforce through ApexAgent."
-						widths={[640, claudeAnswer.width]}
-						sizes="(min-width: 50rem) 32rem, 92vw"
-						loading="eager"
-					/>
+				<div class="hero-win hero-win-agent">
+						<div class="hero-win-bar">Salesforce</div>
+						<a class="hero-zoom" href={heroSfLumen.src} data-zoom aria-label="Open the full-size image">
+							<Image
+								class="hero-wide"
+								src={heroSfLumen}
+								alt="The Northwind Traders Cases list in Salesforce, with Lumen open in the utility bar answering “What open cases does Northwind Traders have?” with the same four cases."
+								widths={[800, heroSfLumen.width]}
+								sizes="(min-width: 50rem) 38rem, 92vw"
+								loading="eager"
+							/>
+						</a>
+						<a class="hero-zoom" href={heroLumen.src} data-zoom aria-label="Open the full-size image">
+							<Image
+								class="hero-narrow"
+								src={heroLumen}
+								alt="Lumen in the Salesforce utility bar, answering “What open cases does Northwind Traders have?” with four case cards."
+								widths={[440, heroLumen.width]}
+								sizes="92vw"
+								loading="eager"
+							/>
+						</a>
 				</div>
+				<p class="hero-label hero-label-agent">The agent, inside Salesforce</p>
 				<div class="hero-link" aria-hidden="true">
 					<svg viewBox="20 56 472 400">
 						<polygon points="20,456 228,56 284,56 316,117.54 140,456"></polygon>
 						<polygon points="336,156 492,456 268.98,456 357.38,352 280.88,262"></polygon>
 					</svg>
 				</div>
-				<div class="hero-win">
-					<div class="hero-win-bar">Salesforce</div>
-					<Image
-						src={sfCases}
-						alt="The Cases list for the Northwind Traders account in Salesforce, showing the same four cases that Claude listed."
-						widths={[640, sfCases.width]}
-						sizes="(min-width: 50rem) 38rem, 92vw"
-						loading="eager"
-					/>
+				<div class="hero-win hero-win-mcp">
+						<div class="hero-win-bar">Claude</div>
+						<a class="hero-zoom" href={claudeAnswer.src} data-zoom aria-label="Open the full-size image">
+							<Image
+								src={claudeAnswer}
+								alt="Claude answering “What open cases does Northwind Traders have in Salesforce?” with a table of the same four cases, through ApexAgent's MCP server."
+								widths={[640, claudeAnswer.width]}
+								sizes="(min-width: 50rem) 26rem, 92vw"
+								loading="eager"
+							/>
+						</a>
 				</div>
+				<p class="hero-label hero-label-mcp">The MCP server, from Claude or ChatGPT</p>
 			</div>
 			<figcaption>
-				Ask in Claude, and it works in your Salesforce org as you: finding, reading, creating and
-				updating records. Add your own tools and it can do anything Apex can.
+				Ask Lumen inside Salesforce, or ask Claude. Same tools, same records, and each person sees only
+				what Salesforce already lets them see.
 			</figcaption>
 		</figure>
 
 		<section class="block">
 			<h2>Two ways to use it.</h2>
 			<p class="block-lede">
-				Want Claude or ChatGPT to work with Salesforce? Set up the MCP server. Want a chat assistant
-				inside Salesforce? Set up the agent. They draw on the same set of tools, and you can use either one
-				without the other.
+				Want a chat assistant inside Salesforce? Set up the agent. Want Claude or ChatGPT to work with
+				Salesforce? Set up the MCP server. They share the same tools, and either one works without the
+				other.
 			</p>
 			<div class="parts">
 				{
@@ -215,6 +243,19 @@ const config = [
 										<dd>{detail}</dd>
 									</div>
 								))}
+								<div>
+									<dt>{part.works.term}</dt>
+									<dd>
+										<ul class="works">
+											{part.works.items.map((item) => (
+												<li>
+													<span class="works-icon" set:html={item.icon} />
+													<a href={item.href} data-provider-tab={item.tab}>{item.name}</a>
+												</li>
+											))}
+										</ul>
+									</dd>
+								</div>
 							</dl>
 							<a class="text-link" href={part.link.href}>
 								{part.link.text}
@@ -226,80 +267,49 @@ const config = [
 		</section>
 
 		<section class="block">
-			<h2>Why ApexAgent.</h2>
-			<div class="why" style="--why-rows: 6">
-				{
-					why.map((col) => (
-						<div class="why-col">
-							<h3>
-								<span class="part-icon" set:html={col.icon === 'mcp' ? mcpIcon : agentIcon} />
-								{col.name}
-							</h3>
-							<dl>
-								{col.points.map(([term, detail]) => (
-									<div>
-										<dt>{term}</dt>
-										<dd>{detail}</dd>
-									</div>
-								))}
-							</dl>
-							<div class="cost">
-								<p class="cost-title">{col.cost.title}</p>
-								{col.cost.bars.map((bar) => (
-									<div class="cost-row">
-										<span class="cost-label">{bar.label}</span>
-										<span class="cost-track">
-											<span
-												class:list={['cost-bar', { 'cost-bar-unknown': bar.unknown, 'cost-bar-ours': bar.label === 'ApexAgent' }]}
-												style={`width: ${bar.width}%`}
-											/>
-										</span>
-										<span class="cost-value">{bar.value}</span>
-									</div>
-								))}
-								<p class="cost-note">{col.cost.note}</p>
-							</div>
-							<a class="text-link" href={col.link.href}>
-								{col.link.text}
-							</a>
-						</div>
-					))
-				}
-				<figure class="parts-shot">
-					<Image
-						src={lumenCases}
-						alt="Lumen, the starter agent, in the Salesforce utility bar, answering the same question with a list of four open cases."
-						widths={[440, lumenCases.width]}
-						sizes="(min-width: 72rem) 22rem, (min-width: 50rem) 24rem, 92vw"
-					/>
-					<figcaption>Lumen answers the same question inside Salesforce.</figcaption>
-				</figure>
-			</div>
-		</section>
-
-		<section class="block split">
-			<div>
-				<h2>Set it up in three steps.</h2>
-				<p class="block-lede">
-					About 15 minutes. The install guide covers what you need first and walks through each step.
-				</p>
-				<p class="block-lede">
-					Works in Developer, Enterprise, Performance and Unlimited Edition orgs.
-				</p>
-				<div class="actions">
-					<a class="btn btn-solid" href={docs('start/install')}>Start the install guide</a>
+			<h2>What it costs.</h2>
+			<div class="costs">
+				<div>
+					<dl class="costs-points">
+						{
+							cost.points.map(([term, detail]) => (
+								<div>
+									<dt>{term}</dt>
+									<dd>{detail}</dd>
+								</div>
+							))
+						}
+					</dl>
+					<div class="cost">
+						<p class="cost-title">{cost.title}</p>
+						{
+							cost.bars.map((bar) => (
+								<div class="cost-row">
+									<span class="cost-label">{bar.label}</span>
+									<span class="cost-track">
+										<span
+											class:list={['cost-bar', { 'cost-bar-ours': bar.label === 'ApexAgent' }]}
+											style={`width: ${bar.width}%`}
+										/>
+									</span>
+									<span class="cost-value">{bar.value}</span>
+								</div>
+							))
+						}
+						<p class="cost-note">{cost.note}</p>
+					</div>
+					<a class="text-link" href={cost.link.href}>
+						{cost.link.text}
+					</a>
+					<p class="cost-mcp">
+						<strong>The MCP server:</strong> each request from Claude, ChatGPT or another client uses one of
+						your org's ordinary daily API requests today. Salesforce has{' '}
+						<a href={kbHpi}>announced</a> that calls from AI agents, over MCP or the API, will be billed in
+						Flex Credits once it sets a rate. That would apply here too. Sandboxes and Developer Edition orgs
+						aren't billed.
+					</p>
 				</div>
 			</div>
-			<ol class="steps">
-				{
-					steps.map(([name, detail]) => (
-						<li>
-							<h3>{name}</h3>
-							<p>{detail}</p>
-						</li>
-					))
-				}
-			</ol>
 		</section>
 
 		<section class="block">
@@ -344,6 +354,31 @@ const config = [
 			</p>
 		</section>
 
+		<section class="block split">
+			<div>
+				<h2>Set it up in three steps.</h2>
+				<p class="block-lede">
+					About 15 minutes. The install guide covers what you need first and walks through each step.
+				</p>
+				<p class="block-lede">
+					Works in Developer, Enterprise, Performance and Unlimited Edition orgs.
+				</p>
+				<div class="actions">
+					<a class="btn btn-solid" href={docs('start/install')}>Start the install guide</a>
+				</div>
+			</div>
+			<ol class="steps">
+				{
+					steps.map(([name, detail]) => (
+						<li>
+							<h3>{name}</h3>
+							<p>{detail}</p>
+						</li>
+					))
+				}
+			</ol>
+		</section>
+
 		<section class="block">
 			<h2>Open source, MIT licensed.</h2>
 			<p class="block-lede">
@@ -371,6 +406,24 @@ const config = [
 		</footer>
 	</div>
 </StarlightPage>
+
+<script>
+	import '../scripts/zoom.ts';
+</script>
+
+<script>
+	// Pick the provider's tab on the setup page before going there. Starlight's synced tabs
+	// read the choice back from this key when the page loads.
+	document.querySelectorAll<HTMLAnchorElement>('a[data-provider-tab]').forEach((link) => {
+		link.addEventListener('click', () => {
+			try {
+				localStorage.setItem('starlight-synced-tabs__provider', link.dataset.providerTab ?? '');
+			} catch {
+				// Storage can be blocked; the page then opens on its first tab.
+			}
+		});
+	});
+</script>
 
 <style is:global>
 	/* Starlight's title is left out on this page, so its emptied panel and the rule under it go too. */
@@ -602,6 +655,31 @@ const config = [
 		box-shadow: 0 2.25rem 4.5rem -2rem rgb(0 0 0 / 0.35);
 	}
 
+	/* What each window is, in the muted caption type, under it. */
+	.aa .hero-label {
+		position: relative;
+		z-index: 1;
+		margin-top: 0.625rem;
+		color: var(--muted);
+		font-size: 0.875rem;
+		font-weight: 600;
+	}
+
+	/* A phone shows only the Lumen panel; the full Salesforce page would be too small to read. */
+	.hero-win :global(.hero-wide) {
+		display: none !important;
+	}
+
+	@media (min-width: 50rem) {
+		.hero-win :global(.hero-wide) {
+			display: block !important;
+		}
+
+		.hero-win :global(.hero-narrow) {
+			display: none !important;
+		}
+	}
+
 	.hero-win-bar {
 		padding: 0.625rem 0.875rem;
 		border-bottom: 1px solid var(--rule);
@@ -609,6 +687,10 @@ const config = [
 		font-size: 0.8125rem;
 		font-weight: 600;
 		line-height: 1;
+	}
+
+	.hero-zoom {
+		display: block;
 	}
 
 	.hero-win :global(img) {
@@ -693,7 +775,7 @@ const config = [
 	.part {
 		display: grid;
 		grid-template-rows: subgrid;
-		grid-row: span 4;
+		grid-row: span 5;
 		gap: 0;
 		justify-items: start;
 	}
@@ -706,53 +788,52 @@ const config = [
 		letter-spacing: -0.025em;
 	}
 
-	/*
-	 * Two columns, one per product. Each column borrows the parent's rows, so the
-	 * dividers line up across the pair however the text wraps.
-	 */
-	.why {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		column-gap: 3.5rem;
-		row-gap: 0;
+	/* What it costs: the reasons, then the bars, kept to a readable measure. */
+	.costs {
+		max-width: 44rem;
 		margin-top: 2.5rem;
 	}
 
-	.why-col {
-		display: grid;
-		grid-template-rows: subgrid;
-		grid-row: span var(--why-rows);
-		align-content: start;
+	.costs-points {
+		margin: 0;
 	}
 
-	.why-col + .why-col {
-		margin-top: 2.5rem;
-	}
-
-	.why-col h3 {
-		display: flex;
-		align-items: center;
-		gap: 0.625rem;
-		padding-bottom: 1.25rem;
-		font-size: 1.5rem;
-		letter-spacing: -0.025em;
-	}
-
-	.why-col dl {
-		display: contents;
-	}
-
-	.why-col dl > div {
+	.costs-points > div {
 		padding-block: 0.875rem;
 		border-top: 1px solid var(--rule);
 	}
 
-	.why-col dt {
+	.costs-points dt {
 		font-weight: 600;
 	}
 
-	.why-col dd {
+	.costs-points dd {
 		margin: 0.25rem 0 0;
+	}
+
+	.costs .text-link {
+		margin-top: 0.75rem;
+	}
+
+	/* What Salesforce has said about MCP billing: set apart under the agent's figures, in their small type. */
+	.aa .cost-mcp {
+		margin-top: 2rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--rule);
+		color: var(--muted);
+		font-size: 0.875rem;
+		line-height: 1.5;
+	}
+
+	.cost-mcp strong {
+		color: var(--ink);
+		font-weight: 600;
+	}
+
+	.cost-mcp a {
+		color: var(--ink);
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
 	}
 
 	/* Two bars drawn to scale: the longer one is what the same work costs on Salesforce. */
@@ -794,14 +875,6 @@ const config = [
 		background: var(--ink);
 	}
 
-	.cost-bar-unknown {
-		background: repeating-linear-gradient(
-			117.5deg,
-			var(--sl-color-gray-4) 0 2px,
-			transparent 2px 6px
-		);
-	}
-
 	.cost-value {
 		min-width: 5.5rem;
 		font-variant-numeric: tabular-nums;
@@ -814,15 +887,6 @@ const config = [
 		color: var(--muted);
 		font-size: 0.8125rem;
 		line-height: 1.5;
-	}
-
-	.why-col .text-link {
-		justify-self: start;
-		margin-top: 0.75rem;
-	}
-
-	.why + .block-lede {
-		margin-top: 2rem;
 	}
 
 	.part-icon {
@@ -845,19 +909,6 @@ const config = [
 		display: contents;
 	}
 
-	.parts-shot {
-		margin: 2.5rem 0 0;
-		max-width: 24rem;
-	}
-
-	.parts-shot :global(img) {
-		display: block;
-		width: 100%;
-		height: auto;
-		border: 1px solid var(--sl-color-gray-4);
-		border-radius: 0.75rem;
-	}
-
 	.part dl > div {
 		justify-self: stretch;
 		padding-block: 0.75rem;
@@ -866,6 +917,43 @@ const config = [
 
 	.part dl > div:first-child {
 		margin-top: 1.5rem;
+	}
+
+	/* What each part connects to: small marks with their names, in one wrapping line. */
+	.works {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 1.25rem;
+		margin: 0.5rem 0 0;
+		padding: 0;
+		list-style: none;
+		color: var(--ink);
+		font-size: 0.9375rem;
+		font-weight: 500;
+	}
+
+	.works li {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4375rem;
+		margin: 0;
+	}
+
+	.works a {
+		color: inherit;
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.25em;
+	}
+
+	.works-icon {
+		display: inline-flex;
+		flex: none;
+	}
+
+	.works-icon :global(svg) {
+		width: 1.125rem;
+		height: 1.125rem;
 	}
 
 	.aa dt {
@@ -985,20 +1073,38 @@ const config = [
 	}
 
 	@media (min-width: 50rem) {
-		.why {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
-
-		.why-col + .why-col {
-			margin-top: 0;
-		}
-
 		.hero {
 			padding-block: 3rem 3rem;
 		}
 
 		.hero-stage {
-			grid-template-columns: minmax(0, 1fr) 4.5rem minmax(0, 1fr);
+			grid-template-columns: minmax(0, 1.5fr) 4.5rem minmax(0, 1fr);
+			grid-template-areas:
+				'agent link mcp'
+				'agent-label . mcp-label';
+			/* Both windows sit on one baseline, so their labels line up right under them. */
+			align-items: end;
+		}
+
+		.hero-win-agent {
+			grid-area: agent;
+		}
+
+		.hero-win-mcp {
+			grid-area: mcp;
+		}
+
+		.hero-link {
+			grid-area: link;
+			align-self: center;
+		}
+
+		.hero-label-agent {
+			grid-area: agent-label;
+		}
+
+		.hero-label-mcp {
+			grid-area: mcp-label;
 		}
 
 		.hero-link {
@@ -1008,11 +1114,6 @@ const config = [
 
 		.parts {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
-
-		.parts-shot {
-			grid-column: 1 / -1;
-			margin-top: 2.5rem;
 		}
 
 		.split {
@@ -1034,18 +1135,5 @@ const config = [
 			inset-inline: -1.5rem;
 		}
 
-		/* A spare last row takes the capture's extra height, so the text rows stay tight. */
-		.why:has(.parts-shot) {
-			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 22rem;
-			grid-template-rows: repeat(6, auto) 1fr;
-			column-gap: 2.5rem;
-		}
-
-		.why .parts-shot {
-			grid-column: 3;
-			grid-row: 1 / span 7;
-			align-self: start;
-			margin-top: 0;
-		}
 	}
 </style>

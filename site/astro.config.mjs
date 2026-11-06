@@ -12,7 +12,7 @@ export default defineConfig({
 		starlight({
 			title: 'ApexAgent',
 			description:
-				'An AI agent and an MCP server for Salesforce, built in plain Apex. No Agentforce license. No Flex Credits.',
+				'An AI agent and an MCP server for Salesforce, built in plain Apex. No Agentforce license. Open source.',
 			logo: {
 				light: './src/assets/logo-black.svg',
 				dark: './src/assets/logo-white.svg',
