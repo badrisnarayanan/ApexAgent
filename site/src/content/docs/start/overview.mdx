@@ -26,15 +26,15 @@ ApexAgent gives you two things. They draw on the same set of tools, and you can 
 
 [MCP](https://modelcontextprotocol.io) (Model Context Protocol) is an open standard that lets an AI app call tools hosted somewhere else. The agent works with any provider that accepts the OpenAI chat completions format, which most do. A connection to [OpenRouter](https://openrouter.ai), a service that gives you one API key for many AI models, comes preconfigured.
 
-| | MCP server | Agent |
+| | Agent | MCP server |
 | --- | --- | --- |
-| **What it is** | An endpoint in your org that lets an outside AI app (Claude, ChatGPT, or any other MCP client) use Salesforce tools | A chat assistant inside Salesforce, in the utility bar |
-| **Where the AI model runs** | In the client you connect. ApexAgent never calls a model. | Called from Apex, at any OpenAI-compatible provider |
+| **What it is** | A chat assistant inside Salesforce, in the utility bar | An endpoint in your org that lets an outside AI app (Claude, ChatGPT, or any other MCP client) use Salesforce tools |
+| **Where the AI model runs** | Called from Apex, at any OpenAI-compatible provider | In the client you connect. ApexAgent never calls a model. |
 | **Extra Salesforce license** | **None** | **None** |
-| **Who pays for the model** | Whoever runs the client | You, through your account with the model provider |
-| **Needs a model provider API key** | **No** | **Yes**. OpenRouter comes preconfigured, or use your own |
-| **Needs an External Client App**, Salesforce's newer form of a Connected App | **Yes**. The deploy creates it | No |
-| **Users sign in with** | Their own Salesforce login, from the client | Nothing extra; they are already in Salesforce |
+| **Who pays for the model** | You, through your account with the model provider | Whoever runs the client |
+| **Needs a model provider API key** | **Yes**. OpenRouter comes preconfigured, or use your own | **No** |
+| **Needs an External Client App**, Salesforce's newer form of a Connected App | No | **Yes**. The deploy creates it |
+| **Users sign in with** | Nothing extra; they are already in Salesforce | Their own Salesforce login, from the client |
 
 <Screenshot
 	src={claudeAnswer}
@@ -61,4 +61,4 @@ ApexAgent gives you two things. They draw on the same set of tools, and you can 
 
 1. Check the [prerequisites](../prerequisites/).
 2. [Install ApexAgent](../install/). The steps are the same whichever part you want.
-3. [Set up the MCP server](../../mcp/setup/), [set up the agent](../../agent/setup/), or both.
+3. [Set up the agent](../../agent/setup/), [set up the MCP server](../../mcp/setup/), or both.

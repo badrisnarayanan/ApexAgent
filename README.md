@@ -7,7 +7,7 @@
   </picture>
 </p>
 
-**[Documentation](https://badrisnarayanan.github.io/ApexAgent/)** · [Install](https://badrisnarayanan.github.io/ApexAgent/start/install/) · [MCP server](https://badrisnarayanan.github.io/ApexAgent/mcp/setup/) · [Agent](https://badrisnarayanan.github.io/ApexAgent/agent/setup/) · [Tools](https://badrisnarayanan.github.io/ApexAgent/tools/built-in/)
+**[Documentation](https://badrisnarayanan.github.io/ApexAgent/)** · [Install](https://badrisnarayanan.github.io/ApexAgent/start/install/) · [Agent](https://badrisnarayanan.github.io/ApexAgent/agent/setup/) · [MCP server](https://badrisnarayanan.github.io/ApexAgent/mcp/setup/) · [Tools](https://badrisnarayanan.github.io/ApexAgent/tools/built-in/)
 
 > 💡 **No extra Salesforce licensing.** ApexAgent uses only standard platform features: Apex, custom objects, Lightning Web Components and a Salesforce Site. It needs **no Agentforce license, no Einstein add-on and no Data Cloud**. It runs in Developer, Enterprise, Performance and Unlimited Edition orgs.
 >
@@ -17,15 +17,15 @@ Everything deploys into your org and runs with your users' own permissions. Ther
 
 ApexAgent gives you two things. They draw on the same set of tools, and you can use either one without the other.
 
-| | 🔌 MCP Server | 🤖 Agent |
+| | 🤖 Agent | 🔌 MCP Server |
 | --- | --- | --- |
-| **What it is** | An endpoint in your org that lets an outside AI client (Claude, ChatGPT, or any MCP client) use Salesforce tools | A chat assistant inside Salesforce, in the utility bar |
-| **Where the AI model runs** | In the client you connect. ApexAgent never calls a model. | Called from Apex, at any OpenAI-compatible provider |
+| **What it is** | A chat assistant inside Salesforce, in the utility bar | An endpoint in your org that lets an outside AI client (Claude, ChatGPT, or any MCP client) use Salesforce tools |
+| **Where the AI model runs** | Called from Apex, at any OpenAI-compatible provider | In the client you connect. ApexAgent never calls a model. |
 | **Extra Salesforce license** | **None** | **None** |
-| **Who pays for the model** | Whoever runs the client | You, through your account with the model provider |
-| **Needs a model provider API key** | **No** | **Yes**. OpenRouter comes preconfigured, or use your own |
-| **Needs an External Client App**, Salesforce's newer form of a Connected App | **Yes**. The deploy creates it | No |
-| **Users sign in with** | Their own Salesforce login, from the client | Nothing extra; they are already in Salesforce |
+| **Who pays for the model** | You, through your account with the model provider | Whoever runs the client |
+| **Needs a model provider API key** | **Yes**. OpenRouter comes preconfigured, or use your own | **No** |
+| **Needs an External Client App**, Salesforce's newer form of a Connected App | No | **Yes**. The deploy creates it |
+| **Users sign in with** | Nothing extra; they are already in Salesforce | Their own Salesforce login, from the client |
 
 ## Quick start
 
@@ -55,8 +55,8 @@ Setup creates a starter configuration: 4 model providers, 5 LLMs, 10 tools, 1 ag
 
 | | |
 | --- | --- |
-| [ApexAgent MCP server vs Salesforce Hosted MCP Servers](https://badrisnarayanan.github.io/ApexAgent/start/compare/mcp/) | What each is, what each costs, when to choose which |
-| [ApexAgent agent vs Agentforce](https://badrisnarayanan.github.io/ApexAgent/start/compare/agent/) | The same comparison for the agent |
+| [ApexAgent agent vs Agentforce](https://badrisnarayanan.github.io/ApexAgent/start/compare/agent/) | What each is, what each costs, when to choose which |
+| [ApexAgent MCP server vs Salesforce Hosted MCP Servers](https://badrisnarayanan.github.io/ApexAgent/start/compare/mcp/) | The same comparison for the MCP server |
 | [Security and data](https://badrisnarayanan.github.io/ApexAgent/operate/security/) | Who sees what, what reaches a model, and where data goes |
 | [Add your own tool](https://badrisnarayanan.github.io/ApexAgent/tools/add-a-tool/) | Write one Apex class and give it to an agent, an MCP server, or both |
 | [Change the model](https://badrisnarayanan.github.io/ApexAgent/agent/models/) | Switch the agent to another model |

@@ -5,16 +5,23 @@ description: The four model providers that come set up, what each needs, and wha
 
 The agent reaches AI models through **Model Provider** records. Each one is a connection: the named credential that holds the key, the API path, and the provider type, which tells ApexAgent how that provider differs from plain OpenAI. Each [LLM record](/ApexAgent/agent/models/) points at one provider.
 
-Setup creates four providers, already wired to named credentials. To use one, you only add its key.
+Setup creates four providers, already connected. To use one, you only add its API key.
 
-| Provider | Named credential | Key is sent as | Before you use it |
-| --- | --- | --- | --- |
-| OpenRouter | `ApexAgent_OpenRouter` | `Authorization: Bearer <key>` | Nothing |
-| OpenAI | `ApexAgent_OpenAI` | `Authorization: Bearer <key>` | Nothing |
-| Azure OpenAI | `ApexAgent_Azure_OpenAI` | `api-key: <key>` | Set the named credential's URL to your resource, and the LLM's **Model API Name** to your deployment name |
-| Google AI Studio | `ApexAgent_Google_AI_Studio` | `Authorization: Bearer <key>` | Nothing |
+| Provider | Add the key to | Before you use it |
+| --- | --- | --- |
+| OpenRouter | **ApexAgent OpenRouter Credential** | Nothing |
+| OpenAI | **ApexAgent OpenAI Credential** | Nothing |
+| Azure OpenAI | **ApexAgent Azure OpenAI Credential** | Set the **ApexAgent Azure OpenAI** named credential's URL to your resource, and the LLM's **Model API Name** to your deployment name |
+| Google AI Studio | **ApexAgent Google AI Studio Credential** | Nothing |
 
-To add a key, follow step 1 of [Set up the agent](/ApexAgent/agent/setup/#1-add-your-key) and pick your provider's tab. For a company AI gateway or any other OpenAI-compatible service, see [Connect a gateway](/ApexAgent/agent/gateway/). For a provider with its own format, see [Write a provider adapter](/ApexAgent/agent/adapter/).
+To add a key:
+
+1. In Setup, go to **Named Credentials** and open the **External Credentials** tab.
+2. Open the provider's credential from the table above.
+3. Under **Principals**, open the **Actions** menu at the end of the **Authorization** row and choose **Edit**.
+4. Add an authentication parameter named `Authorization`, with your API key as the value. Paste just the key; ApexAgent adds anything the provider needs in front of it.
+
+[Set up the agent](/ApexAgent/agent/setup/#1-add-your-key) walks through this with a screenshot, and says which LLM to pick for each provider. For a company AI gateway or any other OpenAI-compatible service, see [Connect a gateway](/ApexAgent/agent/gateway/). For a provider with its own format, see [Write a provider adapter](/ApexAgent/agent/adapter/).
 
 ## What ApexAgent handles for each provider
 

@@ -45,26 +45,10 @@ export default defineConfig({
 						{
 							label: 'How it compares',
 							items: [
-								{ label: 'ApexAgent MCP vs Salesforce MCP', slug: 'start/compare/mcp' },
 								{ label: 'ApexAgent agent vs Agentforce', slug: 'start/compare/agent' },
+								{ label: 'ApexAgent MCP vs Salesforce MCP', slug: 'start/compare/mcp' },
 							],
 						},
-					],
-				},
-				{
-					label: 'MCP server',
-					items: [
-						{ label: 'Set up the MCP server', slug: 'mcp/setup' },
-						{
-							label: 'Connect a client',
-							items: [
-								{ label: 'Claude', slug: 'mcp/clients/claude' },
-								{ label: 'ChatGPT', slug: 'mcp/clients/chatgpt' },
-								{ label: 'Another client', slug: 'mcp/clients/other' },
-							],
-						},
-						{ label: 'Configure MCP servers', slug: 'mcp/servers' },
-						{ label: 'Limits', slug: 'mcp/limits' },
 					],
 				},
 				{
@@ -82,6 +66,22 @@ export default defineConfig({
 							],
 						},
 						{ label: 'Limits', slug: 'agent/limits' },
+					],
+				},
+				{
+					label: 'MCP server',
+					items: [
+						{ label: 'Set up the MCP server', slug: 'mcp/setup' },
+						{
+							label: 'Connect a client',
+							items: [
+								{ label: 'Claude', slug: 'mcp/clients/claude' },
+								{ label: 'ChatGPT', slug: 'mcp/clients/chatgpt' },
+								{ label: 'Another client', slug: 'mcp/clients/other' },
+							],
+						},
+						{ label: 'Configure MCP servers', slug: 'mcp/servers' },
+						{ label: 'Limits', slug: 'mcp/limits' },
 					],
 				},
 				{
