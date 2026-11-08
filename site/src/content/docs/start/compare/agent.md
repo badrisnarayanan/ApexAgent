@@ -38,11 +38,11 @@ Nothing here is a workaround. The agent is built from features your org already 
 - **Custom objects** hold the agent's configuration and its logs.
 - **A Lightning web component** is the chat window.
 
-What Salesforce charges for with Agentforce is its own model access and the services around it. ApexAgent leaves the model to you, so there is nothing for Salesforce to meter.
+What Salesforce charges for with Agentforce is its own model access and the services around it. ApexAgent leaves the model to you, and adds no charge of its own.
 
 ## A worked example
 
-These figures come from 149 questions logged in our own org between April and October 2026 on Gemini Flash models, priced at Gemini 3.8 Flash rates ($0.75 per million input tokens, $0.075 cached, $3.75 output), and from Salesforce's [Flex Credits rate card](https://www.salesforce.com/agentforce/rates/).
+ApexAgent's figures are an average question in our own test org, priced at Gemini 3.8 Flash rates ($0.75 per million input tokens, $0.075 cached, $3.75 output). Agentforce's come from Salesforce's [Flex Credits rate card](https://www.salesforce.com/agentforce/rates/).
 
 | | ApexAgent | Agentforce |
 | --- | --- | --- |

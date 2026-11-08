@@ -93,7 +93,7 @@ const cost = {
 		{ label: 'Agentforce', width: 100, value: '$0.17' },
 		{ label: 'ApexAgent', width: 9.4, value: '$0.016' },
 	],
-	note: 'ApexAgent: the average of 149 logged questions, priced at Gemini 3.8 Flash rates. Agentforce: 20 Flex Credits an action at list price. Your cost depends on the model you pick. Every conversation logs its tokens and cost, so you can check this in your own org.',
+	note: 'An average question. ApexAgent: model cost on Gemini 3.8 Flash. Agentforce: 20 Flex Credits an action at list price. Your cost depends on the model you pick. Every conversation logs its tokens and cost, so you can check this in your own org.',
 	link: { text: 'Compare with Agentforce', href: docs('start/compare/agent') },
 };
 
@@ -154,12 +154,12 @@ const config = [
 				<span>An AI&nbsp;agent and an MCP&nbsp;server for&nbsp;Salesforce.</span>{' '}
 				<span class="hero-cost">
 					<span>No Agentforce license.</span>{' '}
-					<span>Built in plain Apex.</span>
+					<span>Open source.</span>
 				</span>
 			</h1>
 			<p class="lede">
-				Give your users an AI agent inside Salesforce, on the AI provider you already use. The same
-				tools work from Claude, ChatGPT and other MCP apps. Open source.
+				A framework for building AI agents and MCP servers in plain Apex. It installs with a working
+				agent in the utility bar and an MCP server for Claude, ChatGPT and other MCP apps.
 			</p>
 			<div class="actions">
 				<a class="btn btn-solid" href={docs('start/install')}>Install ApexAgent</a>
