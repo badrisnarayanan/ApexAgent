@@ -3,7 +3,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.png">
-    <img src="assets/banner-light.png" alt="ApexAgent: an AI agent and an MCP server for Salesforce, built in plain Apex. No Agentforce license. Open source." width="820">
+    <img src="assets/banner-light.png" alt="ApexAgent: build AI agents and MCP servers for Salesforce, in Apex. No Agentforce license. Open source." width="820">
   </picture>
 </p>
 
@@ -11,7 +11,9 @@
 
 > 💡 **No extra Salesforce licensing.** ApexAgent uses only standard platform features: Apex, custom objects, Lightning Web Components and a Salesforce Site. It needs **no Agentforce license, no Einstein add-on and no Data Cloud**. It runs in Developer, Enterprise, Performance and Unlimited Edition orgs.
 >
-> The agent's running cost is the AI model: you pay your model provider directly for what you use, and ApexAgent adds nothing. The MCP server brings no model of its own; the model belongs to the client that connects. Each request uses one of your org's ordinary API requests today. Salesforce has [announced](https://help.salesforce.com/s/articleView?language=en_US&id=005360285&type=1) that calls from AI agents, over MCP or the API, will be billed in Flex Credits once it sets a rate, and that would apply here too.
+> **The agent:** its running cost is the AI model. You pay your model provider directly for what you use, and ApexAgent adds nothing. The agent runs inside your org and calls the model from Apex; it doesn't connect to Salesforce as an outside AI client.
+>
+> **The MCP server:** it brings no model of its own; the model belongs to the client that connects, such as Claude or ChatGPT. Each request uses one of your org's ordinary API requests today. Salesforce has [announced](https://help.salesforce.com/s/articleView?language=en_US&id=005360285&type=1) that calls from outside AI agents like these, over MCP or the API, will be billed in Flex Credits once it sets a rate, and that would apply to MCP calls here too.
 
 Everything deploys into your org and runs with your users' own permissions. There is no middleware and no external server to host.
 

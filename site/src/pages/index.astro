@@ -129,18 +129,18 @@ const config = [
 
 <StarlightPage
 	frontmatter={{
-		title: 'An AI agent and an MCP server for Salesforce',
+		title: 'Build AI agents and MCP servers for Salesforce, in Apex',
 		description:
-			'An AI agent and an MCP server for Salesforce, built in plain Apex. No Agentforce license. Open source.',
+			'Build AI agents and MCP servers for Salesforce, in Apex. No Agentforce license. Open source. Comes with a working agent and MCP server.',
 		template: 'splash',
 		// The browser tab leads with the name, so it survives when the tab is narrow.
 		head: [
-			{ tag: 'title', content: 'ApexAgent: an AI agent and an MCP server for Salesforce' },
+			{ tag: 'title', content: 'ApexAgent: build AI agents and MCP servers for Salesforce, in Apex' },
 			{
 				tag: 'meta',
 				attrs: {
 					property: 'og:title',
-					content: 'ApexAgent: an AI agent and an MCP server for Salesforce',
+					content: 'ApexAgent: build AI agents and MCP servers for Salesforce, in Apex',
 				},
 			},
 		],
@@ -151,15 +151,14 @@ const config = [
 	<div class="aa not-content">
 		<section class="hero">
 			<h1 id="_top">
-				<span>An AI&nbsp;agent and an MCP&nbsp;server for&nbsp;Salesforce.</span>{' '}
+				<span>Build AI&nbsp;agents and MCP&nbsp;servers for&nbsp;Salesforce, in&nbsp;Apex.</span>{' '}
 				<span class="hero-cost">
 					<span>No Agentforce license.</span>{' '}
 					<span>Open source.</span>
 				</span>
 			</h1>
 			<p class="lede">
-				A framework for building AI agents and MCP servers in plain Apex. It installs with a working
-				agent in the utility bar and an MCP server for Claude, ChatGPT and other MCP apps.
+				It comes with a working agent and MCP server. Add your own tools as Apex classes.
 			</p>
 			<div class="actions">
 				<a class="btn btn-solid" href={docs('start/install')}>Install ApexAgent</a>
